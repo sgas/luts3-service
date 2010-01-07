@@ -1,0 +1,105 @@
+
+=== Documentation for SGAS usage record service ===
+
+The usage record stores usage records in an underlaying database, and provides
+a mechanism for retrieving aggregated information from these.
+
+
+== Requirements == 
+
+* Python 2.5 or later
+* Twisted Core and Web (http://twistedmatrix.com/)
+* PyOpenSSL (https://launchpad.net/pyopenssl)
+* CouchDB 0.9 or later (0.8 will NOT work) (http://couchdb.apache.org/)
+
+Debian/Ubuntu:
+
+Python comes stock
+Packages: python-twisted, python-twisted-web, python-openssl
+
+Currently CouchDB is shipped in 0.8 version (though this will probably change
+once Ubuntu 9.10 is out). It is possible to install CouchDB 0.9+ manually, but
+using the PPA from James Henstridge is much easier. See:
+https://launchpad.net/~jamesh/+archive/ppa
+
+RedHat / CentOS
+
+Typically the Python version is not new enough, and Python and will have to be
+installed manually with dependencies. See the redhat-setup file for a detailed
+description.
+
+Packages: couchdb openssl-devel
+
+Other Linux distribution:
+
+You are on your own.
+
+
+== CouchDB ==
+
+Before installing SGAS, you'll need to get an instance of CouchDB running.
+
+The actual installation is better covered on the CouchDB homepage, so I'll
+assume that you have it up and running.
+
+Note, CouchDB has no limit on access/authorization, but by default only listens
+on the lo interface, meaning that it can only be reached from the machine
+itself. Hence SGAS should be running on the same machine (it is possible to
+have CouchDB listen on external interface, check the documentation, and
+remember to set your iptables).
+
+Open the CouchDB administrative interface (called Futon). This is done by
+pointing a browser at localhost:5984 at CouchDB machine. If you don't have a
+browser (or X tunneling) at the machine, you can use ssh port forwarding:
+
+$ ssh -L 6984:localhost:5984 couchdb.example.org
+
+And then point your browser to localhost:6984
+
+Once you have access to Futon, create a database. Name doesn't matter, but
+"usagerecords" tends to work fine. The url for accessing the database (to be
+used in the sgas configuration) will then be:
+
+http://localhost:5984/usagerecords
+
+Later you will use Futon for creating views, but first lets get SGAS running.
+
+
+== Installation & Configuration ==
+
+1. Unpack the tarball (you have probably already done this)
+2. Run: python setup.py build
+3. Run: sudo python setup.py install
+
+Edit /etc/sgas.conf, the main settings you should worry about is:
+
+# db.url - where to find the database, e.g.,
+db.url=http://localhost:5984/usagerecords
+
+# where to get js/css files (required for html views)
+webfiles=/usr/share/sgas/webfiles
+
+# authorization file
+authzfile=/etc/sgas.authz
+
+Hereafter edit /etc/sgas.authz to set which identities can perform which
+actions. Subject names must in "", so a line would look like this:
+
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     retrieval,view
+
+which will allow retrieval of individual usage records, and access to all views
+for the identity. You probably want to set who can insert usage records, and
+who can access views.
+
+
+== Views ==
+
+You probably want to setup some views in order to get high-level information
+about the usage record data.
+
+See docs/views for more information about setting up views.
+
+Just inserting usage records in itself is rather useless. In order to provide
+high level information about the usage record data, you should configure a set
+of views. This is a bit complicated so it has its own file.
+

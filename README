@@ -1,0 +1,29 @@
+SGAS LUTS3 server (accounting server).
+
+
+An SGAS accounting system consist of two parts:
+
+* The SGAS LUTS, which is used for storing usage records, and
+  extracting usage data from. See docs/server-setup for more information.
+
+* A logger. This is typically a plugin for a grid middleware. The arc-ur-logger
+  and arc-ur-registrant from ARC 0.8.1 or newer is recommended as a baseline for
+  starting.
+
+  There is also a small seperate client in the module called luts3-client.
+
+
+Install:
+
+$ python setup sdist
+Will create a tarball suitable for distrubution in the dist/ directory.
+See docs/server-setup for further instructions.
+
+
+Credits:
+
+Gerhard Weis for writing the excellent isodate module, which
+is used (and included in a modified form) in this software.
+
+Olli Tourunen and Jost Berthold for testing and feedback.
+

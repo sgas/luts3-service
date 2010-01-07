@@ -1,0 +1,129 @@
+SGAS features a number of extensions to the UR format.
+
+There are three namespaces / extention groups:
+
+
+* DEISA Submit time
+
+Originally created by the DEISA accounting project, to describe the point in
+time when a job was submitted.
+
+Namespace       :  http://rmis.deisa.org/acct
+Preferred abr.  :  deisa
+
+Element name    :  SubmitTime
+Parent element  :  JobUsageRecord
+Description     :  ISO time value.
+Example         :
+    <deisa:SubmitTime xmlns:deisa="http://rmis.deisa.org/acct">2009-07-07T09:06:37Z</deisa:SubmitTime>
+
+
+* SGAS VO Extension
+
+Created by the SGAS project in order to describe VO information of the user
+running the job. Somewhat closely modelled after the VOMS extensions, but have
+been shown to be generic enough for other uses.
+
+
+Namespace       :  http://www.sgas.se/namespaces/2009/05/ur/vo
+Preferred abr.  :  vo
+
+Element name    :  VO
+Attributes      :  type
+Parent element  :  UserIdenty block
+Description     :  Top element container for VO information. Type should be a
+                   string describing the source for the VO information, e.g.,
+                   "voms".
+
+Element name    :  Name
+Parent element  :  VO
+Description     :  The name of the VO.
+
+Element name    :  Issuer
+Parent element  :  VO
+Description     :  The identity of the VO authority.
+
+Element name    :  Attribute
+Parent element  :  VO
+Description     :  Element container for VO attributes.
+
+Element name    :  Group
+Parent element  :  Attribute
+Description     :  Describe membership of a group in a VO.
+
+Element name    :  Role
+Parent element  :  Attribute
+Description     :  Describe a role in a VO.
+
+Element name    :  Capability
+Parent element  :  Attribute
+Description     :  Describes a capability in a VO. Note that this is element
+                   is mainly provided in order to be "VOMS complete", and has
+                   yet to see any actual use (capability is almost never used
+                   in VOMS).
+
+Example:
+
+<vo:VO type="voms">
+    <vo:Name>bio.ndgf.org</vo:Name> 
+    <vo:Issuer>/O=Grid/O=NorduGrid/CN=host/voms.ndgf.org</vo:Issuer>
+    <vo:Attribute>
+        <vo:Group>bio.ndgf.org/test</vo:Group>
+        <vo:Role>VO-dev</vo:Role>
+    </vo:Attribute>
+    <vo:Attribute>
+        <vo:Group>bio.ndgf.org</vo:Group>
+    </vo:Attribute>
+</vo:VO>
+
+
+* SGAS additional information:
+
+Additional data for usage records.
+
+
+Namespace       :  http://www.sgas.se/namespaces/2009/07/ur
+Preferred abr.  :  sgas
+
+Element name    :  KSI2KCpuDuration
+Parent element  :  JobUsageRecord
+Description     :  CPU duration converted to KSI2k units
+Example         :  <sgas:KSI2KCpuDuration>PT150.4S</sgas:KSI2KCpuDuration>
+
+Element name    :  KSI2KWallDuration
+Parent element  :  JobUsageRecord
+Description     :  Wall time duration converted to KSI2K units.
+Example         :  <sgas:KSI2KWallDuration>PT8488.44S</sgas:KSI2KWallDuration>
+
+Attribute name  :  insertTime
+Element name    :  RecordIdentity
+Description     :  ISO time for when the usage record was inserted into the
+                   database.
+Example         :  <ur:RecordIdentity sgas:insertTime="2009-07-07T09:06:52Z" />
+
+Element name    :  UserTime
+Parent element  :  JobUsageRecord
+Description     :  Time spend in userland; in ISO time duration.
+Example         :  <sgas:UserTime>PT84.3S</sgas:UserTime>
+
+Element name    :  KernelTime
+Parent element  :  JobUsageRecord
+Description     :  Time spend in the kernel; in ISO time duration.
+Example         :  <sgas:KernelTime>PT13.2S</sgas:KernelTime>
+
+Element name    :  ExitCode
+Parent element  :  JobUsageRecord
+Description     :  Exit code of the job, integer value.
+Example         :  <sgas:ExitCode>0</sgas:ExitCode>
+
+Element name    :  MajorPageFaults
+Parent element  :  JobUsageRecord
+Description     :  Number of major page faults of the job.
+Example         :  <sgas:MajorPageFaults>3</sgas:MajorPageFaults>
+
+Element name    :  RuntimeEnvironment
+Parent element  :  JobUsageRecord
+Description     :  Runtime environment used (or requested) by the job.
+                   Note, repetitions are allowed.
+Example         :  <sgas:RuntimeEnvironment>APPS/HEP/ATLAS-13.0.40</sgas:RuntimeEnvironment>
+

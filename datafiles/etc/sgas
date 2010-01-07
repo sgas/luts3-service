@@ -1,0 +1,55 @@
+#! /bin/sh
+# /etc/init.d/sgas: start the SGAS accounting server
+
+### BEGIN INIT INFO
+# Provides:             sgas
+# Required-Start:       $network
+# Required-Stop:        $network
+# Should-Start:         $time
+# Should-Stop:          $time
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    SGAS Accounting server
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+TACFILE=/usr/local/share/sgas/sgas.tac
+PIDFILE=/var/run/sgas.pid
+LOGFILE=/var/log/sgas.log
+
+
+do_start() {
+    twistd --pidfile $PIDFILE -l $LOGFILE -y $TACFILE
+}
+
+do_stop() {
+    kill `cat $PIDFILE` || rm $PIDFILE
+}
+
+case "$1" in
+  start)
+    echo "Starting SGAS accounting server"
+    do_start
+    ;;
+  stop)
+    echo "Stopping SGAS accounting server"
+    do_stop
+    ;;
+  restart|reload)
+    echo "Restarting sgas accounting server"
+    do_stop
+    # erhm...
+    sleep 1
+    do_start
+    ;;
+  status)
+    status_of_proc -p $PIDFILE "twistd" "SGAS Accounting server" && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,4 @@
+include README
+include Makefile
+recursive-include datafiles *
+recursive-include docs *
