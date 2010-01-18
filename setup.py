@@ -23,9 +23,9 @@ class InstallSGASData(install_data):
 cmdclasses = {'install_data': InstallSGASData} 
 
 
-setup(name='sgas-accounting-server',
+setup(name='sgas-luts-service',
       version='3.0.0-git',
-      description='SGAS Accounting Server',
+      description='SGAS LUTS Accounting Server',
       author='Henrik Thostrup Jensen',
       author_email='htj@ndgf.org',
       url='http://www.sgas.se/',
