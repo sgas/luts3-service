@@ -38,7 +38,7 @@ class InsertResource(resource.Resource):
             if error.check(couchdb.DocumentAlreadyExistsError):
                 request.setResponseCode(409)
             else:
-                request.setResponseCode(400)
+                request.setResponseCode(500)
             request.write(error.getErrorMessage())
             request.finish()
 
