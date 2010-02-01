@@ -1,34 +1,35 @@
+=== SGAS LUTS Installation Documentation ===
 
-=== Documentation for SGAS usage record service ===
-
-The usage record stores usage records in an underlaying database, and provides
+The LUTS service stores usage records in an underlaying database, and provides
 a mechanism for retrieving aggregated information from these.
 
 
-== Requirements == 
+== Requirements ==
 
 * Python 2.5 or later
 * Twisted Core and Web (http://twistedmatrix.com/)
 * PyOpenSSL (https://launchpad.net/pyopenssl)
-* CouchDB 0.9 or later (0.8 will NOT work) (http://couchdb.apache.org/)
+* CouchDB 0.9 or later (0.8 will NOT work) (http://couchdb.apache.org/) 0.10 is
+  highly recommended, and will probably be required in future versions.
 
 Debian/Ubuntu:
 
 Python comes stock
-Packages: python-twisted, python-twisted-web, python-openssl
+Packages: python-twisted python-twisted-web python-openssl
 
-Currently CouchDB is shipped in 0.8 version (though this will probably change
-once Ubuntu 9.10 is out). It is possible to install CouchDB 0.9+ manually, but
-using the PPA from James Henstridge is much easier. See:
+Karmic includes CouchDB version 0.10, package name: couchdb (universe)
+
+For earlier Ubuntu versions it is possible to install CouchDB 0.9+ manually,
+but using the PPA from James Henstridge is much easier. See:
 https://launchpad.net/~jamesh/+archive/ppa
 
 RedHat / CentOS
 
 Typically the Python version is not new enough, and Python and will have to be
-installed manually with dependencies. See the redhat-setup file for a detailed
+installed manually with dependencies. See the redhat4-setup file for a detailed
 description.
 
-Packages: couchdb openssl-devel
+Packages: couchdb openssl-devel (for compiling pyopenssl)
 
 Other Linux distribution:
 
