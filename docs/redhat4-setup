@@ -1,9 +1,10 @@
-Installing required software on RedHat
+Installing required software on RedHat4 (or other linux distributions which
+does not have the required software for running SGAS).
 
-Thanks to Olli Tourunen for this.
+Thanks to Olli Tourunen for providing this.
 
 
-Python 2.6
+* Python 2.6
 
 wget http://www.python.org/ftp/python/2.6.2/Python-2.6.2.tar.bz2
 tar xvfj Python-2.6.2.tar.bz2
