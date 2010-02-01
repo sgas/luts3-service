@@ -55,7 +55,7 @@ browser (or X tunneling) at the machine, you can use ssh port forwarding:
 
 $ ssh -L 6984:localhost:5984 couchdb.example.org
 
-And then point your browser to localhost:6984
+And then point your browser to http://localhost:6984/_utils/
 
 Once you have access to Futon, create a database. Name doesn't matter, but
 "usagerecords" tends to work fine. The url for accessing the database (to be
