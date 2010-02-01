@@ -1,0 +1,89 @@
+This document intends to gave an overview of the SGAS LUTS system.
+
+The SGAS LUTS system is inteded for accounting infrastructure in grid and HPC
+systems.
+
+
+
+1: Terminology:
+
+
+* Usage Record
+
+An XML document adhering the OGF-98 standard. The document describes the job
+and consumed resource for a job run on a grid or cluster. Most accounting
+systems use a number of extensions for the OGF standard to describe additional
+information.
+
+Usage Records is typically abbreviated to UR.
+
+
+* LUTS service:
+
+A service to which usage records can be registered to and stored at. Aggregated
+information can then be extracted from the LUTS service through views.
+
+Typically a single LUTS would be run per-country or per-vo basis, but it can
+differ.
+
+Currently NDGF runs a single LUTS to which all ATLAS and ALICE production sites
+report to. In the future it is planned/hoped that the NGIs will run national
+LUTSes, and that only ATLAS, ALICE, CMS URs will get logged to the LUTS run by
+NDGF.
+
+
+* UR Logger:
+
+A program/plugin generating usage records. Typically installed/deployed
+alongside a grid middleware or LRMS.
+
+While the usage record could be registered immedidately it is typically written
+to disk in a spool directory and then registered to one or more LUTSes by
+another program, typically called UR registrant.
+
+The ARC middleware includes a UR logger (and registrant) as of version 0.8.1.
+
+NDGF is also running a custom UR logger for MonALISA (the information system of
+the AliEn production system/grid).
+
+NDGF is working on producing UR loggers for LRMSes. Currently Maui is underway
+as the first target. Code is available at: http://github.com/htj/lrmsurgen
+
+The three loggers all use the same registrant code (except some minor
+differences). The current registrant supports registering URs to multiple
+LUTSes, per-vo registration and will retry registration if the LUTS is
+unavailable. This will also work with multiple LUTSes and so forth.
+
+
+
+2. LUTS Service
+
+
+* Description:
+
+The LUTS service is daemon listening on port 6143 by default. The
+interface/protocol is TLS+HTTP, and is used for registering URs and accessing
+views (can be done via browser or view data can be fetched using ordinary HTTP
+client libraries).
+
+The LUTS service is essentially a thin wrapper over a database (the server code
+is only ~1500 lines). It performs mainly authorization and data transformation.
+Proxy certificates are not yet supported, but host certificates (for
+registration), and ordinary grid user certificates (for acessing view in in the
+browser), works fine.
+
+The underlying database is CouchDB, a document-oriented JSON database. It has a
+webpage at: http://couchdb.apache.org/
+
+
+* Insertion
+
+
+
+
+* Views
+
+
+
+
+
