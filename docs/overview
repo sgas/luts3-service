@@ -1,6 +1,6 @@
 This document intends to gave an overview of the SGAS LUTS system.
 
-The SGAS LUTS system is inteded for accounting infrastructure in grid and HPC
+The SGAS LUTS system is intended for accounting infrastructure in grid and HPC
 systems.
 
 
@@ -37,7 +37,7 @@ NDGF.
 A program/plugin generating usage records. Typically installed/deployed
 alongside a grid middleware or LRMS.
 
-While the usage record could be registered immedidately it is typically written
+While the usage record could be registered immediately it is typically written
 to disk in a spool directory and then registered to one or more LUTSes by
 another program, typically called UR registrant.
 
@@ -51,7 +51,7 @@ as the first target. Code is available at: http://github.com/htj/lrmsurgen
 
 The three loggers all use the same registrant code (except some minor
 differences). The current registrant supports registering URs to multiple
-LUTSes, per-vo registration and will retry registration if the LUTS is
+LUTSes, per-VO registration and will retry registration if the LUTS is
 unavailable. This will also work with multiple LUTSes and so forth.
 
 
@@ -69,21 +69,39 @@ client libraries).
 The LUTS service is essentially a thin wrapper over a database (the server code
 is only ~1500 lines). It performs mainly authorization and data transformation.
 Proxy certificates are not yet supported, but host certificates (for
-registration), and ordinary grid user certificates (for acessing view in in the
+registration), and ordinary grid user certificates (for accessing view in in the
 browser), works fine.
 
 The underlying database is CouchDB, a document-oriented JSON database. It has a
-webpage at: http://couchdb.apache.org/
+web page at: http://couchdb.apache.org/
 
 
 * Insertion
 
+Once the LUTS has received a batch of URs, the usage records are transformed
+into JSON documents before being inserted into the database (which is JSON
+based). Information about insert time, certificate used in authorization and
+from which host the usage record was inserted is added as "provenance"
+information the usage records.
 
+An _id field (the reference for the document in the database) is added to the
+JSON document. Currently this is a SHA224 hash of the global_job_id value. This
+may change in the future, as it is rather inefficient for view creation.
 
 
 * Views
 
+Note: The view engine in SGAS is not yet deemed ready for general usage, but it
+can still be very useful.
 
+Just inserting usage records in itself is rather useless. In order to provide
+high level information about the usage record data, SGAS provides access to
+aggregated information in the form of views. It is also possible to access
+individual usage records, but this is typically rather meaningless (as studying
+a drop in an ocean).
 
+SGAS tries to push as much view functionality to CouchDB, as the database is
+closest to the data  Often SGAS will just pass the data directly though it, or
+do some basic data transformation.
 
 
