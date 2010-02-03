@@ -5,7 +5,7 @@ systems.
 
 
 
-1: Terminology:
+1: Terminology & Concepts
 
 
 * Usage Record
@@ -24,7 +24,12 @@ A service to which usage records can be registered to and stored at. Aggregated
 information can then be extracted from the LUTS service through views.
 
 Typically a single LUTS would be run per-country or per-vo basis, but it can
-differ.
+differ. It is also possible to run a LUTS per site, however this might incur a
+lot of additional adminstration time. The options can also be combined in
+various ways, e.g., having a per-site LUTS and a national LUTS. Note that the
+LUTS does not feature forwarding of usage records. Instead the registration
+client simply registers URs to multple places. This scheme is significantly
+simpler and less brittle than forwarding.
 
 Currently NDGF runs a single LUTS to which all ATLAS and ALICE production sites
 report to. In the future it is planned/hoped that the NGIs will run national
