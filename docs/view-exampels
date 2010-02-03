@@ -1,0 +1,25 @@
+View Examples
+-----------------------------------------------------------
+
+# aggreated walltime per host / day
+
+
+function(doc) {
+    emit([doc.machine_name, doc.start_time.substring(0,10)], doc.wall_duration);
+}
+
+function (key, values) {
+    return sum(values);
+}
+
+
+# aggregated wall time per global user / day
+
+function(doc) {
+    emit([doc.global_user_name, doc.start_time.substring(0,10)], doc.wall_duration);
+}
+
+function (key, values) {
+    return sum(values);
+}
+

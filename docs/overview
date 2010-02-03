@@ -109,4 +109,83 @@ SGAS tries to push as much view functionality to CouchDB, as the database is
 closest to the data  Often SGAS will just pass the data directly though it, or
 do some basic data transformation.
 
+Creating an SGAS view consists of two steps: Creating a view in CouchDB, and
+creating the view in SGAS. The first is the most tricky one. An introduction to
+CouchDB view can found here:
+http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views
+
+In the future we intend to deliver "standard" views with SGAS, for the most
+common usage patterns. For now, they must be created manually.
+
+
+* Creating Views
+
+You will probably need an example UR to look at. One can be found in
+docs/ur.json. Note that not all URs have all information.
+
+1. Figure out what information should be extracted.
+
+First establish what information is wanted in the view.
+
+As an example we would like to know much accumulated walltime each host has
+been used each day.
+
+
+2. Write the map-reduce query.
+
+CouchDB view are based on the map-reduce model. First each document in the
+database is mapped to a set of key-value entries. The number of produced
+entries can be 0 or multiple, but is typically one. The mapping function would
+look like this:
+
+function(doc) {
+    emit([doc.machine_name, doc.end_time.substring(0,10)], doc.wall_duration);
+}
+
+This produces entries with (host, date) as key, and wall time (in seconds) as
+the value. To add the seconds together, we define the reduce function as this:
+
+function (key, values) {
+    return sum(values);
+}
+
+This wall add the values for all identical keys together in order to produce a
+single value for the host+date combination. The easiest way to create the view
+in CouchDB is to create a temporary view and the save it as a permanent view.
+
+
+3. Configure SGAS
+
+Having created the view in CouchDB, SGAS needs to be aware of it. This is done
+by creating an entry in sgas.conf, like this:
+
+[view:hostwalltime]
+design=host
+view=walltime
+description=Accumulated walltime per host / day
+
+The first line creates a configuration entry, and names the view. With the
+given name, the view would be accessed at:
+https://sgas.examples.org:6143/sgas/view/hostwalltime
+
+The design and view options define the location of the view in CouchDB. The
+description adds a humanly readable description to the view. More options are
+available for data filtering or post processing.
+
+
+4. Authorize Users
+
+Finally users must be allowed access to the view. This is done be adding a line
+to sgas.authz, like this:
+
+"/O=Grid/O=NorduGrid/OU=Organization/CN=Grid User"     view:hostwalltime
+
+This line allows the user in question access to the view.
+
+
+* More Information
+
+This documentation is a work in progress.
+
+If you have questions or suggestions, please contact htj _at_ ndgf.org
 
