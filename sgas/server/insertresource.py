@@ -35,11 +35,17 @@ class InsertResource(resource.Resource):
         def insertError(error):
             from sgas.server import couchdb
             log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
+
+            error_msg = error.getErrorMessage()
             if error.check(couchdb.DocumentAlreadyExistsError):
-                request.setResponseCode(409)
+                request.setResponseCode(409) # conflict
+            elif error.check(couchdb.DatabaseUnavailableError):
+                request.setResponseCode(503) # service unavailable
+                error_msg = 'Database currently unavailable. Please try again later.'
             else:
                 request.setResponseCode(500)
-            request.write(error.getErrorMessage())
+
+            request.write(error_msg)
             request.finish()
 
         # FIXME check for postpath, and if any reject request
