@@ -62,8 +62,12 @@ class UsageRecordDatabase:
         defer.returnValue(json.dumps(doc))
 
 
-    @defer.inlineCallbacks
     def getView(self, view_name):
+
+        def gotResult(doc):
+            rows = convert.viewResultToRows(doc)
+            rows = view_def.process(rows)
+            return rows, view_def.description
 
         try:
             view_def = self.views[view_name]
@@ -71,9 +75,7 @@ class UsageRecordDatabase:
             raise InvalidViewError('No such view, %s' % view_name)
 
         startkey, endkey = view_def.filter()
-        doc = yield self.db.queryView(view_def.db_design, view_def.db_view,
-                                      startkey=startkey, endkey=endkey)
-        rows = convert.viewResultToRows(doc)
-        rows = view_def.process(rows)
-        defer.returnValue((rows, view_def.description))
+        d = self.db.queryView(view_def.db_design, view_def.db_view, startkey=startkey, endkey=endkey)
+        d.addCallback(gotResult)
+        return d
 
