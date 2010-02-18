@@ -1,5 +1,5 @@
 """
-Top resource for VTAS.
+Top resource for SGAS.
 
 Used for fetching service urls, and inserting usage records
 into the underlying database.

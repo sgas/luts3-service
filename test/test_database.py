@@ -91,7 +91,7 @@ class DatabaseTest(unittest.TestCase):
 
     @defer.inlineCallbacks
     def setUp(self):
-        config = json.load(file(VTAS_TEST_FILE))
+        config = json.load(file(SGAS_TEST_FILE))
         # convert unicode to regular strings, as the sedna module requires this
         url = str(config['db.url'])
         base_url, self.db_name = url.rsplit('/', 1)

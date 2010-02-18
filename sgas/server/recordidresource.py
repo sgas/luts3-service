@@ -1,5 +1,5 @@
 """
-UR insertion resource for VTAS.
+UR insertion resource for SGAS.
 
 Used for inserting usage records into database.
 

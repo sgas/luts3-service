@@ -19,7 +19,7 @@ DOC2 = {'k':2, '_id':'yummie'}
 class CouchDBTest(unittest.TestCase):
 
     def setUp(self):
-        config = json.load(file(VTAS_TEST_FILE))
+        config = json.load(file(SGAS_TEST_FILE))
         self.url = str(config['db.url'])
         self.base_url, self.db_name = self.url.rsplit('/', 1)
 
