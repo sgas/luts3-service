@@ -30,6 +30,12 @@ DESIGN    = '_design'
 
 # errors
 
+class DatabaseUnavailableError(Exception):
+    """
+    Raised when a contacted database is not available.
+    """
+
+
 class NoSuchDocumentError(Exception):
     """
     Raised when trying to access a document which does not exist.
@@ -92,6 +98,22 @@ def httpRequest(url, method, data=None):
 
 
 
+def couchRequest(url, method, data=None):
+    """
+    Wrapper for making http request to couchdb, which only errs out on real
+    errors (and not every non-200 response).
+    """
+    def handleResponse(result, factory):
+        if hasattr(factory, 'status'):
+            return result
+        raise DatabaseUnavailableError(result.getErrorMessage())
+
+    d, f = httpRequest(url, method, data)
+    d.addBoth(handleResponse, f)
+    return d, f
+
+
+
 # class definitions
 
 class CouchDB:
@@ -114,8 +136,8 @@ class CouchDB:
             e = UnhandledResponseError('Unhandled response. Response code: %s' % factory.status)
             return defer.fail(e)
 
-        d, f = httpRequest(self.url + db_name, method='PUT')
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + db_name, method='PUT')
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -131,8 +153,8 @@ class CouchDB:
             e = UnhandledResponseError('Unhandled response. Response code: %s' % factory.status)
             return defer.fail(e)
 
-        d, f = httpRequest(self.url + db_name, method='DELETE')
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + db_name, method='DELETE')
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -155,8 +177,8 @@ class Database:
                 e = UnhandledResponseError('Unhandled response. Response code: %s' % factory.status)
                 return defer.fail(e)
 
-        d, f = httpRequest(self.url, 'GET')
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url, 'GET')
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -167,8 +189,8 @@ class Database:
                 return json.loads(result)
             defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
-        d, f = httpRequest(self.url + ALL_DOCS, method='GET')
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + ALL_DOCS, method='GET')
+        d.addCallback(handleResponse, f)
         return d
 
     # single document commands
@@ -182,8 +204,8 @@ class Database:
                 return defer.fail(NoSuchDocumentError('No such document (%s) in database' % doc_id))
             return defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
-        d, f = httpRequest(self.url + doc_id, method='GET')
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + doc_id, method='GET')
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -199,13 +221,13 @@ class Database:
 
         payload = json.dumps(doc)
         if doc_id is None and ID_KEY not in doc:
-            d, f = httpRequest(self.url, method='POST', data=payload)
+            d, f = couchRequest(self.url, method='POST', data=payload)
         else:
             if not doc_id:
                 doc_id = str(doc[ID_KEY])
-            d, f = httpRequest(self.url + doc_id, method='PUT', data=payload)
+            d, f = couchRequest(self.url + doc_id, method='PUT', data=payload)
 
-        d.addBoth(handleResponse, f)
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -221,7 +243,7 @@ class Database:
         else:
             doc_id = doc
 
-        d, f = httpRequest(self.url + doc_id, method='DELETE')
+        d, f = couchRequest(self.url + doc_id, method='DELETE')
         d.addCallback(handleResponse, f)
         return d
 
@@ -235,8 +257,8 @@ class Database:
             print result
 
         payload = json.dumps({'keys': docs})
-        d, f = httpRequest(self.url + ALL_DOCS + '?include_docs=true', method='GET', data=payload)
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + ALL_DOCS + '?include_docs=true', method='GET', data=payload)
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -249,8 +271,8 @@ class Database:
             return defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
         payload = json.dumps({'docs': docs })
-        d, f = httpRequest(self.url + BULK_DOCS, method='POST', data=payload)
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + BULK_DOCS, method='POST', data=payload)
+        d.addCallback(handleResponse, f)
         return d
 
     # view commands
@@ -262,8 +284,8 @@ class Database:
             return defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
         payload = """{ "map" : "%s" }""" % view_definition
-        d, f = httpRequest(self.url + TEMP_VIEW, method='POST', data=payload)
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + TEMP_VIEW, method='POST', data=payload)
+        d.addCallback(handleResponse, f)
         return d
 
 
@@ -275,8 +297,8 @@ class Database:
                 return defer.fail(ViewCreationError(result))
             defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
-        d, f = httpRequest(self.url + DESIGN + '/' + view_name, method='PUT', data=view_definition)
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(self.url + DESIGN + '/' + view_name, method='PUT', data=view_definition)
+        d.addCallback(handleResponse, f)
         return d
 
     # need a delete view / get view design
@@ -303,7 +325,7 @@ class Database:
         if params:
             url += '?' + '&'.join(params)
 
-        d, f = httpRequest(url, method='GET')
-        d.addBoth(handleResponse, f)
+        d, f = couchRequest(url, method='GET')
+        d.addCallback(handleResponse, f)
         return d
 

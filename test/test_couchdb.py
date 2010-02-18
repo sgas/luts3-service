@@ -25,6 +25,19 @@ class CouchDBTest(unittest.TestCase):
 
 
     @defer.inlineCallbacks
+    def testUnavailability(self):
+
+        couch = couchdb.CouchDB('http://localhost:9999')
+
+        try:
+            db = yield couch.createDatabase('phony')
+            self.fail('Should have failed with DatabaseNotAvailableError')
+
+        except couchdb.DatabaseUnavailableError:
+            pass
+
+
+    @defer.inlineCallbacks
     def testEverything(self):
 
         #couch = couchdb.CouchDB('http://localhost:5984/')
