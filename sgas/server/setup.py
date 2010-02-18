@@ -1,6 +1,7 @@
 """
 Server-setup logic
 """
+import os.path
 
 from twisted.application import internet, service
 from twisted.web import resource, server
@@ -15,6 +16,13 @@ DEFAULT_CONFIG_FILE = '/etc/sgas.conf'
 
 TCP_PORT = 6180
 SSL_PORT = 6143
+
+
+
+class ConfigurationError(Exception):
+    """
+    Raised when the server is configured wrong.
+    """
 
 
 
@@ -44,6 +52,20 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
 
     cfg = config.readConfig(config_file)
 
+    # sanity checks
+    if use_ssl:
+        hostkey  = cfg.get(config.SERVER_BLOCK, config.HOSTKEY)
+        hostcert = cfg.get(config.SERVER_BLOCK, config.HOSTCERT)
+        certdir  = cfg.get(config.SERVER_BLOCK, config.CERTDIR)
+        if not (os.path.exists(hostkey)  and os.path.isfile(hostkey)):
+            raise ConfigurationError('Configured host key does not exist')
+        if not (os.path.exists(hostcert) and os.path.isfile(hostcert)):
+            raise ConfigurationError('Configured host cert does not exist')
+        if not (os.path.exists(certdir)  and os.path.isdir(certdir)):
+            raise ConfigurationError('Configured certificate directory does not exist')
+
+    # setup server
+
     cdb = couchdb.Database(cfg.get(config.SERVER_BLOCK, config.DB))
 
     view_specs = {}
@@ -53,12 +75,11 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
             view_specs[view_name] = dict(cfg.items(block))
 
     views = dict([ (view_name,view.createView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
-
     ur_db = database.UsageRecordDatabase(cdb, views)
 
     az = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
-
     web_files_path = cfg.get(config.SERVER_BLOCK, config.WEB_FILES)
+
     site = createSite(ur_db, az, web_files_path)
 
     # setup application
