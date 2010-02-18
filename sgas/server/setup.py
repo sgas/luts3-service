@@ -17,6 +17,29 @@ TCP_PORT = 6180
 SSL_PORT = 6143
 
 
+
+def createSite(ur_db, authz, web_files_path):
+
+    rr = insertresource.InsertResource(ur_db, authz)
+    rr.putChild('recordid', recordidresource.RecordIDResource(ur_db))
+
+    vr = viewresource.ViewResource(ur_db, authz)
+
+    tr = topresource.TopResource(authz)
+    tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
+    tr.registerService(vr, 'view', (('View', 'view'),))
+
+    sr = staticresource.StaticResource(web_files_path)
+
+    root = resource.Resource()
+    root.putChild('sgas', tr)
+    root.putChild('static', sr)
+
+    site = server.Site(root)
+    return site
+
+
+
 def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
 
     cfg = config.readConfig(config_file)
@@ -35,22 +58,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
 
     az = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
 
-    rr = insertresource.InsertResource(ur_db, az)
-    rr.putChild('recordid', recordidresource.RecordIDResource(ur_db))
-
-    vr = viewresource.ViewResource(ur_db, az)
-
-    tr = topresource.TopResource(az)
-    tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
-    tr.registerService(vr, 'view', (('View', 'view'),))
-
-    sr = staticresource.StaticResource(cfg.get(config.SERVER_BLOCK, config.WEB_FILES))
-
-    root = resource.Resource()
-    root.putChild('sgas', tr)
-    root.putChild('static', sr)
-
-    site = server.Site(root)
+    web_files_path = cfg.get(config.SERVER_BLOCK, config.WEB_FILES)
+    site = createSite(ur_db, az, web_files_path)
 
     # setup application
     application = service.Application("sgas")
