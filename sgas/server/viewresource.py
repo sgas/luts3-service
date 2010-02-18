@@ -75,23 +75,30 @@ class ViewResource(resource.Resource):
             request.finish()
 
         def viewError(error, return_type, view_name):
-            if error.type == database.InvalidViewError:
+            error_msg = error.getErrorMessage()
+            if error.check(database.InvalidViewError):
                 request.setResponseCode(404)
                 request.write(error.getErrorMessage())
-            elif error.type == couchdb.InvalidViewError:
+            elif error.check(couchdb.InvalidViewError):
                 log.msg('Error accessing view specified in view definition %s' % view_name, system='sgas.ViewResource')
                 log.msg('This is probably an error in the configuration or a view that has not been created', system='sgas.ViewResource')
                 log.err(error)
                 request.setResponseCode(500)
-                request.write('Error accessing view in database (punch the admin)')
+                error_msg = 'Error accessing view in database (punch the admin)'
+            elif error.check(couchdb.DatabaseUnavailableError):
+                error.printTraceback()
+                log.err(error)
+                request.setResponseCode(503)
+                error_msg = 'Database is currently unavailable, please try again later'
             else:
                 log.err(error)
                 request.setResponseCode(500)
-                request.write(error.getErrorMessage())
-            request.finish()
-        # end def
 
-        # first, extact view name
+            request.write(error_msg)
+            request.finish()
+        # def viewError
+
+        # first, extract view name
         if len(request.postpath) == 1 or (len(request.postpath) == 2 and request.postpath[1] == ''):
             view_name = request.postpath[0]
         else:
@@ -99,23 +106,21 @@ class ViewResource(resource.Resource):
             return 'Unknown resource'
 
         subject = authz.getSubject(request)
-        if not subject:
-            request.setResponseCode(403) # forbidden
-            return "No certificate presented. Anonymous access not allowed"
-        if not self.authorizer.isAllowed(subject, authz.VIEW, view_name=view_name):
+        if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
             request.setResponseCode(403) # forbidden
             return "Access to view %s not allowed for %s" % (view_name, subject)
 
         # figure out if we should return json or html content, json is default
         accepts = request.requestHeaders.getRawHeaders('Accept', [])
         return_type = 'json'
-        for acc in accepts[0].split(','):
-            if acc == JSON_MIME_TYPE:
-                return_type = 'json'
-                break
-            elif acc == HTML_MIME_TYPE:
-                return_type = 'html'
-                break
+        if accepts:
+            for acc in accepts[0].split(','):
+                if acc == JSON_MIME_TYPE:
+                    return_type = 'json'
+                    break
+                elif acc == HTML_MIME_TYPE:
+                    return_type = 'html'
+                    break
 
         d = self.urdb.getView(view_name) #, sub_view)
         d.addCallbacks(gotResult, viewError,
