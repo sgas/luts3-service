@@ -112,7 +112,7 @@ class DatabaseTest(unittest.TestCase):
         ur1_hs = usagerecord.createID(ur1_id)
 
         doc_ids = yield self.ur_db.insertUsageRecords(UR1)
-        self.failUnlessEqual(doc_ids, [ur1_hs])
+        self.failUnlessEqual(doc_ids, {ur1_id: {'id':ur1_hs}})
 
         doc = yield self.ur_db.getUsageRecord(ur1_hs)
         self.failUnlessIn(ur1_id, doc)
@@ -129,7 +129,8 @@ class DatabaseTest(unittest.TestCase):
 
         doc_ids = yield self.ur_db.insertUsageRecords(CUR)
         self.failUnlessEqual(len(doc_ids), 2)
-        self.failUnlessEqual(set(doc_ids), set([cur_hs1, cur_hs2]))
+        wanted_result = {cur_id1: {'id':cur_hs1}, cur_id2: {'id':cur_hs2}}
+        self.failUnlessEqual(doc_ids, wanted_result)
 
         doc1 = yield self.ur_db.getUsageRecord(cur_hs1)
         self.failUnlessIn("test job 3", doc1)
