@@ -53,7 +53,7 @@ def rowsToHTMLTable(doc, caption=None, base_indent=8, indent=4):
     res += i2 + '<tr>\n'
     res += i3 + '<td></td>\n'
     for sk in headers:
-        res += i3 + '<th>' + sk + '</th>\n'
+        res += i3 + '<th>' + str(sk) + '</th>\n'
     res += i2 + '</tr>\n'
     res += i1 + '</thead>\n'
 
@@ -61,7 +61,7 @@ def rowsToHTMLTable(doc, caption=None, base_indent=8, indent=4):
     res += i1 + '<tbody>\n'
     for pk in keys:
         res += i2 + '<tr>\n'
-        res += i3 + '<th>' + pk + '</th>\n'
+        res += i3 + '<th>' + str(pk) + '</th>\n'
         for sk in headers:
             res += i3 + '<td>' + str(matrix[pk,sk]) + '</th>\n'
         res += i2 + '</tr>\n'
