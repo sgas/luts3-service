@@ -122,7 +122,7 @@ class ViewResource(resource.Resource):
                     return_type = 'html'
                     break
 
-        d = self.urdb.getView(view_name) #, sub_view)
+        d = self.urdb.getView(view_name)
         d.addCallbacks(gotResult, viewError,
                        callbackArgs=(return_type, view_name),
                        errbackArgs=(return_type, view_name))
