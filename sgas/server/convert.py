@@ -11,32 +11,45 @@ def viewResultToRows(doc):
     return [ (e['key'], e['value']) for e in doc['rows'] ]
 
 
+def formatValue(value):
+    if type(value) in (tuple, list):
+        return ' / '.join( [ str(e) for e in value ] )
+    else:
+        return str(value)
+
 
 def rowsToHTMLTable(doc, caption=None, base_indent=8, indent=4):
     # assumes a document with a complex key of length 2 and a value
     # it is somewhat assumed that the value pairs in the key form a matrix
 
-#    hi = 1
-#    hi =     flip and 0 or 1
-#    bi = not flip and 0 or 1
-
-    header_set = set()
-    for (key, value) in doc:
-        header_set.add(key[1])
-    headers = sorted(header_set)
-
-    key_set = set()
+    row_set = set()
+    col_set = set()
     matrix = {}
-    for (k1, k2), value in doc:
-        key_set.add(k1)
+
+    for key, value in doc:
+        if type(key) in (list, tuple):
+            k1, k2 = key # only up 2 dimensions are supported
+        else:
+            k1, k2 = key, ''
+        row_set.add(k1)
+        col_set.add(k2)
         matrix[k1,k2] = value
-    keys = sorted(key_set)
-    for pk in keys:
-        for sk in headers:
+
+    rows    = sorted(row_set)
+    columns = sorted(col_set)
+
+    for rn in rows:
+        for cn in columns:
             try:
-                matrix[pk, sk]
+                matrix[rn, cn]
             except KeyError, e:
-                matrix[pk, sk] = ''
+                matrix[rn, cn] = ''
+
+    table = createHTMLTable(columns, rows, matrix, caption, base_indent, indent)
+    return table
+
+
+def createHTMLTable(column_names, row_names, matrix, caption=None, base_indent=8, indent=4):
 
     i0 = ' ' * base_indent
     i1 = ' ' * base_indent + ' ' * 1 * indent
@@ -52,18 +65,18 @@ def rowsToHTMLTable(doc, caption=None, base_indent=8, indent=4):
     res += i1 + '<thead>\n'
     res += i2 + '<tr>\n'
     res += i3 + '<td></td>\n'
-    for sk in headers:
-        res += i3 + '<th>' + str(sk) + '</th>\n'
+    for cn in column_names:
+        res += i3 + '<th>' + str(cn) + '</th>\n'
     res += i2 + '</tr>\n'
     res += i1 + '</thead>\n'
 
     # body
     res += i1 + '<tbody>\n'
-    for pk in keys:
+    for rn in row_names:
         res += i2 + '<tr>\n'
-        res += i3 + '<th>' + str(pk) + '</th>\n'
-        for sk in headers:
-            res += i3 + '<td>' + str(matrix[pk,sk]) + '</th>\n'
+        res += i3 + '<th>' + str(rn) + '</th>\n'
+        for cn in column_names:
+            res += i3 + '<td>' + formatValue(matrix[rn,cn]) + '</th>\n'
         res += i2 + '</tr>\n'
     res += i1 + '</tbody>\n'
 
