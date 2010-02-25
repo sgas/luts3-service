@@ -26,14 +26,6 @@ HTML_HEADER = """<!DOCTYPE html>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>%(title)s</title>
         <link rel="stylesheet" type="text/css" href="/static/css/view.visualize.css" />
-        <script type="text/javascript" src="/static/js/jquery-1.3.2.min.js"></script>
-        <script type="text/javascript" src="/static/js/visualize.jQuery.js"></script>
-        <script type="text/javascript">
-            jQuery(function(){
-                //make some charts
-                $('table').visualize({type: 'line', height: 300, title: '%(title)s'});
-                });
-        </script>
     </head>
     <body>
 """
