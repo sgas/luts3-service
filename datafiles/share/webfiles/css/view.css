@@ -3,7 +3,7 @@ body { font-size: 70%; font-family: Verdana, sans-serif; }
 
 /* table layout */
 table {
-    width: 850px; border-collapse: collapse; margin-left: 30px;
+    width: 850px; border-collapse: collapse; margin-left: 15px;
     border-width: 2px 2px 2px 2px; border-spacing: 2px; border-style: double ;
 }
 caption {margin: 0 0 .5em; font-size: 1.3em;  text-align: left;   }
