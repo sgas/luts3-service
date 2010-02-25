@@ -54,13 +54,18 @@ class ViewResource(resource.Resource):
         # request for view start page / overview
         if len(postpath) == 0 or (len(postpath) == 1 and postpath[0] == ''):
             self.renderStartPage(request, subject)
+
         # request for specific view
-        elif len(request.postpath) == 1 or (len(request.postpath) == 2 and request.postpath[1] == ''):
+        elif len(postpath) in (1,2):
             view_name = request.postpath[0]
+            context = None
+            if postpath[1] != '':
+                context = postpath[1]
             if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
                 request.setResponseCode(403) # forbidden
                 return "Access to view %s not allowed for %s" % (view_name, subject)
             self.renderView(request, view_name, subject)
+
         # invalid resource request
         else:
             request.setResponseCode(404)

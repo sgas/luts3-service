@@ -56,20 +56,24 @@ class Authorizer:
         return parse_authz
 
 
-    def isAllowed(self, subject, action, view_name=None):
-        log.msg("Authz check: Subject %s, Action %s" % (subject, action), system='sgas.Authorizer')
+    def isAllowed(self, subject, action, view_name=None, context=None):
+
+        allowed = False
+
         try:
             if action in self.allowed_actions[subject]:
-                log.msg("Authz check, action allowed", system='sgas.Authorizer')
-                return True
+                allowed = True
             # check views
-            if action == VIEW and view_name:
+            elif action == VIEW and view_name:
                 if VIEW_PREFIX + view_name in self.allowed_actions[subject]:
-                    log.msg("Authz check, action allowed (named view)", system='sgas.Authorizer')
-                    return True
+                    allowed = True
+                elif context is not None and VIEW_PREFIX + view_name + ':' + context in self.allowed_actions[subject]:
+                    allowed = True
         except KeyError, e:
             pass
 
-        log.msg("Authz check, action not allowed", system='sgas.Authorizer')
-        return False
+        log.msg("Authz check: Subject %s, Action %s, View name: %s, Context: %s. Acceses allowed: %s" % \
+                 (subject, action, view_name, context, allowed), system='sgas.Authorizer')
+
+        return allowed
 
