@@ -25,7 +25,7 @@ HTML_HEADER = """<!DOCTYPE html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>%(title)s</title>
-        <link rel="stylesheet" type="text/css" href="/static/css/view.visualize.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/view.css" />
     </head>
     <body>
 """
