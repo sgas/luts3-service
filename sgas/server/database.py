@@ -62,7 +62,11 @@ class UsageRecordDatabase:
         defer.returnValue(json.dumps(doc))
 
 
-    def getView(self, view_name):
+    def getViewList(self):
+        return self.views.values()
+
+
+    def getViewData(self, view_name):
 
         def gotResult(doc):
             rows = convert.viewResultToRows(doc)

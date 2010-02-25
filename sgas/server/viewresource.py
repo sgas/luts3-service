@@ -69,9 +69,28 @@ class ViewResource(resource.Resource):
         return server.NOT_DONE_YET
 
 
-    def renderStartPage(self, request, subject):
+    def renderStartPage(self, request, identity):
 
-        body = "Hello %s" % subject
+        views = self.urdb.getViewList()
+
+        stock_views = []
+        custom_views = []
+
+        for view_def in views:
+            custom_views.append(view_def.view_name)
+
+        ib = 4 * ' '
+
+        body =''
+        body += 2*ib + '<div>Hello %(identity)s</div>\n' % {'identity': identity }
+        body += 2*ib + '<h1>Stock views</h1>\n'
+        for sv in stock_views:
+            body += 2*ib + '<div>%(view_name)s</div>\n' % {'view_name': sv }
+        body += 2*ib + '<div></div>\n'
+        body += 2*ib + '<h1>Custom views</h1>\n'
+        for cv in custom_views:
+            body += 2*ib + '<div><a href=view/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': cv }
+
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
         request.write(HTML_FOOTER)
@@ -136,7 +155,7 @@ class ViewResource(resource.Resource):
                     return_type = 'html'
                     break
 
-        d = self.urdb.getView(view_name)
+        d = self.urdb.getViewData(view_name)
         d.addCallbacks(gotResult, viewError,
                        callbackArgs=(return_type, view_name),
                        errbackArgs=(return_type, view_name))
