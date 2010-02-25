@@ -48,6 +48,40 @@ class ViewResource(resource.Resource):
 
     def render_GET(self, request):
 
+        postpath = request.postpath
+        subject = authz.getSubject(request)
+
+        # request for view start page / overview
+        if len(postpath) == 0 or (len(postpath) == 1 and postpath[0] == ''):
+            self.renderStartPage(request, subject)
+        # request for specific view
+        elif len(request.postpath) == 1 or (len(request.postpath) == 2 and request.postpath[1] == ''):
+            view_name = request.postpath[0]
+            if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
+                request.setResponseCode(403) # forbidden
+                return "Access to view %s not allowed for %s" % (view_name, subject)
+            self.renderView(request, view_name, subject)
+        # invalid resource request
+        else:
+            request.setResponseCode(404)
+            return 'Unknown resource'
+
+        return server.NOT_DONE_YET
+
+
+    def renderStartPage(self, request, subject):
+
+        body = "Hello %s" % subject
+        request.write(HTML_HEADER % {'title': 'View startpage'} )
+        request.write(body)
+        request.write(HTML_FOOTER)
+
+        request.setResponseCode(200)
+        request.finish()
+
+
+    def renderView(self, request, view_name, subject):
+
         def gotResult((rows, view_description), return_type, view_name):
             if return_type == 'json':
                 retval = json.dumps(rows)
@@ -90,18 +124,6 @@ class ViewResource(resource.Resource):
             request.finish()
         # def viewError
 
-        # first, extract view name
-        if len(request.postpath) == 1 or (len(request.postpath) == 2 and request.postpath[1] == ''):
-            view_name = request.postpath[0]
-        else:
-            request.setResponseCode(404)
-            return 'Unknown resource'
-
-        subject = authz.getSubject(request)
-        if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
-            request.setResponseCode(403) # forbidden
-            return "Access to view %s not allowed for %s" % (view_name, subject)
-
         # figure out if we should return json or html content, json is default
         accepts = request.requestHeaders.getRawHeaders('Accept', [])
         return_type = 'json'
@@ -118,5 +140,4 @@ class ViewResource(resource.Resource):
         d.addCallbacks(gotResult, viewError,
                        callbackArgs=(return_type, view_name),
                        errbackArgs=(return_type, view_name))
-        return server.NOT_DONE_YET
 
