@@ -35,7 +35,8 @@ setup(name='sgas-luts-service',
 
       data_files=[
           ('share/sgas',               ['datafiles/share/sgas.tac']),
-          ('share/sgas/webfiles/css',  ['datafiles/share/webfiles/css/view.visualize.css']),
+          ('share/sgas/webfiles/css',  ['datafiles/share/webfiles/css/view.css',
+                                        'datafiles/share/webfiles/css/view.visualize.css']),
           ('share/sgas/webfiles/js',   ['datafiles/share/webfiles/js/jquery-1.3.2.min.js',
                                         'datafiles/share/webfiles/js/visualize.jQuery.js']),
           ('/etc/init.d',              ['datafiles/etc/sgas']),
