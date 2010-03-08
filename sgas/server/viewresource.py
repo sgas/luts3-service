@@ -59,7 +59,7 @@ class ViewResource(resource.Resource):
         elif len(postpath) in (1,2):
             view_name = request.postpath[0]
             context = None
-            if postpath[1] != '':
+            if len(postpath) > 1 and postpath[1] != '':
                 context = postpath[1]
             if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
                 request.setResponseCode(403) # forbidden
