@@ -55,11 +55,7 @@ class TopResource(resource.Resource):
 
 
     def render_GET(self, request):
-
         # No authz check, we allow everyone to fetch service list
-        subject = authz.getSubject(request)
-        log.msg("Request for service list by %s" % subject, system='sgas.TopResource')
-
         #print "Host Header:", request.received_headers.get('host')
         host = request.received_headers.get('host')
         if not host:
