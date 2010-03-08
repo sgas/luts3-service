@@ -50,5 +50,6 @@ class StaticResource(resource.Resource):
             return cp.getContent()
         else:
             request.setResponseCode(404)
-            return 'Request resource does not exist..'
+            log.msg('Could not find requested static file at post path: %s' % '/'.join(request.postpath))
+            return 'Requested resource does not exist.'
 
