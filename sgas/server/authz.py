@@ -72,7 +72,7 @@ class Authorizer:
         except KeyError, e:
             pass
 
-        log.msg("Authz check: Subject %s, Action %s, View name: %s, Context: %s. Acceses allowed: %s" % \
+        log.msg("Authz check: Subject %s, Action %s, View name: %s, Context: %s. Access allowed: %s" % \
                  (subject, action, view_name, context, allowed), system='sgas.Authorizer')
 
         return allowed
