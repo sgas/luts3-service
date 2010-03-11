@@ -250,14 +250,32 @@ class Database:
     # document bulk commands
 
     # this one needs couchdb 0.9+ to work
-    def retrieveDocuments(self, docs):
+    # doc_ids should be an array of wanted keys
+    def retrieveDocuments(self, doc_ids=None, startkey=None, endkey=None):
 
         def handleResponse(result, factory):
-            print factory.status
-            print result
+            if factory.status == '200':
+                return json.loads(result)
+            log.msg("Error fetching documents", system='sgas.Database')
+            return defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
-        payload = json.dumps({'keys': docs})
-        d, f = couchRequest(self.url + ALL_DOCS + '?include_docs=true', method='GET', data=payload)
+        request_url = self.url + ALL_DOCS + '?include_docs=true'
+        payload = None
+
+        if doc_ids is not None:
+            assert startkey is None, 'Cannot specify doc_ids and startkey'
+            assert endkey   is None, 'Cannot specify doc_ids and endkey'
+            payload = json.dumps({'keys': doc_ids})
+
+        if startkey is not None:
+            assert doc_ids is None, 'Cannot use doc_ids with startkey'
+            request_url += '&startkey="%s"' % urllib.quote(startkey)
+
+        if endkey is not None:
+            assert doc_ids is None, 'Cannot use doc_ids with endkey'
+            request_url += '&endkey="%s"' % urllib.quote(endkey)
+
+        d, f = couchRequest(request_url, method='GET', data=payload)
         d.addCallback(handleResponse, f)
         return d
 
