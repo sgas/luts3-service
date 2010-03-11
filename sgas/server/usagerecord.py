@@ -8,6 +8,7 @@ from xml.etree import cElementTree as ET
 
 from twisted.python import log
 
+from sgas.server import baseconvert
 from sgas.ext import isodate
 
 
@@ -67,8 +68,23 @@ ISO_TIME_FORMAT   = "%Y-%m-%dT%H:%M:%SZ" # if we want to convert back some time
 JSON_DATETIME_FORMAT = "%Y %m %d %H:%M:%S"
 
 
-def createID(record_id):
+# new-style hash, produces smaller/faster b-trees in couchdb
+def _create12byteb62hash(record_id):
+    sha_160_hex = hashlib.sha1(record_id).hexdigest()
+    sha_160 = int(sha_160_hex, 16)
+    b62_12byte_max_length = 62**12
+    b62_hash = baseconvert.base10to62(sha_160 % b62_12byte_max_length)
+    return b62_hash
+
+
+# old-style hash, no longer used
+def _createSHA224Hash(record_id):
     return hashlib.sha224(record_id).hexdigest()
+
+
+def createID(record_id):
+    hash_id = _create12byteb62hash(record_id)
+    return hash_id
 
 
 def parseInt(value):
@@ -128,8 +144,11 @@ def xmlToDict(ur, insert_identity=None, insert_hostname=None):
     # Usually rc2 and prior versions of datetime can be converted by s/[TZ-]// on the string.
     # However rc2 could really be any form of iso datetime (which was the problem)
     #
+    # conver-version = 4 -- sgas 3.1.0
+    # use shorted _id field to save b-tree space in couchdb (faster views)
+    #
     # the convert-version should be bumped when any changes to the json UR format are made.
-    r['convert_version'] = 3
+    r['convert_version'] = 4
 
     r['insert_time'] = time.strftime(JSON_DATETIME_FORMAT, time.gmtime())
     if insert_identity is not None:
