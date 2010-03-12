@@ -8,7 +8,7 @@ from xml.etree import cElementTree as ET
 
 from twisted.python import log
 
-from sgas.server import baseconvert
+from sgas.common import baseconvert
 from sgas.ext import isodate
 
 
