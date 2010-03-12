@@ -11,7 +11,8 @@ import urllib
 from twisted.trial import unittest
 from twisted.internet import defer
 
-from sgas.server import couchdb, database, usagerecord
+from sgas.common import couchdb
+from sgas.server import database, usagerecord
 
 from . import ur
 

@@ -34,7 +34,7 @@ class RecordIDResource(resource.Resource):
         def retrievalError(error):
             log.msg("Error retrieving record: %s" % error.getErrorMessage(), system='sgas.RecordIDResource')
 
-            from sgas.server import couchdb
+            from sgas.common import couchdb
             error_msg = error.getErrorMessage()
             if error.check(couchdb.DatabaseUnavailableError):
                 request.setResponseCode(503) # service unavailable

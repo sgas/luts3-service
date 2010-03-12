@@ -4,7 +4,7 @@ import json
 from twisted.internet import defer
 from twisted.trial import unittest
 
-from sgas.server import couchdb
+from sgas.common import couchdb
 
 
 

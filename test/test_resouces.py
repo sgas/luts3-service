@@ -12,7 +12,8 @@ from twisted.trial import unittest
 from twisted.internet import defer, reactor
 from twisted.web import error as weberror
 
-from sgas.server import couchdb, database, usagerecord, view, setup
+from sgas.common import couchdb
+from sgas.server import database, usagerecord, view, setup
 
 from . import rclient, ur
 

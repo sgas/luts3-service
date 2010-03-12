@@ -33,7 +33,7 @@ class InsertResource(resource.Resource):
             request.finish()
 
         def insertError(error):
-            from sgas.server import couchdb
+            from sgas.common import couchdb
             log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
 
             error_msg = error.getErrorMessage()

@@ -10,7 +10,8 @@ import json
 from twisted.python import log
 from twisted.web import resource, server
 
-from sgas.server import authz, convert, database, couchdb
+from sgas.common import couchdb
+from sgas.server import authz, convert, database
 
 
 JSON_MIME_TYPE = 'application/json'

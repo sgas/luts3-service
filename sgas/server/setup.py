@@ -6,7 +6,8 @@ import os.path
 from twisted.application import internet, service
 from twisted.web import resource, server
 
-from sgas.server import config, couchdb, database, view, ssl, authz, \
+from sgas.common import couchdb
+from sgas.server import config, database, view, ssl, authz, \
                         topresource, insertresource, recordidresource, viewresource, staticresource
 
 
