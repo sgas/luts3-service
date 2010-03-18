@@ -49,6 +49,11 @@ itself. Hence SGAS should be running on the same machine (it is possible to
 have CouchDB listen on external interface, check the documentation, and
 remember to set your iptables).
 
+Optimize view generation performance a bit by setting the following lines in
+the [couchdb] section in the /etc/couchdb/local.ini file:
+batch_save_size = 20000 ; number of docs at which to save a batch
+batch_save_interval = 20000 ; milliseconds after which to save batches
+
 Open the CouchDB administrative interface (called Futon). This is done by
 pointing a browser at localhost:5984 at CouchDB machine. If you don't have a
 browser (or X tunneling) at the machine, you can use ssh port forwarding:

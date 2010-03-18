@@ -24,12 +24,12 @@ cmdclasses = {'install_data': InstallSGASData}
 
 
 setup(name='sgas-luts-service',
-      version='3.0.2-svn',
+      version='3.1.0-rc2',
       description='SGAS LUTS Accounting Server',
       author='Henrik Thostrup Jensen',
       author_email='htj@ndgf.org',
       url='http://www.sgas.se/',
-      packages=['sgas', 'sgas/server', 'sgas/ext', 'sgas/ext/isodate'],
+      packages=['sgas', 'sgas/common', 'sgas/server', 'sgas/ext', 'sgas/ext/isodate'],
 
       cmdclass = cmdclasses,
 

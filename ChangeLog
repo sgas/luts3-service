@@ -1,0 +1,60 @@
+SGAS Luts Server Change Log (from version 3.0.0 and onwords)
+
+
+3.1.0:
+
+New _id scheme to conserve space in CouchDB, and perform faster view
+generation.
+
+
+3.0.1:
+
+Documentation overhaul, including a better structured installation guide, and
+an explanation of the main concepts as it was a bit tricky to understand for
+new people. Some additional view examples have been added as well.
+
+Return error code 500 (server error) instead of 400 (client error) when an
+error happens on insertion.
+
+Better error messages if the underlying database is unavailable.
+
+Some more test cases have been added.
+
+Test for host certificate, key, and CA dir during startup and fail at startup
+instead of starting up fine and reporting the error in the log (should confuse
+admins a bit less in case of a misconfiguration).
+
+More flexible view engine. Can now report complex results (i.e., multiple
+values per table cell) as well as having a single column (1-dimensional
+results).
+
+Disables graph rendering of results, as it was buggy and largely useless.
+
+View engine have had a bit of an overhaul, though no visible changes. Mainly to
+prepare for more flexible view usage in the future. A view overview page is now
+available and will list the custom defined views (URL: /sgas/view).
+
+Slightly less verbose logging as the service wrote quite a bit to the log file.
+
+
+3.0.0:
+
+New, completely rewritten service.
+
+Seperate backend database. We are now using CouchDB as backend database for
+storing usage records. Using a proper database allows easier generation of
+summary data.
+
+Data insertion and retrieval now uses ordinary TLS and HTTP. This means that it
+is possible to use stock tools as cURL and a Browser to use the LUTS.
+
+Signifanatly easier installation and configuration compared to previous SGAS
+versions.
+
+View engine for creating custom views of aggregated data. This part is still a
+bit rough but is is possible to create view of aggregated data. These can be
+displayed directly in the browser or be fetched with an HTTP client
+
+
+
+
