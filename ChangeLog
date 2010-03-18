@@ -6,6 +6,8 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 New _id scheme to conserve space in CouchDB, and perform faster view
 generation.
 
+Added a change log.
+
 
 3.0.1:
 
