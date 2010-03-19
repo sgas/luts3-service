@@ -13,7 +13,6 @@ from xml.etree import cElementTree as ET
 from twisted.python import log
 from twisted.web import resource
 
-from sgas.server import authz
 
 
 XML_HEADER = '''<?xml version="1.0" encoding="UTF-8"?>'''
