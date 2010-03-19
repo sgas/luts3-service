@@ -56,6 +56,14 @@ class Authorizer:
         return parse_authz
 
 
+    def getAllowedActions(self, subject):
+        """
+        Returns list of allowed actions for a subject.
+        Empty list is returned in case the subject has no entries.
+        """
+        return self.allowed_actions.get(subject, [])
+
+
     def isAllowed(self, subject, action, view_name=None, context=None):
 
         allowed = False
