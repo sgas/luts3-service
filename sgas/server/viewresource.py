@@ -6,6 +6,7 @@ Copyright: Nordic Data Grid Facility (2009)
 """
 
 import json
+import urllib
 
 from twisted.python import log
 from twisted.web import resource, server
@@ -107,10 +108,10 @@ class ViewTopResource(resource.Resource):
         body =''
         body += 2*ib + '<div>Hello %(identity)s</div>\n' % {'identity': identity }
         body += 2*ib + '<div>Allowed actions: %(actions)s</div>\n' % {'actions': ''.join(allowed_actions) }
-        body += 2*ib + '<h1>Stock views</h1>\n'
+        body += 2*ib + '<h2>Stock views</h2>\n'
         for sv in self.stock_views:
             body += 2*ib + '<div><a href=view/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': sv }
-        body += 2*ib + '<h1>Custom views</h1>\n'
+        body += 2*ib + '<h2>Custom views</h2>\n'
         for cv in custom_views:
             body += 2*ib + '<div><a href=view/custom/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': cv }
 
@@ -236,16 +237,12 @@ class StockViewSubjectRenderer(resource.Resource):
             html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
 
             HREF_BASE = "<a href=%(url)s>%(name)s</a>\n"
-            #V_SPACE = "<p>&nbsp;\n"
             V_SPACE = "<div>&nbsp;</div>"
 
             def createHref(group):
-                return HREF_BASE % {'url': request.path + '?group=%s' % group, 'name': group }
+                return HREF_BASE % {'url': request.path + urllib.quote('?group=%s' % group), 'name': group }
 
             hrefs = [ createHref(group) for group in self.GROUPS if group != self.base_attribute ]
-#            user_group_href = HREF_BASE % {'url': request.path + "?group=user", 'name': 'user' }
-#            host_group_href = HREF_BASE % {'url': request.path + "?group=host", 'name': 'host' }
-#            vo_group_href   = HREF_BASE % {'url': request.path + "?group=vo", 'name': 'vo' }
             group_hrefs = "<div>Group by: %s</div>" % ' '.join(hrefs)
 
             request.write(HTML_HEADER % {'title': page_title } )
