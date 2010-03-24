@@ -17,27 +17,32 @@ log = FakeLog()
 
 
 # configuration constants
-DEFAULT_HOSTKEY     = '/etc/grid-security/hostkey.pem'
-DEFAULT_HOSTCERT    = '/etc/grid-security/hostcert.pem'
-DEFAULT_CERTDIR     = '/etc/grid-security/certificates'
-DEFAULT_AUTHZ_FILE  = '/etc/sgas.authz'
-DEFAULT_WEB_FILES   = '/usr/local/share/sgas/webfiles'
+DEFAULT_HOSTKEY         = '/etc/grid-security/hostkey.pem'
+DEFAULT_HOSTCERT        = '/etc/grid-security/hostcert.pem'
+DEFAULT_CERTDIR         = '/etc/grid-security/certificates'
+DEFAULT_AUTHZ_FILE      = '/etc/sgas.authz'
+DEFAULT_WEB_FILES       = '/usr/local/share/sgas/webfiles'
+DEFAULT_COREINFO_DESIGN = ''
+DEFAULT_COREINFO_VIEW   = ''
 
 # server options
-SERVER_BLOCK = 'server'
-HOSTKEY      = 'hostkey'
-HOSTCERT     = 'hostcert'
-CERTDIR      = 'certdir'
-DB           = 'db'
-AUTHZ_FILE   = 'authzfile'
-WEB_FILES    = 'webfiles'
+SERVER_BLOCK     = 'server'
+HOSTKEY          = 'hostkey'
+HOSTCERT         = 'hostcert'
+CERTDIR          = 'certdir'
+DB               = 'db'
+AUTHZ_FILE       = 'authzfile'
+WEB_FILES        = 'webfiles'
+
+COREINFO_DESIGN  = 'coredesign'
+COREINFO_VIEW    = 'coreview'
 
 # view options
-VIEW_PREFIX  = 'view:'
-VIEW_DESIGN  = 'design'
-VIEW_NAME    = 'view'
+VIEW_PREFIX      = 'view:'
+VIEW_DESIGN      = 'design'
+VIEW_NAME        = 'view'
 VIEW_DESCRIPTION = 'description'
-VIEW_FILTER  = 'filter'
+VIEW_FILTER      = 'filter'
 VIEW_POSTPROCESS = 'postprocess'
 
 
@@ -58,6 +63,8 @@ def readConfig(filename):
     cfg.set(SERVER_BLOCK, CERTDIR,  DEFAULT_CERTDIR)
     cfg.set(SERVER_BLOCK, AUTHZ_FILE, DEFAULT_AUTHZ_FILE)
     cfg.set(SERVER_BLOCK, WEB_FILES,  DEFAULT_WEB_FILES)
+    cfg.set(SERVER_BLOCK, COREINFO_DESIGN, DEFAULT_COREINFO_DESIGN)
+    cfg.set(SERVER_BLOCK, COREINFO_VIEW,   DEFAULT_COREINFO_VIEW)
 
     # read cfg file
     cfg.readfp(open(filename))
