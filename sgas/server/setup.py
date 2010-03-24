@@ -7,7 +7,7 @@ from twisted.application import internet, service
 from twisted.web import resource, server
 
 from sgas.common import couchdb
-from sgas.server import config, database, view, ssl, authz, \
+from sgas.server import config, database, view, viewinfo, ssl, authz, \
                         topresource, insertresource, recordidresource, viewresource, staticresource
 
 
@@ -32,7 +32,7 @@ def createSite(ur_db, authz, web_files_path):
     rr = insertresource.InsertResource(ur_db, authz)
     rr.putChild('recordid', recordidresource.RecordIDResource(ur_db))
 
-    vr = viewresource.ViewResource(ur_db, authz)
+    vr = viewresource.ViewTopResource(ur_db, authz)
 
     tr = topresource.TopResource(authz)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
@@ -75,8 +75,13 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
             view_name = block.split(':',1)[-1]
             view_specs[view_name] = dict(cfg.items(block))
 
+    chunk_manager = None
+    ci_design = cfg.get(config.SERVER_BLOCK, config.COREINFO_DESIGN, None)
+    ci_view   = cfg.get(config.SERVER_BLOCK, config.COREINFO_VIEW, None)
+    if ci_design and ci_view:
+        chunk_manager = viewinfo.InformationChunkManager(cdb, ci_design, ci_view)
     views = dict([ (view_name,view.createView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
-    ur_db = database.UsageRecordDatabase(cdb, views)
+    ur_db = database.UsageRecordDatabase(cdb, chunk_manager, views)
 
     az = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
     web_files_path = cfg.get(config.SERVER_BLOCK, config.WEB_FILES)

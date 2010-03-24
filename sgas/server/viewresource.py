@@ -37,65 +37,82 @@ HTML_FOOTER = """   </body>
 
 
 
-class ViewResource(resource.Resource):
+def getReturnMimeType(request):
+    # given a request, figure out if json or html content should be returned
+    # json is default
+    accepts = request.requestHeaders.getRawHeaders('Accept', [])
+    return_type = 'json'
+    if accepts:
+        for acc in accepts[0].split(','):
+            if acc == JSON_MIME_TYPE:
+                return_type = 'json'
+                break
+            elif acc == HTML_MIME_TYPE:
+                return_type = 'html'
+                break
+    return return_type
 
-    isLeaf = True
+
+
+# generic error handler
+def handleViewError(error, request, view_name):
+    error_msg = error.getErrorMessage()
+    if error.check(database.InvalidViewError):
+        request.setResponseCode(404)
+        request.write(error.getErrorMessage())
+    elif error.check(couchdb.InvalidViewError):
+        log.msg('Error accessing view specified in view definition %s' % view_name, system='sgas.viewresource')
+        log.msg('This is probably an error in the configuration or a view that has not been created', system='sgas.viewresource')
+        log.err(error)
+        request.setResponseCode(500)
+        error_msg = 'Error accessing view in database (punch the admin)'
+    elif error.check(couchdb.DatabaseUnavailableError):
+        error.printTraceback()
+        log.err(error)
+        request.setResponseCode(503)
+        error_msg = 'Database is currently unavailable, please try again later'
+    else:
+        log.err(error)
+        request.setResponseCode(500)
+
+    request.write(error_msg)
+    request.finish()
+
+
+
+class ViewTopResource(resource.Resource):
 
     def __init__(self, urdb, authorizer):
         resource.Resource.__init__(self)
         self.urdb = urdb
         self.authorizer = authorizer
 
+        self.stock_views = ['user', 'host', 'vo']
+        for va in self.stock_views:
+            self.putChild(va, StockViewResource(va, urdb, authorizer))
+        self.putChild('custom', CustomViewTopResource(urdb, authorizer))
+
 
     def render_GET(self, request):
-
-        postpath = request.postpath
         subject = authz.getSubject(request)
-
-        # request for view start page / overview
-        if len(postpath) == 0 or (len(postpath) == 1 and postpath[0] == ''):
-            self.renderStartPage(request, subject)
-
-        # request for specific view
-        elif len(postpath) in (1,2):
-            view_name = request.postpath[0]
-            context = None
-            if len(postpath) > 1 and postpath[1] != '':
-                context = postpath[1]
-            if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
-                request.setResponseCode(403) # forbidden
-                return "Access to view %s not allowed for %s" % (view_name, subject)
-            self.renderView(request, view_name, subject)
-
-        # invalid resource request
-        else:
-            request.setResponseCode(404)
-            return 'Unknown resource'
-
-        return server.NOT_DONE_YET
+        self.renderStartPage(request, subject)
 
 
     def renderStartPage(self, request, identity):
 
-        views = self.urdb.getViewList()
-
-        stock_views = []
-        custom_views = []
-
-        for view_def in views:
-            custom_views.append(view_def.view_name)
-
+        custom_views = self.urdb.getCustomViewList()
+        allowed_actions = self.authorizer.getAllowedActions(identity)
         ib = 4 * ' '
 
         body =''
         body += 2*ib + '<div>Hello %(identity)s</div>\n' % {'identity': identity }
+        body += 2*ib + '<div>Allowed actions: %(actions)s</div>\n' % {'actions': ''.join(allowed_actions) }
         body += 2*ib + '<h1>Stock views</h1>\n'
-        for sv in stock_views:
-            body += 2*ib + '<div>%(view_name)s</div>\n' % {'view_name': sv }
-        body += 2*ib + '<div></div>\n'
+        for sv in self.stock_views:
+            body += 2*ib + '<div><a href=view/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': sv }
         body += 2*ib + '<h1>Custom views</h1>\n'
         for cv in custom_views:
-            body += 2*ib + '<div><a href=view/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': cv }
+            body += 2*ib + '<div><a href=view/custom/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': cv }
 
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
@@ -105,9 +122,208 @@ class ViewResource(resource.Resource):
         request.finish()
 
 
-    def renderView(self, request, view_name, subject):
 
-        def gotResult((rows, view_description), return_type, view_name):
+
+class StockViewResource(resource.Resource):
+
+    def __init__(self, base_attribute, urdb, authorizer):
+        resource.Resource.__init__(self)
+        self.base_attribute = base_attribute
+        self.urdb = urdb
+        self.authorizer = authorizer
+
+
+    def getChild(self, path, request):
+        # request for specific subject listing
+        print "STOCK CHILD", self.base_attribute, path
+        subject = authz.getSubject(request)
+        view_resource = path
+
+        if not self.authorizer.isAllowed(subject, authz.VIEW, self.base_attribute, context=view_resource):
+            request.setResponseCode(403) # forbidden
+            return "Access to view %s not allowed for %s" % (self.base_attribute, subject)
+        else:
+            return StockViewSubjectRenderer(self.urdb, self.base_attribute, view_resource)
+
+
+    def render_GET(self, request):
+        # request for resource list
+
+        postpath = request.postpath
+        subject = authz.getSubject(request)
+        print "STOCK", request.prepath, request.postpath
+
+        if not self.authorizer.isAllowed(subject, authz.VIEW, self.base_attribute):
+            request.setResponseCode(403) # forbidden
+            return "Listing for view %s not allowed for %s" % (self.base_attribute, subject)
+        else:
+            return self.renderViewList(request)
+
+
+    def renderViewList(self, request):
+
+        def buildView(viewdata, return_type):
+            if return_type == 'json':
+                sorted_viewdata = list(sorted(viewdata))
+                return_data = json.dumps(sorted_viewdata)
+                request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_TYPE, [JSON_MIME_TYPE])
+                request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_LENGTH, [str(len(return_data))])
+                request.write(json.dumps(return_data))
+            elif return_type == 'html':
+                if None in viewdata:
+                    viewdata.remove(None)
+                table_input = sorted(viewdata)
+                html_table = convert.createLinkedHTMLTableList(table_input,
+                                                               prefix=self.base_attribute + '/',
+                                                               caption="%s list" % self.base_attribute)
+                # twisted web sets content-type to text/html per default
+                request.write(HTML_HEADER % {'title': 'View enumeration'} )
+                request.write(str(html_table))
+                request.write(HTML_FOOTER)
+            else:
+                request.setResponseCode(500)
+                request.write('''"Something went wrong when choosing return type"''')
+
+            request.finish()
+
+        print "RENDER VIEW LIST", self.base_attribute
+        return_type = getReturnMimeType(request)
+
+        d = self.urdb.getViewAttributeList(self.base_attribute)
+        d.addCallback(buildView, return_type)
+        d.addErrback(handleViewError, request, '%s listing' % self.base_attribute.capitalize())
+        return server.NOT_DONE_YET
+
+
+
+class StockViewSubjectRenderer(resource.Resource):
+
+    GROUPS = ['user', 'host', 'vo']
+    DEFAULT_GROUP = {
+        'user' : 'host',
+        'host' : 'vo',
+        'vo'   : 'host'
+    }
+    DEFAULT_CLUSTER = {
+        'user' : None,
+        'host' : None,
+        'vo'   : None
+    }
+    DEFAULT_RESOLUTION = {
+        'vo'   : 1, # vo, no group/role
+        'date' : 2  # month
+    }
+
+    def __init__(self, urdb, base_attribute, view_resource):
+        resource.Resource.__init__(self)
+        self.urdb = urdb
+        self.base_attribute = base_attribute
+        self.view_resource = view_resource
+
+
+    def render_GET(self, request):
+        return self.renderView(request)
+
+
+    def renderView(self, request):
+
+        def buildTables(query_result):
+            print "QUERY_RESULTS"
+            print len(query_result)
+            print query_result
+
+            page_title = '%s view for %s' % (self.base_attribute.capitalize(), self.view_resource)
+            html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
+
+            HREF_BASE = "<a href=%(url)s>%(name)s</a>\n"
+            #V_SPACE = "<p>&nbsp;\n"
+            V_SPACE = "<div>&nbsp;</div>"
+
+            def createHref(group):
+                return HREF_BASE % {'url': request.path + '?group=%s' % group, 'name': group }
+
+            hrefs = [ createHref(group) for group in self.GROUPS if group != self.base_attribute ]
+#            user_group_href = HREF_BASE % {'url': request.path + "?group=user", 'name': 'user' }
+#            host_group_href = HREF_BASE % {'url': request.path + "?group=host", 'name': 'host' }
+#            vo_group_href   = HREF_BASE % {'url': request.path + "?group=vo", 'name': 'vo' }
+            group_hrefs = "<div>Group by: %s</div>" % ' '.join(hrefs)
+
+            request.write(HTML_HEADER % {'title': page_title } )
+            request.write(group_hrefs)
+            request.write(V_SPACE)
+            request.write(html_table)
+            request.write(HTML_FOOTER)
+            request.finish()
+
+        params = request.args
+        print "RENDER VIEW", self.base_attribute, self.view_resource, params
+        print "PATH", request.path
+
+        # get parameters
+
+        filter = { self.base_attribute : self.view_resource }
+        print "FILTER", filter
+
+        if 'group' in request.args:
+            group = request.args['group'][-1]
+        else:
+            group  = self.DEFAULT_GROUP[self.base_attribute]
+
+        resolution = self.DEFAULT_RESOLUTION
+
+        # issue query
+
+        d = self.urdb.viewQuery(group, filter=filter, resolution=resolution)
+        d.addCallback(buildTables)
+        d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
+        return server.NOT_DONE_YET
+
+
+
+class CustomViewTopResource(resource.Resource):
+
+
+    def __init__(self, urdb, authorizer):
+        resource.Resource.__init__(self)
+        self.urdb = urdb
+        self.authorizer = authorizer
+
+
+    def getChild(self, path, request):
+        # request for custom view
+        print "CUSTOM getChild", path, request
+        subject = authz.getSubject(request)
+
+        view_name = path
+        if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
+            request.setResponseCode(403) # forbidden
+            return "Access to view %s not allowed for %s" % (view_name, subject)
+        else:
+            return CustomViewResourceRenderer(self.urdb, view_name)
+
+
+    def render_GET(self, request):
+        print "CUSTOM TOP", request.prepath, request.postpath
+        request.setResponseCode(404)
+        return 'Please specify specific view resource'
+
+
+
+class CustomViewResourceRenderer(resource.Resource):
+
+    def __init__(self, urdb, view_name):
+        resource.Resource.__init__(self)
+        self.urdb = urdb
+        self.view_name = view_name
+
+
+    def render_GET(self, request):
+        return self.renderView(request)
+
+
+    def renderView(self, request):
+
+        def gotResult((rows, view_description), return_type):
             if return_type == 'json':
                 retval = json.dumps(rows)
                 request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_TYPE, [JSON_MIME_TYPE])
@@ -125,44 +341,10 @@ class ViewResource(resource.Resource):
 
             request.finish()
 
-        def viewError(error, return_type, view_name):
-            error_msg = error.getErrorMessage()
-            if error.check(database.InvalidViewError):
-                request.setResponseCode(404)
-                request.write(error.getErrorMessage())
-            elif error.check(couchdb.InvalidViewError):
-                log.msg('Error accessing view specified in view definition %s' % view_name, system='sgas.ViewResource')
-                log.msg('This is probably an error in the configuration or a view that has not been created', system='sgas.ViewResource')
-                log.err(error)
-                request.setResponseCode(500)
-                error_msg = 'Error accessing view in database (punch the admin)'
-            elif error.check(couchdb.DatabaseUnavailableError):
-                error.printTraceback()
-                log.err(error)
-                request.setResponseCode(503)
-                error_msg = 'Database is currently unavailable, please try again later'
-            else:
-                log.err(error)
-                request.setResponseCode(500)
+        return_type = getReturnMimeType(request)
 
-            request.write(error_msg)
-            request.finish()
-        # def viewError
-
-        # figure out if we should return json or html content, json is default
-        accepts = request.requestHeaders.getRawHeaders('Accept', [])
-        return_type = 'json'
-        if accepts:
-            for acc in accepts[0].split(','):
-                if acc == JSON_MIME_TYPE:
-                    return_type = 'json'
-                    break
-                elif acc == HTML_MIME_TYPE:
-                    return_type = 'html'
-                    break
-
-        d = self.urdb.getViewData(view_name)
-        d.addCallbacks(gotResult, viewError,
-                       callbackArgs=(return_type, view_name),
-                       errbackArgs=(return_type, view_name))
+        d = self.urdb.getCustomViewData(self.view_name)
+        d.addCallback(gotResult, return_type)
+        d.addErrback(handleViewError, request, 'custom/%s' % self.view_name)
+        return server.NOT_DONE_YET
 
