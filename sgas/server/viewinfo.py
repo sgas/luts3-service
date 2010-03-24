@@ -36,8 +36,8 @@ def deserializeInfoChunk(row):
             'vo_group' : key[4],
             'vo_role'  : key[5],
             'count'    : value[0],
-            'walltime' : value[1],
-            'cputime'  : value[2]
+            'cputime'  : value[1],
+            'walltime' : value[2]
         }
         return ic
     except (TypeError, ValueError), e:
@@ -84,7 +84,7 @@ class InformationChunkManager(service.Service):
         if self.deferreds:
             return defer.DeferredList(self.deferreds)
         else:
-            return defer.success(None)
+            return defer.succeed(None)
 
 
     def getInformationChunks(self):
@@ -101,10 +101,10 @@ class InformationChunkManager(service.Service):
             d = self._fetchChunks()
             self.deferreds.append(d)
             d.addCallback(removeDeferred)
-            return self.chunks
+            return defer.succeed(self.chunks)
 
         else:
-            return defer.success(self.chunks)
+            return defer.succeed(self.chunks)
 
 
     def _fetchChunks(self):
