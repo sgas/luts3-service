@@ -6,7 +6,6 @@ Copyright: Nordic Data Grid Facility (2009)
 """
 
 import json
-import urllib
 
 from twisted.python import log
 from twisted.web import resource, server
@@ -176,7 +175,7 @@ class StockViewResource(resource.Resource):
                 table_input = sorted(viewdata)
                 html_table = convert.createLinkedHTMLTableList(table_input,
                                                                prefix=self.base_attribute + '/',
-                                                               caption="%s list" % self.base_attribute)
+                                                               caption="%s list" % self.base_attribute.capitalize())
                 # twisted web sets content-type to text/html per default
                 request.write(HTML_HEADER % {'title': 'View enumeration'} )
                 request.write(str(html_table))
@@ -228,10 +227,8 @@ class StockViewSubjectRenderer(resource.Resource):
 
     def renderView(self, request):
 
-        def buildTables(query_result):
-            print "QUERY_RESULTS"
-            print len(query_result)
-            print query_result
+        def buildTables(query_result, current_group):
+            print "QUERY_RESULTS:", len(query_result)
 
             page_title = '%s view for %s' % (self.base_attribute.capitalize(), self.view_resource)
             html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
@@ -239,11 +236,10 @@ class StockViewSubjectRenderer(resource.Resource):
             HREF_BASE = "<a href=%(url)s>%(name)s</a>\n"
             V_SPACE = "<div>&nbsp;</div>"
 
-            def createHref(group):
-                return HREF_BASE % {'url': request.path + urllib.quote('?group=%s' % group), 'name': group }
+            createHref = lambda group : HREF_BASE % {'url': request.path + '?group=%s' % group, 'name': group }
 
             hrefs = [ createHref(group) for group in self.GROUPS if group != self.base_attribute ]
-            group_hrefs = "<div>Group by: %s</div>" % ' '.join(hrefs)
+            group_hrefs = "<div>Group by: %s (current: %s)</div>" % (' '.join(hrefs), current_group)
 
             request.write(HTML_HEADER % {'title': page_title } )
             request.write(group_hrefs)
@@ -271,7 +267,7 @@ class StockViewSubjectRenderer(resource.Resource):
         # issue query
 
         d = self.urdb.viewQuery(group, filter=filter, resolution=resolution)
-        d.addCallback(buildTables)
+        d.addCallback(buildTables, group)
         d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
         return server.NOT_DONE_YET
 
