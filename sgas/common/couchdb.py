@@ -331,7 +331,7 @@ class Database:
                 return defer.fail(InvalidViewError('View %s/%s does not exist' % (design_name, view_name)))
             defer.fail(UnhandledResponseError('Unhandled response. Response code: %s' % factory.status))
 
-        url = self.url + DESIGN + '/' + design_name + '/' + VIEW ' /' + view_name
+        url = self.url + DESIGN + '/' + design_name + '/' + VIEW + '/' + view_name
 
         params = []
         if group:
