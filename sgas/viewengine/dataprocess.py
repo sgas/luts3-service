@@ -24,16 +24,12 @@ FILTERS = {
      lambda : ('["' + time.strftime('%Y %m %d', time.gmtime(time.time() - SECONDS_PER_WEEK)) + '",{}]', None)
 }
 
-SECONDS_TO_DAYS    = lambda key, value : (key, round(value / (24 * 3600.0) , 1)),
-SECONDS_TO_HOURS   = lambda key, value : (key, round(value / (     3600.0) , 1)),
-SECONDS_TO_MINUTES = lambda key, value : (key, round(value / (       60.0))),
-FLIP12             = lambda key, value : (swap(key, 0, 1), value),
-
+SECONDS_TO_DAYS    = lambda value : (round(value / (24 * 3600.0) , 1))
+SECONDS_TO_HOURS   = lambda value : (round(value / (     3600.0) , 1))
 
 POST_PROCESSORS = {
-    'seconds_to_days'    : SECONDS_TO_DAYS,
-    'seconds_to_hours'   : SECONDS_TO_HOURS,
-    'seconds_to_minutes' : SECONDS_TO_MINUTES,
-    'flip12'             : FLIP12
+    'seconds_to_days'    : lambda key, value : (key, SECONDS_TO_DAYS(value)),
+    'seconds_to_hours'   : lambda key, value : (key, SECONDS_TO_HOURS(value)),
+    'flip12'             : lambda key, value : (swap(key, 0, 1), value)
 }
 
