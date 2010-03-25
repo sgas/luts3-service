@@ -5,6 +5,10 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
+import time
+
+from sgas.viewengine import dataprocess
+
 
 
 def removeChunkAttributes(chunk, attributes):
@@ -70,34 +74,47 @@ def groupResults(chunks, group):
     return grouped_results.items()
 
 
-def sumChunks(chunks, values):
+def sumChunks(chunks, sum_attrs):
+    def scaleValue(value, attr):
+        if attr in ('cputime', 'walltime'):
+            return dataprocess.SECONDS_TO_HOURS(value)
+        else:
+            return value
+
     #print "SUMMING CHUNKS", chunks
-    ccw_values = [ [ chunk.pop(value) for value in values ] for chunk in chunks ]
+    ccw_values = [ [ chunk.pop(attr) for attr in sum_attrs ] for chunk in chunks ]
     summed_chunks = [ sum(values) for values in zip(*ccw_values) ]
+    scaled_summed_chunks = [ scaleValue(value, attr) for value, attr in zip(summed_chunks, sum_attrs) ]
     #print "SUMMED_CHUNKS", summed_chunks
-    return summed_chunks
+    return scaled_summed_chunks
 
 
-def sumGroups(grouped_results, values):
-    summed_grouped_results = [ (group, sumChunks(chunks, values)) for group, chunks in grouped_results ]
+def sumGroups(grouped_results, sum_attrs):
+    summed_grouped_results = [ (group, sumChunks(chunks, sum_attrs)) for group, chunks in grouped_results ]
     return summed_grouped_results
 
 
-def chunkQuery(chunks, group, cluster=None, filter=None, resolution=None, values=None):
+def chunkQuery(chunks, group, cluster=None, filter=None, resolution=None, sum_attributes=None):
     # group      : attr
     # cluster    : attr
     # filter     : { attr : value }
     # resolution : { attr : level }
     # values     : [ attr1, attr2 ]
 
-    if values is None:
-        values = ['count', 'cputime', 'walltime']
+    if sum_attributes is None:
+        sum_attributes = ['count', 'cputime', 'walltime']
+
+    t_start = time.time()
 
     if filter:
         chunks = filterResults(chunks, filter)
     if resolution:
         chunks = changeResolution(chunks, resolution)
     grouped_chunks = groupResults(chunks, group)
-    summed_grouped_chunks = sumGroups(grouped_chunks, values)
+    summed_grouped_chunks = sumGroups(grouped_chunks, sum_attributes)
+
+    t_end = time.time()
+    t_delta = t_end - t_start
+    print "Chunk processing took %s seconds" % round(t_delta,2)
     return summed_grouped_chunks
 

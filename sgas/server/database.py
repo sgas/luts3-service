@@ -84,7 +84,7 @@ class UsageRecordDatabase:
         # values     : [ attr1, attr2 ]
         d = self.info_chunks.getInformationChunks()
         d.addCallback(chunkprocess.chunkQuery,
-                      group=group, cluster=cluster, filter=filter, resolution=resolution, values=values)
+                      group=group, cluster=cluster, filter=filter, resolution=resolution, sum_attributes=values)
         return d
 
     # custom views
