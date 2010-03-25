@@ -29,7 +29,8 @@ setup(name='sgas-luts-service',
       author='Henrik Thostrup Jensen',
       author_email='htj@ndgf.org',
       url='http://www.sgas.se/',
-      packages=['sgas', 'sgas/common', 'sgas/server', 'sgas/ext', 'sgas/ext/isodate'],
+      packages=['sgas', 'sgas/common', 'sgas/server', 'sgas/viewengine',
+                'sgas/ext', 'sgas/ext/isodate'],
 
       cmdclass = cmdclasses,
 

@@ -1,4 +1,14 @@
-# view info stuff
+"""
+chunks module
+
+chunks are an aggregated accounting unit.
+
+chunks are extracted from the database, and saved in memory, where they can be
+easily filtered, managed, rotatated and whatnot.
+
+Author: Henrik Thostrup Jensen <htj@ndgf.org>
+Copyright: Nordic Data Grid Facility (2010)
+"""
 
 import time
 

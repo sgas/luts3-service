@@ -7,8 +7,9 @@ from twisted.application import internet, service
 from twisted.web import resource, server
 
 from sgas.common import couchdb
-from sgas.server import config, database, view, viewinfo, ssl, authz, \
+from sgas.server import config, database, ssl, authz, \
                         topresource, insertresource, recordidresource, viewresource, staticresource
+from sgas.viewengine import customview, chunks
 
 
 # -- constants
@@ -79,8 +80,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
     ci_design = cfg.get(config.SERVER_BLOCK, config.COREINFO_DESIGN, None)
     ci_view   = cfg.get(config.SERVER_BLOCK, config.COREINFO_VIEW, None)
     if ci_design and ci_view:
-        chunk_manager = viewinfo.InformationChunkManager(cdb, ci_design, ci_view)
-    views = dict([ (view_name,view.createView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
+        chunk_manager = chunks.InformationChunkManager(cdb, ci_design, ci_view)
+    views = dict([ (view_name,customview.createCustomView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
     ur_db = database.UsageRecordDatabase(cdb, chunk_manager, views)
 
     az = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))

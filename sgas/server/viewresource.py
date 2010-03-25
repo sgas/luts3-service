@@ -149,7 +149,7 @@ class StockViewResource(resource.Resource):
     def render_GET(self, request):
         # request for resource list
 
-        postpath = request.postpath
+        #postpath = request.postpath
         subject = authz.getSubject(request)
         print "STOCK", request.prepath, request.postpath
 
