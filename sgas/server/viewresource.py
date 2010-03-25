@@ -135,7 +135,7 @@ class StockViewResource(resource.Resource):
 
     def getChild(self, path, request):
         # request for specific subject listing
-        print "STOCK CHILD", self.base_attribute, path
+        #print "STOCK CHILD", self.base_attribute, path
         subject = authz.getSubject(request)
         view_resource = path
 
@@ -151,7 +151,7 @@ class StockViewResource(resource.Resource):
 
         #postpath = request.postpath
         subject = authz.getSubject(request)
-        print "STOCK", request.prepath, request.postpath
+        #print "STOCK", request.prepath, request.postpath
 
         if not self.authorizer.isAllowed(subject, authz.VIEW, self.base_attribute):
             request.setResponseCode(403) # forbidden
@@ -186,7 +186,7 @@ class StockViewResource(resource.Resource):
 
             request.finish()
 
-        print "RENDER VIEW LIST", self.base_attribute
+        #print "RENDER VIEW LIST", self.base_attribute
         return_type = getReturnMimeType(request)
 
         d = self.urdb.getViewAttributeList(self.base_attribute)
@@ -228,7 +228,7 @@ class StockViewSubjectRenderer(resource.Resource):
     def renderView(self, request):
 
         def buildTables(query_result, current_group):
-            print "QUERY_RESULTS:", len(query_result)
+            #print "QUERY_RESULTS:", len(query_result)
 
             page_title = '%s view for %s' % (self.base_attribute.capitalize(), self.view_resource)
             html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
@@ -249,13 +249,13 @@ class StockViewSubjectRenderer(resource.Resource):
             request.finish()
 
         params = request.args
-        print "RENDER VIEW", self.base_attribute, self.view_resource, params
-        print "PATH", request.path
+        #print "RENDER VIEW", self.base_attribute, self.view_resource, params
+        #print "PATH", request.path
 
         # get parameters
 
         filter = { self.base_attribute : self.view_resource }
-        print "FILTER", filter
+        #print "FILTER", filter
 
         if 'group' in request.args:
             group = request.args['group'][-1]
