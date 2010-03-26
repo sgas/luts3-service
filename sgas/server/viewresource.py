@@ -200,7 +200,7 @@ class StockViewResource(resource.Resource):
 class StockViewSubjectRenderer(resource.Resource):
 
     GROUPS = ['user', 'host', 'vo']
-    DATE_RESOLUTIONS = { 0:'collapse', 1: 'year', 2: 'month', 3: 'day' }
+    DATE_RESOLUTIONS = { 'collapse':0, 'year':1, 'month':2, 'day':3 }
     VO_RESOLUTIONS = [ 0, 1, 2 ]
 
     DEFAULT_GROUP = {
@@ -215,7 +215,7 @@ class StockViewSubjectRenderer(resource.Resource):
     }
     DEFAULT_RESOLUTION = {
         'vo'   : 1, # vo, no group/role
-        'date' : 2  # month
+        'date' : 'month'
     }
 
     def __init__(self, urdb, base_attribute, view_resource):
@@ -232,14 +232,10 @@ class StockViewSubjectRenderer(resource.Resource):
     def renderView(self, request):
 
         def parseDateResolution(value):
-            try:
-                i_value = int(value)
-                if i_value in self.DATE_RESOLUTIONS:
-                    return i_value
-            except ValueError:
-                pass
-            # parse error on invalid option
-            return self.DEFAULT_RESOLUTION['date']
+            if value in self.DATE_RESOLUTIONS:
+                return value
+            else:
+                return self.DEFAULT_RESOLUTION['date']
 
         def createViewOptions(basepath, current_group, current_date_resolution):
             i8 = 8 * ' '
@@ -322,9 +318,12 @@ class StockViewSubjectRenderer(resource.Resource):
         if 'dateres' in request.args:
             resolution['date'] = parseDateResolution(request.args['dateres'][-1])
 
+        query_res = resolution.copy()
+        query_res['date'] = self.DATE_RESOLUTIONS[query_res.pop('date')]
+
         # issue query
 
-        d = self.urdb.viewQuery(group, filter=filter, resolution=resolution)
+        d = self.urdb.viewQuery(group, filter=filter, resolution=query_res)
         d.addCallback(buildTables, current_group=group, resolution=resolution)
         d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
         return server.NOT_DONE_YET
