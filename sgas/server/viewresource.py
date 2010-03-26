@@ -6,6 +6,7 @@ Copyright: Nordic Data Grid Facility (2009)
 """
 
 import json
+import urllib
 
 from twisted.python import log
 from twisted.web import resource, server
@@ -199,6 +200,9 @@ class StockViewResource(resource.Resource):
 class StockViewSubjectRenderer(resource.Resource):
 
     GROUPS = ['user', 'host', 'vo']
+    DATE_RESOLUTIONS = { 0:'collapse', 1: 'year', 2: 'month', 3: 'day' }
+    VO_RESOLUTIONS = [ 0, 1, 2 ]
+
     DEFAULT_GROUP = {
         'user' : 'host',
         'host' : 'vo',
@@ -227,35 +231,87 @@ class StockViewSubjectRenderer(resource.Resource):
 
     def renderView(self, request):
 
-        def buildTables(query_result, current_group):
+        def parseDateResolution(value):
+            try:
+                i_value = int(value)
+                if i_value in self.DATE_RESOLUTIONS:
+                    return i_value
+            except ValueError:
+                pass
+            # parse error on invalid option
+            return self.DEFAULT_RESOLUTION['date']
+
+        def createViewOptions(basepath, current_group, current_date_resolution):
+            i8 = 8 * ' '
+            lines = []
+
+            HREF_BASE = "<a href=%(url)s>%(name)s</a>"
+            OPTION_BASE = "<div>%(description)s: %(hrefs)s (current: %(current)s)</div>"
+
+            createHref = lambda options, name : HREF_BASE % {'url': basepath + '?%s' % urllib.urlencode(options), 'name': name }
+
+            option_order = [ 'group', 'dateres' ]
+            descriptions = {
+                'group'    : 'Group by',
+                'dateres'  : 'Time resolution'
+            }
+            current_options = {
+                'group'   : current_group,
+                'dateres' : current_date_resolution
+            }
+            query_options = {
+                'group'   : [ group for group in self.GROUPS if group != self.base_attribute ],
+                'dateres' : self.DATE_RESOLUTIONS.keys()
+            }
+
+            href_frontpage = HREF_BASE % {'url' : basepath.rsplit('/',2)[0], 'name': 'View frontpage'}
+            lines.append("<div>%s</div>" % href_frontpage)
+
+            print "OPTIONS", basepath, current_group, current_date_resolution
+
+            for q_option in option_order:
+                group_hrefs = []
+                for option_value in query_options.get(q_option):
+                    if option_value == current_options.get(q_option):
+                        continue
+                    options = { q_option : option_value }
+                    options.update( [ (g,v) for g,v in current_options.items() if g != q_option ] )
+                    print options
+
+                    group_hrefs.append( createHref(options, option_value) )
+
+                shrefs = ' '.join(group_hrefs)
+
+                line = OPTION_BASE % {
+                    'description' : descriptions.get(q_option),
+                    'hrefs': shrefs,
+                    'current': current_options.get(q_option)
+                }
+                lines.append(line)
+
+            print lines
+            return '\n'.join( [ i8 + line for line in lines ] )
+
+
+        def buildTables(query_result, current_group, resolution):
             #print "QUERY_RESULTS:", len(query_result)
 
             page_title = '%s view for %s' % (self.base_attribute.capitalize(), self.view_resource)
+
+            href_options = createViewOptions(request.path, current_group, resolution.get('date') )
             html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
 
-            HREF_BASE = "<a href=%(url)s>%(name)s</a>\n"
-            V_SPACE = "<div>&nbsp;</div>"
-
-            createHref = lambda group : HREF_BASE % {'url': request.path + '?group=%s' % group, 'name': group }
-
-            hrefs = [ createHref(group) for group in self.GROUPS if group != self.base_attribute ]
-            group_hrefs = "<div>Group by: %s (current: %s)</div>" % (' '.join(hrefs), current_group)
-
             request.write(HTML_HEADER % {'title': page_title } )
-            request.write(group_hrefs)
-            request.write(V_SPACE)
+            request.write(href_options)
+            request.write("<div>&nbsp;</div>") # create some vertical sapce
             request.write(html_table)
             request.write(HTML_FOOTER)
             request.finish()
 
-        params = request.args
-        #print "RENDER VIEW", self.base_attribute, self.view_resource, params
-        #print "PATH", request.path
-
+        print "RENDER VIEW", self.base_attribute, self.view_resource, request.args
         # get parameters
 
         filter = { self.base_attribute : self.view_resource }
-        #print "FILTER", filter
 
         if 'group' in request.args:
             group = request.args['group'][-1]
@@ -263,11 +319,13 @@ class StockViewSubjectRenderer(resource.Resource):
             group  = self.DEFAULT_GROUP[self.base_attribute]
 
         resolution = self.DEFAULT_RESOLUTION
+        if 'dateres' in request.args:
+            resolution['date'] = parseDateResolution(request.args['dateres'][-1])
 
         # issue query
 
         d = self.urdb.viewQuery(group, filter=filter, resolution=resolution)
-        d.addCallback(buildTables, group)
+        d.addCallback(buildTables, current_group=group, resolution=resolution)
         d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
         return server.NOT_DONE_YET
 
