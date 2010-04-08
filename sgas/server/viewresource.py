@@ -217,7 +217,7 @@ class StockViewSubjectRenderer(resource.Resource):
 
     def renderView(self, request):
 
-        def createViewOptions(basepath, current_group, current_date_resolution):
+        def createViewOptions(basepath, url_options):
             i8 = 8 * ' '
             lines = []
 
@@ -226,33 +226,29 @@ class StockViewSubjectRenderer(resource.Resource):
 
             createHref = lambda options, name : HREF_BASE % {'url': basepath + '?%s' % urllib.urlencode(options), 'name': name }
 
-            option_order = [ 'group', 'dateres' ]
+            option_order = [ 'group', 'timeres' ]
             descriptions = {
                 'group'    : 'Group by',
-                'dateres'  : 'Time resolution'
-            }
-            current_options = {
-                'group'   : current_group,
-                'dateres' : current_date_resolution
+                'timeres'  : 'Time resolution'
             }
             query_options = {
                 'group'   : [ group for group in self.GROUPS if group != self.base_attribute ],
-                'dateres' : self.DATE_RESOLUTIONS.keys()
+                'timeres' : self.DATE_RESOLUTIONS.keys()
             }
 
             href_frontpage = HREF_BASE % {'url' : basepath.rsplit('/',2)[0], 'name': 'View frontpage'}
             lines.append("<div>%s</div>" % href_frontpage)
 
-            print "OPTIONS", basepath, current_group, current_date_resolution
+            #print "OPTIONS", basepath, url_options
 
             for q_option in option_order:
                 group_hrefs = []
                 for option_value in query_options.get(q_option):
-                    if option_value == current_options.get(q_option):
+                    if option_value == url_options.get(q_option):
                         continue
                     options = { q_option : option_value }
-                    options.update( [ (g,v) for g,v in current_options.items() if g != q_option ] )
-                    print options
+                    options.update( [ (g,v) for g,v in url_options.items() if g != q_option ] )
+                    #print options
 
                     group_hrefs.append( createHref(options, option_value) )
 
@@ -261,7 +257,7 @@ class StockViewSubjectRenderer(resource.Resource):
                 line = OPTION_BASE % {
                     'description' : descriptions.get(q_option),
                     'hrefs': shrefs,
-                    'current': current_options.get(q_option)
+                    'current': url_options.get(q_option)
                 }
                 lines.append(line)
 
@@ -269,12 +265,12 @@ class StockViewSubjectRenderer(resource.Resource):
             return '\n'.join( [ i8 + line for line in lines ] )
 
 
-        def buildTables(query_result, current_group, resolution):
+        def buildTables(query_result, url_options):
             #print "QUERY_RESULTS:", len(query_result)
 
             page_title = '%s view for %s' % (self.base_attribute.capitalize(), self.view_resource)
 
-            href_options = createViewOptions(request.path, current_group, resolution.get('date') )
+            href_options = createViewOptions(request.path, url_options)
             html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
 
             request.write(HTML_HEADER % {'title': page_title } )
@@ -287,10 +283,13 @@ class StockViewSubjectRenderer(resource.Resource):
         print "RENDER VIEW", self.base_attribute, self.view_resource, request.args
         # get parameters
 
-        query_options = viewresourcehelper.createQueryOptions(request.args, self.base_attribute, self.view_resource)
+        url_options = viewresourcehelper.parseURLParameters(request.args)
+        print "URL O", url_options
+
+        query_options = viewresourcehelper.createQueryOptions(url_options, self.base_attribute, self.view_resource)
 
         d = self.urdb.viewQuery(query_options)
-        d.addCallback(buildTables, current_group=qo.group, resolution=qo.resolution)
+        d.addCallback(buildTables, url_options)
         d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
         return server.NOT_DONE_YET
 
