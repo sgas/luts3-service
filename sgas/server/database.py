@@ -76,17 +76,15 @@ class UsageRecordDatabase:
         return d
 
 
-    def viewQuery(self, group, cluster=None, filter=None, resolution=None, values=None):
+    def viewQuery(self, query_options):
         # group      : attr
         # cluster    : attr
         # filter     : { attr : value }
         # resolution : { attr : level }
         # values     : [ attr1, attr2 ]
 
-        qo = chunkprocess.QueryOptions(group, cluster, filter, resolution, values)
-
         d = self.info_chunks.getInformationChunks()
-        d.addCallback(chunkprocess.chunkQuery, qo)
+        d.addCallback(chunkprocess.chunkQuery, query_options)
         return d
 
     # custom views

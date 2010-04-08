@@ -12,7 +12,7 @@ from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.common import couchdb
-from sgas.server import authz, convert, database
+from sgas.server import authz, convert, database, viewresourcehelper
 
 
 JSON_MIME_TYPE = 'application/json'
@@ -203,20 +203,6 @@ class StockViewSubjectRenderer(resource.Resource):
     DATE_RESOLUTIONS = { 'collapse':0, 'year':1, 'month':2, 'day':3 }
     VO_RESOLUTIONS = [ 0, 1, 2 ]
 
-    DEFAULT_GROUP = {
-        'user' : 'host',
-        'host' : 'vo',
-        'vo'   : 'host'
-    }
-    DEFAULT_CLUSTER = {
-        'user' : None,
-        'host' : None,
-        'vo'   : None
-    }
-    DEFAULT_RESOLUTION = {
-        'vo'   : 1, # vo, no group/role
-        'date' : 'month'
-    }
 
     def __init__(self, urdb, base_attribute, view_resource):
         resource.Resource.__init__(self)
@@ -230,12 +216,6 @@ class StockViewSubjectRenderer(resource.Resource):
 
 
     def renderView(self, request):
-
-        def parseDateResolution(value):
-            if value in self.DATE_RESOLUTIONS:
-                return value
-            else:
-                return self.DEFAULT_RESOLUTION['date']
 
         def createViewOptions(basepath, current_group, current_date_resolution):
             i8 = 8 * ' '
@@ -307,24 +287,10 @@ class StockViewSubjectRenderer(resource.Resource):
         print "RENDER VIEW", self.base_attribute, self.view_resource, request.args
         # get parameters
 
-        filter = { self.base_attribute : self.view_resource }
+        query_options = viewresourcehelper.createQueryOptions(request.args, self.base_attribute, self.view_resource)
 
-        if 'group' in request.args:
-            group = request.args['group'][-1]
-        else:
-            group  = self.DEFAULT_GROUP[self.base_attribute]
-
-        resolution = self.DEFAULT_RESOLUTION
-        if 'dateres' in request.args:
-            resolution['date'] = parseDateResolution(request.args['dateres'][-1])
-
-        query_res = resolution.copy()
-        query_res['date'] = self.DATE_RESOLUTIONS[query_res.pop('date')]
-
-        # issue query
-
-        d = self.urdb.viewQuery(group, filter=filter, resolution=query_res)
-        d.addCallback(buildTables, current_group=group, resolution=resolution)
+        d = self.urdb.viewQuery(query_options)
+        d.addCallback(buildTables, current_group=qo.group, resolution=qo.resolution)
         d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
         return server.NOT_DONE_YET
 
