@@ -94,27 +94,40 @@ def sumGroups(grouped_results, sum_attrs):
     return summed_grouped_results
 
 
-def chunkQuery(chunks, group, cluster=None, filter=None, resolution=None, sum_attributes=None):
-    # group      : attr
-    # cluster    : attr
-    # filter     : { attr : value }
-    # resolution : { attr : level }
-    # values     : [ attr1, attr2 ]
-
-    if sum_attributes is None:
-        sum_attributes = ['count', 'cputime', 'walltime']
+def chunkQuery(chunks, query_options):
 
     t_start = time.time()
 
-    if filter:
-        chunks = filterResults(chunks, filter)
-    if resolution:
-        chunks = changeResolution(chunks, resolution)
-    grouped_chunks = groupResults(chunks, group)
-    summed_grouped_chunks = sumGroups(grouped_chunks, sum_attributes)
+    if query_options.filter:
+        chunks = filterResults(chunks, query_options.filter)
+    if query_options.resolution:
+        chunks = changeResolution(chunks, query_options.resolution)
+    grouped_chunks = groupResults(chunks, query_options.group)
+    summed_grouped_chunks = sumGroups(grouped_chunks, query_options.sum_attributes)
 
     t_end = time.time()
     t_delta = t_end - t_start
     print "Chunk processing took %s seconds" % round(t_delta,2)
     return summed_grouped_chunks
+
+
+
+
+class QueryOptions:
+
+    def __init__(self, group, cluster=None, filter=None, resolution=None, sum_attributes=None):
+        # group      : attr
+        # cluster    : attr
+        # filter     : { attr : value }
+        # resolution : { attr : level }
+        # values     : [ attr1, attr2 ]
+
+        self.group   = group
+        self.cluster = cluster
+        self.filter  = filter
+        self.resolution = resolution
+        self.sum_attributes = sum_attributes
+
+        if self.sum_attributes is None:
+            self.sum_attributes = ['count', 'cputime', 'walltime']
 
