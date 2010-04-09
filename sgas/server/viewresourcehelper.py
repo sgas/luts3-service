@@ -14,10 +14,20 @@ URL_O_TIMERES = 'timeres'
 URL_O_VORES   = 'vores'
 URL_O_VALUES  = 'values'
 
+URL_OPTIONS = [ URL_O_GROUP, URL_O_CLUSTER, URL_O_TIMERES, URL_O_VORES, URL_O_VALUES ]
+
+URL_O_DESCRIPTIONS = {
+    URL_O_GROUP   : 'Group by',
+    URL_O_CLUSTER : 'Cluster by',
+    URL_O_TIMERES : 'Time resolution',
+    URL_O_VORES   : 'VO details',
+    URL_O_VALUES  : 'Displayed values'
+}
+
 URL_VALID_OPTIONS = {
     URL_O_GROUP   : ['user', 'host', 'vo'],
     URL_O_CLUSTER : ['user', 'host', 'vo'],
-    URL_O_TIMERES : ['collapse', 'year', 'month', 'day'],
+    URL_O_TIMERES : ['year', 'month', 'day'],
     URL_O_VORES   : ['collapse', 'vo', 'group', 'role'],
     URL_O_VALUES  : ['count', 'cputime', 'walltime']
 }

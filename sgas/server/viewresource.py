@@ -199,10 +199,6 @@ class StockViewResource(resource.Resource):
 
 class StockViewSubjectRenderer(resource.Resource):
 
-    GROUPS = ['user', 'host', 'vo']
-    DATE_RESOLUTIONS = [ 'day', 'month', 'year' ]
-    VO_RESOLUTIONS = [ 'vo', 'group', 'roles' ]
-
     def __init__(self, urdb, base_attribute, view_resource):
         resource.Resource.__init__(self)
         self.urdb = urdb
@@ -224,39 +220,34 @@ class StockViewSubjectRenderer(resource.Resource):
             OPTION_BASE = "<div>%(description)s: %(hrefs)s (current: %(current)s)</div>"
 
             createHref = lambda options, name : HREF_BASE % {'url': basepath + '?%s' % urllib.urlencode(options), 'name': name }
-
-            option_order = [ 'group', 'timeres' ]
-            descriptions = {
-                'group'    : 'Group by',
-                'timeres'  : 'Time resolution'
-            }
-            query_options = {
-                'group'   : [ group for group in self.GROUPS if group != self.base_attribute ],
-                'timeres' : self.DATE_RESOLUTIONS
-            }
-
             href_frontpage = HREF_BASE % {'url' : basepath.rsplit('/',2)[0], 'name': 'View frontpage'}
             lines.append("<div>%s</div>" % href_frontpage)
 
             #print "OPTIONS", basepath, url_options
 
-            for q_option in option_order:
+            for q_option in [ 'group', 'timeres' ]:
+#            for q_option in viewresourcehelper.URL_OPTIONS:
                 print "Q_OPTION", q_option
                 group_hrefs = []
-                for option_value in query_options.get(q_option):
-                    #if option_value == url_options.get(q_option):
-                    if option_value == url_options.get(q_option, viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option]):
+
+                option_default = viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option]
+                for option_value in viewresourcehelper.URL_VALID_OPTIONS.get(q_option):
+                    print "O", option_value, option_default
+                    # filter out current option
+                    if option_value == url_options.get(q_option, option_default):
+                        continue
+                    # don't list implicit grouping
+                    if q_option == viewresourcehelper.URL_O_GROUP and option_value == self.base_attribute:
                         continue
                     options = { q_option : option_value }
                     options.update( [ (g,v) for g,v in url_options.items() if g != q_option ] )
-                    #print options
 
                     group_hrefs.append( createHref(options, option_value) )
 
                 shrefs = ' '.join(group_hrefs)
 
                 line = OPTION_BASE % {
-                    'description' : descriptions.get(q_option),
+                    'description' : viewresourcehelper.URL_O_DESCRIPTIONS.get(q_option),
                     'hrefs': shrefs,
                     'current': url_options.get(q_option, viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option])
                 }
