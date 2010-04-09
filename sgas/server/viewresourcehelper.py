@@ -22,6 +22,29 @@ URL_VALID_OPTIONS = {
     URL_O_VALUES  : ['count', 'cputime', 'walltime']
 }
 
+URL_O_DEFAULTS = {
+    'user' : {
+        URL_O_GROUP   : 'host',
+        URL_O_CLUSTER : None,
+        URL_O_TIMERES : 'month',
+        URL_O_VORES   : 'vo',
+        URL_O_VALUES  : ['count', 'cputime', 'walltime']
+    },
+    'host' : {
+        URL_O_GROUP   : 'vo',
+        URL_O_CLUSTER : None,
+        URL_O_TIMERES : 'month',
+        URL_O_VORES   : 'vo',
+        URL_O_VALUES  : ['count', 'cputime', 'walltime']
+    },
+    'vo' : {
+        URL_O_GROUP   : 'host',
+        URL_O_CLUSTER : None,
+        URL_O_TIMERES : 'month',
+        URL_O_VORES   : 'vo',
+        URL_O_VALUES  : ['count', 'cputime', 'walltime']
+    }
+}
 
 # stuff for query options
 

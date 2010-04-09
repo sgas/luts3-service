@@ -200,9 +200,8 @@ class StockViewResource(resource.Resource):
 class StockViewSubjectRenderer(resource.Resource):
 
     GROUPS = ['user', 'host', 'vo']
-    DATE_RESOLUTIONS = { 'collapse':0, 'year':1, 'month':2, 'day':3 }
-    VO_RESOLUTIONS = [ 0, 1, 2 ]
-
+    DATE_RESOLUTIONS = [ 'day', 'month', 'year' ]
+    VO_RESOLUTIONS = [ 'vo', 'group', 'roles' ]
 
     def __init__(self, urdb, base_attribute, view_resource):
         resource.Resource.__init__(self)
@@ -233,7 +232,7 @@ class StockViewSubjectRenderer(resource.Resource):
             }
             query_options = {
                 'group'   : [ group for group in self.GROUPS if group != self.base_attribute ],
-                'timeres' : self.DATE_RESOLUTIONS.keys()
+                'timeres' : self.DATE_RESOLUTIONS
             }
 
             href_frontpage = HREF_BASE % {'url' : basepath.rsplit('/',2)[0], 'name': 'View frontpage'}
@@ -242,9 +241,11 @@ class StockViewSubjectRenderer(resource.Resource):
             #print "OPTIONS", basepath, url_options
 
             for q_option in option_order:
+                print "Q_OPTION", q_option
                 group_hrefs = []
                 for option_value in query_options.get(q_option):
-                    if option_value == url_options.get(q_option):
+                    #if option_value == url_options.get(q_option):
+                    if option_value == url_options.get(q_option, viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option]):
                         continue
                     options = { q_option : option_value }
                     options.update( [ (g,v) for g,v in url_options.items() if g != q_option ] )
@@ -257,11 +258,10 @@ class StockViewSubjectRenderer(resource.Resource):
                 line = OPTION_BASE % {
                     'description' : descriptions.get(q_option),
                     'hrefs': shrefs,
-                    'current': url_options.get(q_option)
+                    'current': url_options.get(q_option, viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option])
                 }
                 lines.append(line)
 
-            print lines
             return '\n'.join( [ i8 + line for line in lines ] )
 
 
