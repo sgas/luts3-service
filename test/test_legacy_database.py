@@ -14,7 +14,7 @@ from twisted.internet import defer
 from sgas.common import couchdb
 from sgas.server import database, usagerecord
 
-from . import ur
+from . import ursampledata
 
 
 
@@ -47,7 +47,7 @@ class DatabaseTest(unittest.TestCase):
         ur1_id = 'gsiftp://example.org/jobs/1'
         ur1_hs = usagerecord.createID(ur1_id)
 
-        doc_ids = yield self.ur_db.insertUsageRecords(ur.UR1)
+        doc_ids = yield self.ur_db.insertUsageRecords(ursampledata.UR1)
         self.failUnlessEqual(doc_ids, {ur1_id: {'id':ur1_hs}})
 
         doc = yield self.ur_db.getUsageRecord(ur1_hs)
@@ -63,7 +63,7 @@ class DatabaseTest(unittest.TestCase):
         cur_hs1 = usagerecord.createID(cur_id1)
         cur_hs2 = usagerecord.createID(cur_id2)
 
-        doc_ids = yield self.ur_db.insertUsageRecords(ur.CUR)
+        doc_ids = yield self.ur_db.insertUsageRecords(ursampledata.CUR)
         self.failUnlessEqual(len(doc_ids), 2)
         wanted_result = {cur_id1: {'id':cur_hs1}, cur_id2: {'id':cur_hs2}}
         self.failUnlessEqual(doc_ids, wanted_result)
