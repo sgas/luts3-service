@@ -223,21 +223,19 @@ class StockViewSubjectRenderer(resource.Resource):
             href_frontpage = HREF_BASE % {'url' : basepath.rsplit('/',2)[0], 'name': 'View frontpage'}
             lines.append("<div>%s</div>" % href_frontpage)
 
-            #print "OPTIONS", basepath, url_options
-
             for q_option in [ 'group', 'timeres' ]:
 #            for q_option in viewresourcehelper.URL_OPTIONS:
-                print "Q_OPTION", q_option
                 group_hrefs = []
 
                 option_default = viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option]
                 for option_value in viewresourcehelper.URL_VALID_OPTIONS.get(q_option):
-                    print "O", option_value, option_default
                     # filter out current option
                     if option_value == url_options.get(q_option, option_default):
                         continue
                     # don't list implicit grouping
                     if q_option == viewresourcehelper.URL_O_GROUP and option_value == self.base_attribute:
+                        continue
+                    if q_option == viewresourcehelper.URL_O_CLUSTER and option_value == self.base_attribute:
                         continue
                     options = { q_option : option_value }
                     options.update( [ (g,v) for g,v in url_options.items() if g != q_option ] )
@@ -271,7 +269,6 @@ class StockViewSubjectRenderer(resource.Resource):
             request.write(HTML_FOOTER)
             request.finish()
 
-        print "RENDER VIEW", self.base_attribute, self.view_resource, request.args
         # get parameters
 
         url_options = viewresourcehelper.parseURLParameters(request.args)

@@ -58,8 +58,9 @@ URL_O_DEFAULTS = {
 
 # stuff for query options
 
-GROUP = 'group'
-DATE  = 'date'
+GROUP   = 'group'
+CLUSTER = 'cluster'
+DATE    = 'date'
 
 #GROUPS = ['user', 'host', 'vo']
 TIME_RESOLUTIONS = { 'collapse':0, 'year':1, 'month':2, 'day':3 }
@@ -103,9 +104,9 @@ def parseURLParameters(request_args):
             url_options[URL_O_GROUP] = group
 
     if URL_O_CLUSTER in request_args:
-        cluster = request_args[URL_O_CLUSTER]
+        cluster = request_args[URL_O_CLUSTER][-1]
         if cluster in URL_VALID_OPTIONS[URL_O_CLUSTER]:
-            url_options[URL_O_CLUSTER]
+            url_options[URL_O_CLUSTER] = cluster
 
     if URL_O_TIMERES in request_args:
         time_res = request_args[URL_O_TIMERES][-1]
@@ -138,12 +139,14 @@ def createQueryOptions(url_options, base_attr, resource):
 
     print "QO", url_options
     group = url_options.get(URL_O_GROUP, QUERY_DEFAULTS[GROUP][base_attr])
+
+    cluster = url_options.get(URL_O_CLUSTER, QUERY_DEFAULTS[CLUSTER][base_attr])
+
     filter = { base_attr : resource }
 
     resolution = DEFAULT_RESOLUTION.copy()
     resolution[DATE] = parseTimeResolution(url_options.get(URL_O_TIMERES))
-    print "QOR", resolution
 
-    qo = chunkprocess.QueryOptions(group, filter=filter, resolution=resolution)
+    qo = chunkprocess.QueryOptions(group, cluster=cluster, filter=filter, resolution=resolution)
     return qo
 
