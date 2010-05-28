@@ -12,7 +12,8 @@ from twisted.trial import unittest
 from twisted.internet import defer
 
 from sgas.common import couchdb
-from sgas.server import database, usagerecord
+from sgas.database.couchdb import urparser
+from sgas.server import database
 
 from . import ursampledata
 
@@ -45,7 +46,7 @@ class DatabaseTest(unittest.TestCase):
     def testSingleInsert(self):
 
         ur1_id = 'gsiftp://example.org/jobs/1'
-        ur1_hs = usagerecord.createID(ur1_id)
+        ur1_hs = urparser.createID(ur1_id)
 
         doc_ids = yield self.ur_db.insertUsageRecords(ursampledata.UR1)
         self.failUnlessEqual(doc_ids, {ur1_id: {'id':ur1_hs}})
@@ -60,8 +61,8 @@ class DatabaseTest(unittest.TestCase):
 
         cur_id1 = 'gsiftp://example.org/jobs/3'
         cur_id2 = 'gsiftp://example.org/jobs/4'
-        cur_hs1 = usagerecord.createID(cur_id1)
-        cur_hs2 = usagerecord.createID(cur_id2)
+        cur_hs1 = urparser.createID(cur_id1)
+        cur_hs2 = urparser.createID(cur_id2)
 
         doc_ids = yield self.ur_db.insertUsageRecords(ursampledata.CUR)
         self.failUnlessEqual(len(doc_ids), 2)

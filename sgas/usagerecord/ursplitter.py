@@ -20,7 +20,7 @@ class ParseError(Exception):
     """
 
 
-def splitURDocument(self, ur_data):
+def splitURDocument(ur_data):
 
     usage_records = []
 
@@ -33,7 +33,7 @@ def splitURDocument(self, ur_data):
         for ur_element in tree:
             if not ur_element.tag == ur.JOB_USAGE_RECORD:
                 raise ParseError("Subelement in UsageRecords doc not a JobUsageRecord")
-            usage_records.append(ur)
+            usage_records.append(ur_element)
 
     elif tree.tag == ur.JOB_USAGE_RECORD:
         usage_records.append(tree)

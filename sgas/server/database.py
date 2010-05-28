@@ -6,8 +6,9 @@ import json
 from twisted.python import log
 from twisted.internet import defer
 
-from sgas.server import usagerecord, convert
 from sgas.viewengine import chunkprocess
+from sgas.database.couchdb import urparser
+from sgas.server import convert
 
 
 
@@ -30,13 +31,13 @@ class UsageRecordDatabase:
     @defer.inlineCallbacks
     def insertUsageRecords(self, ur_data, identity=None, hostname=None):
 
-        parser = usagerecord.UsageRecordParser()
-        edocs = parser.getURDocuments(ur_data)
+        ur_docs = urparser.usageRecordsToCouchDBDocuments(ur_data,
+                                                          insert_identity=identity,
+                                                          insert_hostname=hostname)
 
         docs = {}
         idmap = {}
-        for edoc in edocs.values():
-            doc = usagerecord.xmlToDict(edoc, insert_identity=identity, insert_hostname=hostname)
+        for doc in ur_docs:
             docs[doc['_id']] = doc
             idmap[doc['record_id']] = doc['_id']
 

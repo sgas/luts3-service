@@ -9,7 +9,7 @@ import datetime
 from twisted.trial import unittest
 
 from sgas.ext import isodate
-from sgas.server import usagerecord
+from sgas.usagerecord import urparser
 
 
 
@@ -52,7 +52,7 @@ class ISODateTimeTest(unittest.TestCase):
     def testConversion(self):
 
         for dts in ISO_DATETIME_STRINGS:
-            json_dt = usagerecord.parseISODateTime(dts)
+            json_dt = urparser.parseISODateTime(dts)
             self.failUnlessEqual(json_dt, JSON_DATETIME)
 
 
@@ -78,7 +78,7 @@ class ISODurationTest(unittest.TestCase):
     def testConversion(self):
 
         for tds in ISO_DURATION_STRINGS:
-            ss = usagerecord.parseISODuration(tds)
+            ss = urparser.parseISODuration(tds)
             self.failUnlessEqual(ss, DURATION_SECONDS)
 
 
