@@ -31,11 +31,12 @@ class GenericDatabaseTest:
     def testSingleInsert(self):
 
         doc_ids = yield self.db.insert(ursampledata.UR1)
+        self.failUnlessEqual(len(doc_ids), 1)
 
         doc = yield self.fetchUsageRecord(ursampledata.UR1_ID)
 
-        self.failUnlessIn(ursampledata.UR1_ID, doc)
-        self.failUnlessIn("test job 1", doc)
+        self.failUnlessEqual(doc.get('record_id', None), ursampledata.UR1_ID)
+        self.failUnlessEqual(doc.get('job_name', None),  'test job 1')
 
 
     @defer.inlineCallbacks
@@ -45,11 +46,12 @@ class GenericDatabaseTest:
         self.failUnlessEqual(doc, None)
 
         doc_ids = yield self.db.insert(ursampledata.UR2)
+        self.failUnlessEqual(len(doc_ids), 1)
 
         doc = yield self.fetchUsageRecord(ursampledata.UR2_ID)
 
-        self.failUnlessIn(ursampledata.UR2_ID, doc)
-        self.failUnlessIn("test job 2", doc)
+        self.failUnlessEqual(doc.get('record_id', None), ursampledata.UR2_ID, doc)
+        self.failUnlessEqual(doc.get('job_name', None),  'test job 2')
 
 
     @defer.inlineCallbacks
@@ -61,7 +63,7 @@ class GenericDatabaseTest:
 
         for ur_id in ursampledata.CUR_IDS:
             doc = yield self.fetchUsageRecord(ur_id)
-            self.failUnlessIn(ur_id, doc)
+            self.failUnlessEqual(doc.get('record_id', None), ur_id)
 
 
 
@@ -81,7 +83,7 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
         db_id = urparser.createID(record_id)
         try:
             ur_doc = yield self.couch_database.retrieveDocument(db_id)
-            defer.returnValue(json.dumps(ur_doc))
+            defer.returnValue(ur_doc)
         except couchdbclient.NoSuchDocumentError:
             defer.returnValue(None)
 
@@ -93,7 +95,7 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
         from sgas.database.couchdb import database, couchdbclient
 
         config = json.load(file(SGAS_TEST_FILE))
-        url = str(config['db.url'])
+        url = str(config['couchdb.url'])
 
         base_url, self.couch_database_name = url.rsplit('/', 1)
         self.couch_dbms = couchdbclient.CouchDB(base_url)
@@ -108,13 +110,47 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
 
 
 
+class PostgreSQLTestCase(GenericDatabaseTest, unittest.TestCase):
 
-#class PostgreSQLTestCase(GenericDatabaseTest, unittest.TestCase):
-#
-#    @defer.inlineCallbacks
-#    def setUp(self):
-#        config = json.load(file(SGAS_TEST_FILE))
-#
+    @defer.inlineCallbacks
+    def fetchUsageRecord(self, record_id):
 
+        stm = "SELECT * from usagerecords where record_id = %s"
+        res = yield self.postgres_dbpool.runQuery(stm, record_id)
+
+        if res == []:
+            defer.returnValue(None)
+        elif len(res) == 1:
+            ur_doc = dict(res[0].items())
+            defer.returnValue(ur_doc)
+        else:
+            self.fail('Multiple results returned for a single usage record')
+
+
+    def setUp(self):
+
+        import json
+        from twisted.enterprise import adbapi
+        from sgas.database.postgresql import database
+
+        config = json.load(file(SGAS_TEST_FILE))
+        db_url = config['postgresql.url']
+
+        self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
+
+        self.db = database.PostgreSQLDatabase(db_url)
+
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        # delete all ur rows in the database
+        delete_stms = \
+        "TRUNCATE usagedata;"               + \
+        "TRUNCATE globalusername CASCADE;"  + \
+        "TRUNCATE insertidentity CASCADE;"  + \
+        "TRUNCATE machinename    CASCADE;"  + \
+        "TRUNCATE voinformation  CASCADE;"
+        yield self.postgres_dbpool.runOperation(delete_stms)
+        yield self.postgres_dbpool.close()
 
 
