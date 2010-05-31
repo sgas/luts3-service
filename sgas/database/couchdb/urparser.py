@@ -9,8 +9,6 @@ Copyright: Nordic Data Grid Facility (2010)
 import time
 import hashlib
 
-from twisted.python import log
-
 from sgas.usagerecord import ursplitter, urparser
 
 
