@@ -3,6 +3,7 @@ Some sample usage records.
 """
 
 
+UR1_ID = 'gsiftp://example.org/jobs/1'
 UR1 = """<?xml version="1.0" encoding="UTF-8" ?>
 <ur:JobUsageRecord xmlns:ur="http://schema.ogf.org/urf/2003/09/urf">
     <ur:RecordIdentity ur:createTime="2009-07-07T09:06:52Z" ur:recordId="gsiftp://example.org/jobs/1" />
@@ -21,6 +22,7 @@ UR1 = """<?xml version="1.0" encoding="UTF-8" ?>
 """
 
 
+UR2_ID = 'gsiftp://example.org/jobs/2'
 UR2 = """<?xml version="1.0" encoding="UTF-8" ?>
 <ur:JobUsageRecord xmlns:ur="http://schema.ogf.org/urf/2003/09/urf">
     <ur:RecordIdentity ur:createTime="2009-07-07T09:06:52Z" ur:recordId="gsiftp://example.org/jobs/2" />
@@ -39,6 +41,7 @@ UR2 = """<?xml version="1.0" encoding="UTF-8" ?>
 """
 
 
+CUR_IDS = [ "gsiftp://example.org/jobs/3", "gsiftp://example.org/jobs/4" ]
 CUR = """<?xml version="1.0" encoding="UTF-8" ?>
 <ur:UsageRecords xmlns:ur="http://schema.ogf.org/urf/2003/09/urf">
   <ur:JobUsageRecord>
