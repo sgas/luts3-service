@@ -37,7 +37,15 @@ class ISGASDatabase(Interface):
                                  present in the documents, but are not
                                  guarantied to be present in the underlying
                                  database after insertion.
+
+        @param insert_identity:  A string containining the authenticated
+                                 identity of the entity inserting the
+                                 usage records. None is allowed.
+
+        @param insert_hostname:  The hostname of the originating request for
+                                 inserting the usage records. None is allowed.
         """
+
 
 
     def query(selects, filters, groups, order):
