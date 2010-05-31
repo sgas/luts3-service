@@ -64,13 +64,12 @@ def usageRecordsToCouchDBDocuments(ur_data, insert_identity=None, insert_hostnam
 
     insert_time = time.gmtime()
 
-#    ur_splitter = genericurparser.UsageRecordParser()
-
     for ur_element in ursplitter.splitURDocument(ur_data):
 
         cdoc = urparser.xmlToDict(ur_element,
                                   insert_identity=insert_identity,
-                                  insert_hostname=insert_hostname)
+                                  insert_hostname=insert_hostname,
+                                  insert_time=insert_time)
         # set document type
         cdoc['type'] = 'usagerecord'
         # version control for the convertion in sgas

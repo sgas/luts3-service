@@ -72,9 +72,8 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         r['insert_identity'] = insert_identity
     if insert_hostname is not None:
         r['insert_hostname'] = insert_hostname
-    if insert_time is None:
-        insert_time = time.gmtime()
-    r['insert_time'] = time.strftime(JSON_DATETIME_FORMAT, insert_time)
+    if insert_time is not None:
+        r['insert_time'] = time.strftime(JSON_DATETIME_FORMAT, insert_time)
 
     for element in ur_doc:
         if element.tag == ur.RECORD_IDENTITY:
