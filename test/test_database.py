@@ -91,7 +91,7 @@ class GenericDatabaseTest:
 
         #result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name $ .no', groups='user_identity')
         result = yield self.db.query('user_identity, sum:n_jobs', groups='user_identity')
-        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', '2']])
+        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 2]])
 
 
     @defer.inlineCallbacks
@@ -101,7 +101,7 @@ class GenericDatabaseTest:
         yield self.triggerAggregateUpdate()
 
         result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name = fyrgrid.grid.aau.dk', groups='user_identity')
-        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', '1']])
+        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 1]])
 
 
 

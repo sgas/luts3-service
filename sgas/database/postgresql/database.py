@@ -5,7 +5,7 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-from pyPgSQL import libpq
+from pyPgSQL import libpq, PgSQL
 
 from zope.interface import implements
 
@@ -44,6 +44,17 @@ class PostgreSQLDatabase:
     @defer.inlineCallbacks
     def query(self, selects, filters=None, groups=None, orders=None):
 
+        def buildValue(value):
+            if type(value) in (unicode, str, int, float, bool):
+                return value
+            if isinstance(value, PgSQL.PgNumeric):
+                if value.getPrecision() == 0:
+                    return int(value)
+                else:
+                    return float(value)
+            # bad catch-all
+            return str(value)
+
         q = queryparser.QueryParser(selects, filters, groups, orders)
 
         query_stm = queryengine.buildQuery(q)
@@ -52,7 +63,7 @@ class PostgreSQLDatabase:
 
         results = []
         for row in query_result:
-            results.append( [ str(e) for e in row ] )
+            results.append( [ buildValue(e) for e in row ] )
 
         defer.returnValue(results)
 
