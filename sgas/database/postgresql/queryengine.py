@@ -6,8 +6,20 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
+# FIXME all db input should be properly quoted
+
+from pyPgSQL.PgSQL import _quote
+
+
 
 AGGREGATION_TABLE = 'uraggregated'
+
+
+
+def quote(value):
+    if type(value) is unicode:
+        value = str(value)
+    return _quote(value)
 
 
 
@@ -21,11 +33,11 @@ def buildQuery(query):
 
     def buildFilter(filter):
         if filter.operator in ('=','!=','<','>','<=','>='): 
-            return '%s %s %s' % (filter.attribute, filter.operator, filter.value)
+            return '%s %s %s' % (filter.attribute, filter.operator, quote(filter.value))
         elif filter.operator == '^':
-            return "%s LIKE '%s%'" % (filter.attribute, filter.value)
+            return "%s LIKE %s%" % (filter.attribute, quote(filter.value))
         elif filter.operator == '$':
-            return "%s LIKE '%%%s'" % (filter.attribute, filter.value)
+            return "%s LIKE %%%s" % (filter.attribute, quote(filter.value))
         else:
             raise NotImplementedError('Unsupported filter operator: %s' % filter.operator)
 

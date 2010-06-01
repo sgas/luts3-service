@@ -94,6 +94,16 @@ class GenericDatabaseTest:
         self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', '2']])
 
 
+    @defer.inlineCallbacks
+    def testFilterQuery(self):
+
+        yield self.db.insert(ursampledata.CUR)
+        yield self.triggerAggregateUpdate()
+
+        result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name = fyrgrid.grid.aau.dk', groups='user_identity')
+        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', '1']])
+
+
 
 class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
 
@@ -149,6 +159,10 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
     def testGroupQuery(self):
         pass
     testGroupQuery.skip = 'CouchDB Query engine is not implemented'
+
+    def testFilterQuery(self):
+        pass
+    testFilterQuery.skip = 'CouchDB Query engine is not implemented'
 
 
 

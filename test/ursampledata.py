@@ -67,7 +67,7 @@ CUR = """<?xml version="1.0" encoding="UTF-8" ?>
         <ur:GlobalUserName>/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User</ur:GlobalUserName>
     </ur:UserIdentity>
     <ur:JobName>test job 4</ur:JobName>
-    <ur:MachineName>benedict.grid.aau.dk</ur:MachineName>
+    <ur:MachineName>fyrgrid.grid.aau.dk</ur:MachineName>
     <ur:StartTime>2009-07-08T09:06:37Z</ur:StartTime>
     <ur:EndTime>2009-07-08T09:06:52Z</ur:EndTime>
     <ur:WallDuration>PT4S</ur:WallDuration>
