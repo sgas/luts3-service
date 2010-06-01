@@ -15,7 +15,7 @@ from sgas.database import query
 ATTRIBUTE_REGEX = re.compile('^\s*(\w+)(:(\w+))?\s*$')
 
 # key compare-operator value
-FILTER_REGEX = re.compile("^(\w+)\s*(=|!=|<|>|<=|>=|\^|\$)\s*('?\w+'?)$")
+FILTER_REGEX = re.compile("^(\w+)\s*(=|!=|<|>|<=|>=|\^|\$)\s*('?\.\w+'?)$")
 
 
 
