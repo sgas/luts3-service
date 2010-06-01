@@ -12,7 +12,7 @@ from zope.interface import implements
 from twisted.internet import defer
 
 from sgas.database import ISGASDatabase, error, queryparser
-from sgas.database.postgresql import urparser
+from sgas.database.postgresql import urparser, queryengine
 
 from twisted.enterprise import adbapi 
 
@@ -41,10 +41,18 @@ class PostgreSQLDatabase:
             raise # re-raise current exception
 
 
-    def query(self, selects, filters, groups, orders):
-        # queries the database
+    @defer.inlineCallbacks
+    def query(self, selects, filters=None, groups=None, orders=None):
 
         q = queryparser.QueryParser(selects, filters, groups, orders)
 
-        raise NotImplementedError("we're working on it!")
+        query_stm = queryengine.buildQuery(q)
+
+        query_result = yield self.dbpool.runQuery(query_stm)
+
+        results = []
+        for row in query_result:
+            results.append( [ str(e) for e in row ] )
+
+        defer.returnValue(results)
 

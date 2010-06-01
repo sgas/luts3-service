@@ -24,8 +24,11 @@ class GenericDatabaseTest:
     def fetchUsageRecord(self, record_id):
         # fetch an individual usage record from the underlying database given a record id
         # should return none if the record does not exist
-        raise NotImplementedError('fetching individual usage record not support in generic test (nor should it be)')
+        raise NotImplementedError('fetching individual usage record is not implemented in generic test (nor should it be)')
 
+    def triggerAggregateUpdate(self):
+        # trigger an update of the aggregated information in the underlying database (if needed)
+        raise NotImplementedError('updating aggregated information is not implemented in generic test (nor should it be)')
 
     @defer.inlineCallbacks
     def testSingleInsert(self):
@@ -66,6 +69,32 @@ class GenericDatabaseTest:
             self.failUnlessEqual(doc.get('record_id', None), ur_id)
 
 
+    @defer.inlineCallbacks
+    def testBasicQuery(self):
+
+        yield self.db.insert(ursampledata.UR1)
+        yield self.db.insert(ursampledata.UR2)
+
+        yield self.triggerAggregateUpdate()
+
+        result = yield self.db.query('distinct:user_identity')
+        #print result
+        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User']])
+
+
+    @defer.inlineCallbacks
+    def testGroupQuery(self):
+
+        yield self.db.insert(ursampledata.UR1)
+        yield self.db.insert(ursampledata.UR2)
+        yield self.triggerAggregateUpdate()
+
+        #result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name $ .no', groups='user_identity')
+        result = yield self.db.query('user_identity, sum:n_jobs', groups='user_identity')
+        #print result
+        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 2]])
+
+
 
 class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
 
@@ -86,6 +115,11 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
             defer.returnValue(ur_doc)
         except couchdbclient.NoSuchDocumentError:
             defer.returnValue(None)
+
+    @defer.inlineCallbacks
+    def triggerAggregateUpdate(self):
+        yield defer.succeed(None)
+        defer.returnValue(None)
 
 
     @defer.inlineCallbacks
@@ -109,6 +143,15 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
         yield self.couch_dbms.deleteDatabase(self.couch_database_name)
 
 
+    def testBasicQuery(self):
+        pass
+    testBasicQuery.skip = 'CouchDB Query engine is not implemented'
+
+    def testGroupQuery(self):
+        pass
+    testGroupQuery.skip = 'CouchDB Query engine is not implemented'
+
+
 
 class PostgreSQLTestCase(GenericDatabaseTest, unittest.TestCase):
 
@@ -126,6 +169,12 @@ class PostgreSQLTestCase(GenericDatabaseTest, unittest.TestCase):
         else:
             self.fail('Multiple results returned for a single usage record')
 
+
+    @defer.inlineCallbacks
+    def triggerAggregateUpdate(self):
+        # should update the uraggregate table here
+        yield defer.succeed(None)
+        defer.returnValue(None)
 
     def setUp(self):
 
