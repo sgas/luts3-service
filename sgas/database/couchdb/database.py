@@ -66,7 +66,7 @@ class CouchDBDatabase:
 #        defer.returnValue(json.dumps(doc))
 
 
-    def query(self, selects, filters, groups, orders):
+    def query(self, selects, filters=None, groups=None, orders=None):
         raise NotImplementedError('Query engine for couchdb not quite complete')
 
 
