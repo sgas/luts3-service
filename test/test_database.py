@@ -91,8 +91,7 @@ class GenericDatabaseTest:
 
         #result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name $ .no', groups='user_identity')
         result = yield self.db.query('user_identity, sum:n_jobs', groups='user_identity')
-        #print result
-        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 2]])
+        self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', '2']])
 
 
 
@@ -173,8 +172,10 @@ class PostgreSQLTestCase(GenericDatabaseTest, unittest.TestCase):
     @defer.inlineCallbacks
     def triggerAggregateUpdate(self):
         # should update the uraggregate table here
-        yield defer.succeed(None)
+        from . import postgres
+        yield self.postgres_dbpool.runOperation(postgres.AGGREGATE_STATEMENT)
         defer.returnValue(None)
+
 
     def setUp(self):
 
