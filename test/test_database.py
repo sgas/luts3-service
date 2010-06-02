@@ -26,9 +26,6 @@ class GenericDatabaseTest:
         # should return none if the record does not exist
         raise NotImplementedError('fetching individual usage record is not implemented in generic test (nor should it be)')
 
-    def triggerAggregateUpdate(self):
-        # trigger an update of the aggregated information in the underlying database (if needed)
-        raise NotImplementedError('updating aggregated information is not implemented in generic test (nor should it be)')
 
     @defer.inlineCallbacks
     def testSingleInsert(self):
@@ -69,6 +66,13 @@ class GenericDatabaseTest:
             self.failUnlessEqual(doc.get('record_id', None), ur_id)
 
 
+class QueryDatabaseTest:
+
+    def triggerAggregateUpdate(self):
+        # trigger an update of the aggregated information in the underlying database (if needed)
+        raise NotImplementedError('updating aggregated information is not implemented in generic test (nor should it be)')
+
+
     @defer.inlineCallbacks
     def testBasicQuery(self):
 
@@ -78,7 +82,6 @@ class GenericDatabaseTest:
         yield self.triggerAggregateUpdate()
 
         result = yield self.db.query('distinct:user_identity')
-        #print result
         self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User']])
 
 
@@ -89,7 +92,6 @@ class GenericDatabaseTest:
         yield self.db.insert(ursampledata.UR2)
         yield self.triggerAggregateUpdate()
 
-        #result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name $ .no', groups='user_identity')
         result = yield self.db.query('user_identity, sum:n_jobs', groups='user_identity')
         self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 2]])
 
@@ -162,25 +164,8 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
         yield self.couch_dbms.deleteDatabase(self.couch_database_name)
 
 
-    def testBasicQuery(self):
-        pass
-    testBasicQuery.skip = 'CouchDB Query engine is not implemented'
 
-    def testGroupQuery(self):
-        pass
-    testGroupQuery.skip = 'CouchDB Query engine is not implemented'
-
-    def testFilterQuery(self):
-        pass
-    testFilterQuery.skip = 'CouchDB Query engine is not implemented'
-
-    def testOrderQuery(self):
-        pass
-    testOrderQuery.skip = 'CouchDB Query engine is not implemented'
-
-
-
-class PostgreSQLTestCase(GenericDatabaseTest, unittest.TestCase):
+class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCase):
 
     @defer.inlineCallbacks
     def fetchUsageRecord(self, record_id):

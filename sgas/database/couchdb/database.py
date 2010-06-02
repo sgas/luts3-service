@@ -4,7 +4,7 @@ Implementation of the SGAS database interface with CouchDB as backend.
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Faciliy (2009, 2010)
 """
-import json
+
 
 from zope.interface import implements
 
@@ -13,9 +13,6 @@ from twisted.internet import defer
 
 from sgas.database import ISGASDatabase
 from sgas.database.couchdb import couchdbclient, urparser
-
-from sgas.server import convert
-from sgas.viewengine import chunkprocess
 
 
 
@@ -26,11 +23,6 @@ class CouchDBDatabase:
     def __init__(self, couchdb_url):
 
         self.db = couchdbclient.Database(couchdb_url)
-
-        #db, info_chunks=None, custom_views=None):
-        #self.db = db
-        #self.info_chunks = info_chunks
-        #self.custom_views = custom_views or {}
 
 
     @defer.inlineCallbacks
@@ -58,15 +50,7 @@ class CouchDBDatabase:
         defer.returnValue(return_data)
 
 
-# no longer supported / required
-#    @defer.inlineCallbacks
-#    def getUsageRecord(self, record_id):
-#
-#        doc = yield self.db.retrieveDocument(record_id)
-#        defer.returnValue(json.dumps(doc))
-
 
     def query(self, selects, filters=None, groups=None, orders=None):
-        raise NotImplementedError('Query engine for couchdb not quite complete')
-
+        raise NotImplementedError('Query engine for couchdb is not implemented')
 
