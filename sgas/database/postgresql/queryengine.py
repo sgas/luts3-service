@@ -44,7 +44,7 @@ def buildQuery(query):
     selects = ','.join( [ buildSelector(s) for s in query.selects ] )
     filters = ','.join( [ buildFilter(f)   for f in query.filters ] )
     groups  = ','.join( [ g.attribute      for g in query.groups  ] )
-    orders  = ','.join( [ o                for o in query.orders  ] )
+    orders  = ','.join( [ o.attribute      for o in query.orders  ] )
 
     query_stm = 'SELECT %s FROM %s' % (selects, AGGREGATION_TABLE)
     if filters:
