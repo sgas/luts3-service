@@ -23,7 +23,7 @@ class ISGASDatabase(Interface):
     extended attributes which are used should be supported if at all possible.
     """
 
-    def insert(usagerecord_data):
+    def insert(usagerecord_data, insert_identity=None, insert_hostname=None):
         """
         Inserts one or more usage records into the database. If one or more of
         the inserted usage records already exist in the database duplicate

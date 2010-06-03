@@ -28,10 +28,12 @@ class PostgreSQLDatabase:
 
 
     @defer.inlineCallbacks
-    def insert(self, usagerecord_data):
+    def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None):
         # inserts usage record
         try:
-            insert_stms = urparser.usageRecordsToInsertStatements(usagerecord_data)
+            insert_stms = urparser.usageRecordsToInsertStatements(usagerecord_data,
+                                                                  insert_identity=insert_identity,
+                                                                  insert_hostname=insert_hostname)
             result = yield self.dbpool.runQuery(insert_stms)
             db_ids = [ r.get('urcreate', None) for r in result ]
             defer.returnValue(db_ids)

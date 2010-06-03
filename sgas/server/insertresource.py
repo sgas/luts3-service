@@ -13,6 +13,7 @@ from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.server import authz
+from sgas.database import error
 
 
 
@@ -20,9 +21,9 @@ class InsertResource(resource.Resource):
 
     isLeaf = False
 
-    def __init__(self, urdb, authorizer):
+    def __init__(self, db, authorizer):
         resource.Resource.__init__(self)
-        self.urdb = urdb
+        self.db = db
         self.authorizer = authorizer
 
 
@@ -33,13 +34,11 @@ class InsertResource(resource.Resource):
             request.finish()
 
         def insertError(error):
-            from sgas.common import couchdb
-            log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
+            from sgas.database import error as dberror
+            log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.server.InsertResource')
 
             error_msg = error.getErrorMessage()
-            if error.check(couchdb.DocumentAlreadyExistsError):
-                request.setResponseCode(409) # conflict
-            elif error.check(couchdb.DatabaseUnavailableError):
+            if error.check(dberror.DatabaseUnavailableError):
                 request.setResponseCode(503) # service unavailable
                 error_msg = 'Database currently unavailable. Please try again later.'
             else:
@@ -64,7 +63,7 @@ class InsertResource(resource.Resource):
 
         request.content.seek(0)
         ur_data = request.content.read()
-        d = self.urdb.insertUsageRecords(ur_data, identity=subject, hostname=hostname)
+        d = self.db.insert(ur_data, insert_identity=subject, insert_hostname=hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
 

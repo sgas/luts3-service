@@ -13,7 +13,7 @@ from twisted.internet import defer, reactor
 from twisted.web import error as weberror
 
 from sgas.common import couchdb
-from sgas.server import database, setup
+from sgas.server import setup
 
 from . import rclient, ursampledata
 
@@ -29,51 +29,42 @@ class FakeAuthorizer:
 
 
 
-class ResourceTest(unittest.TestCase):
+class ResourceTest:
 
     port = 6180
 
     @defer.inlineCallbacks
     def setUp(self):
-        config = json.load(file(SGAS_TEST_FILE))
-        # convert unicode to regular strings, as the sedna module requires this
-        url = str(config['db.url'])
-        base_url, self.db_name = url.rsplit('/', 1)
-
-        self.cdc = couchdb.CouchDB(base_url)
-        self.cdb = yield self.cdc.createDatabase(self.db_name)
-        self.ur_db = yield database.UsageRecordDatabase(self.cdb)
-
-        site = setup.createSite(self.ur_db, FakeAuthorizer(), '/tmp') # don't use views
-
+        # self.db should be created by subclass
+        site = setup.createSite(self.db, FakeAuthorizer(), '/tmp') # no views
         self.iport = reactor.listenTCP(self.port, site)
-
         self.service_url = 'http://localhost:%i/sgas' % self.port
+        yield defer.succeed(None)
 
 
     @defer.inlineCallbacks
     def tearDown(self):
         yield self.iport.stopListening()
-        yield self.cdc.deleteDatabase(self.db_name)
 
 
     @defer.inlineCallbacks
-    def testInsertRetrieval(self):
+#    def testInsertRetrieval(self):
+    def testInsert(self):
         insert_url = self.service_url + '/ur'
 
         d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
         r = yield d
         self.failUnlessEqual(f.status, '200')
 
-        d = json.loads(r)
-        record_id = str(d.values()[0]['id'])
-        ur_url = insert_url + '/recordid/' + record_id
-
-        d, f = rclient.httpRequest(ur_url, method='GET')
-        r = yield d
-        self.failUnlessEqual(f.status, '200')
-        d = json.loads(r)
-        self.failUnlessEqual(record_id, d['_id'])
+#        d = json.loads(r)
+#        record_id = str(d.values()[0]['id'])
+#        ur_url = insert_url + '/recordid/' + record_id
+#
+#        d, f = rclient.httpRequest(ur_url, method='GET')
+#        r = yield d
+#        self.failUnlessEqual(f.status, '200')
+#        d = json.loads(r)
+#        self.failUnlessEqual(record_id, d['_id'])
 
 
     @defer.inlineCallbacks
@@ -119,4 +110,62 @@ class ResourceTest(unittest.TestCase):
 #            self.fail('Request should have failed with 503')
 #        except weberror.Error, e:
 #            self.failUnlessEqual(e.status, '503')
+
+
+
+
+class CouchDBResourceTest(ResourceTest, unittest.TestCase):
+
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        from sgas.database.couchdb import database, couchdbclient
+
+        config = json.load(file(SGAS_TEST_FILE))
+        url = str(config['couchdb.url'])
+
+        base_url, self.couch_database_name = url.rsplit('/', 1)
+
+        self.couchdb = couchdbclient.CouchDB(base_url)
+        _ = yield self.couchdb.createDatabase(self.couch_database_name)
+
+        self.db = database.CouchDBDatabase(url)
+        yield ResourceTest.setUp(self)
+
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        yield ResourceTest.tearDown(self)
+        yield self.couchdb.deleteDatabase(self.couch_database_name)
+
+
+
+class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
+
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        from twisted.enterprise import adbapi
+        from sgas.database.postgresql import database
+
+        config = json.load(file(SGAS_TEST_FILE))
+        db_url = config['postgresql.url']
+
+        self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
+        self.db = database.PostgreSQLDatabase(db_url)
+        yield ResourceTest.setUp(self)
+
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        yield ResourceTest.tearDown(self)
+        # delete all ur rows in the database
+        delete_stms = \
+        "TRUNCATE usagedata;"               + \
+        "TRUNCATE globalusername CASCADE;"  + \
+        "TRUNCATE insertidentity CASCADE;"  + \
+        "TRUNCATE machinename    CASCADE;"  + \
+        "TRUNCATE voinformation  CASCADE;"
+#        yield self.postgres_dbpool.runOperation(delete_stms)
+        yield self.postgres_dbpool.close()
 
