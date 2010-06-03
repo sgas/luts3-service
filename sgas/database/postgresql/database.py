@@ -35,12 +35,22 @@ class PostgreSQLDatabase:
                                                                   insert_identity=insert_identity,
                                                                   insert_hostname=insert_hostname)
             result = yield self.dbpool.runQuery(insert_stms)
-            db_ids = [ r.get('urcreate', None) for r in result ]
-            defer.returnValue(db_ids)
+            # getting results from functions is a bit strange...
+            id_dict = dict( [ r[0][1:-1].rsplit(',',2) for r in result ] )
+            for k,v in id_dict.items():
+                if v.isdigit():
+                    id_dict[k] = int(v)
+            defer.returnValue(id_dict)
         except libpq.DatabaseError, e:
-            if 'Connection refused' in e.message:
-                raise error.DatabaseUnavailableError(e.message)
+            #if 'Connection refused' in e.message:
+            if 'Connection refused' in str(e):
+                raise error.DatabaseUnavailableError(str(e))
             raise # re-raise current exception
+        except Exception, e:
+            print e
+            log.msg('Unexpected database error')
+            log.error(r)
+            raise
 
 
     @defer.inlineCallbacks

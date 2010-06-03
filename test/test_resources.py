@@ -48,7 +48,6 @@ class ResourceTest:
 
 
     @defer.inlineCallbacks
-#    def testInsertRetrieval(self):
     def testInsert(self):
         insert_url = self.service_url + '/ur'
 
@@ -56,15 +55,10 @@ class ResourceTest:
         r = yield d
         self.failUnlessEqual(f.status, '200')
 
-#        d = json.loads(r)
-#        record_id = str(d.values()[0]['id'])
-#        ur_url = insert_url + '/recordid/' + record_id
-#
-#        d, f = rclient.httpRequest(ur_url, method='GET')
-#        r = yield d
-#        self.failUnlessEqual(f.status, '200')
-#        d = json.loads(r)
-#        self.failUnlessEqual(record_id, d['_id'])
+        # check that we got proper result with internal db representation
+        ids = json.loads(r)
+        self.failUnlessEqual(len(ids), 1)
+        self.failUnlessIn(ursampledata.UR1_ID, ids)
 
 
     @defer.inlineCallbacks
@@ -74,15 +68,10 @@ class ResourceTest:
         yield self.iport.stopListening()
 
         # setup a new service with the "bad" database
-
-        cdb = couchdb.Database('http://localhost:9999/nosuchdb')
-        views = { 'testview' : view.ViewDefinition('testview', 'fakedesign', 'fakeview') }
-        ur_db = yield database.UsageRecordDatabase(cdb, views)
-
-        site = setup.createSite(ur_db, FakeAuthorizer(), '/tmp')
+        site = setup.createSite(self.bad_db, FakeAuthorizer(), '/tmp')
         self.iport = reactor.listenTCP(self.port, site)
 
-        # -- start the actual test
+        # the actual test
 
         insert_url = self.service_url + '/ur'
         d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
@@ -92,25 +81,23 @@ class ResourceTest:
         except weberror.Error, e:
             self.failUnlessEqual(e.status, '503')
 
-        ur_url = self.service_url + '/ur/recordid/abcdef123456'
-        d, f = rclient.httpRequest(ur_url, method='GET')
-        try:
-            r = yield d
-            self.fail('Request should have failed with 503')
-        except weberror.Error, e:
-            self.failUnlessEqual(e.status, '503')
+        # fetching individual usage records is currently not supported
+        #ur_url = self.service_url + '/ur/recordid/abcdef123456'
+        #d, f = rclient.httpRequest(ur_url, method='GET')
+        #try:
+        #    r = yield d
+        #    self.fail('Request should have failed with 503')
+        #except weberror.Error, e:
+        #    self.failUnlessEqual(e.status, '503')
 
-    testUnavailableDatabase.skip = 'View is broken right now'
-
-# for some reason this fails
-#        view_url = self.service_url + '/view/testview'
-#        d, f = rclient.httpRequest(view_url, method='GET')
-#        try:
-#            r = yield d
-#            self.fail('Request should have failed with 503')
-#        except weberror.Error, e:
-#            self.failUnlessEqual(e.status, '503')
-
+        # new view engine not ready
+        #view_url = self.service_url + '/view/testview'
+        #d, f = rclient.httpRequest(view_url, method='GET')
+        #try:
+        #    r = yield d
+        #    self.fail('Request should have failed with 503')
+        #except weberror.Error, e:
+        #    self.failUnlessEqual(e.status, '503')
 
 
 
@@ -130,6 +117,9 @@ class CouchDBResourceTest(ResourceTest, unittest.TestCase):
         _ = yield self.couchdb.createDatabase(self.couch_database_name)
 
         self.db = database.CouchDBDatabase(url)
+        # for unavailable test
+        self.bad_db = database.CouchDBDatabase('http://localhost:9999/nosuchdb')
+
         yield ResourceTest.setUp(self)
 
 
@@ -152,8 +142,13 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         db_url = config['postgresql.url']
 
         self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
+
         self.db = database.PostgreSQLDatabase(db_url)
+        # for unavalable test
+        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:")
+
         yield ResourceTest.setUp(self)
+
 
 
     @defer.inlineCallbacks
