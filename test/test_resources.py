@@ -166,6 +166,6 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         "TRUNCATE insertidentity CASCADE;"  + \
         "TRUNCATE machinename    CASCADE;"  + \
         "TRUNCATE voinformation  CASCADE;"
-#        yield self.postgres_dbpool.runOperation(delete_stms)
+        yield self.postgres_dbpool.runOperation(delete_stms)
         yield self.postgres_dbpool.close()
 
