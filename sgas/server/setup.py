@@ -6,10 +6,9 @@ import os.path
 from twisted.application import internet, service
 from twisted.web import resource, server
 
-from sgas.common import couchdb
-from sgas.server import config, database, ssl, authz, \
+from sgas.server import config, ssl, authz, \
                         topresource, insertresource, recordidresource, viewresource, staticresource
-from sgas.viewengine import customview, chunks
+#from sgas.viewengine import customview, chunks
 
 
 # -- constants
@@ -28,16 +27,17 @@ class ConfigurationError(Exception):
 
 
 
-def createSite(ur_db, authz, web_files_path):
+def createSite(db, authz, web_files_path):
 
-    rr = insertresource.InsertResource(ur_db, authz)
-    rr.putChild('recordid', recordidresource.RecordIDResource(ur_db))
+    rr = insertresource.InsertResource(db, authz)
+#    rr.putChild('recordid', recordidresource.RecordIDResource(db))
 
-    vr = viewresource.ViewTopResource(ur_db, authz)
+#    vr = viewresource.ViewTopResource(db, authz)
 
     tr = topresource.TopResource(authz)
-    tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
-    tr.registerService(vr, 'view', (('View', 'view'),))
+    tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
+#    tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
+#    tr.registerService(vr, 'view', (('View', 'view'),))
 
     sr = staticresource.StaticResource(web_files_path)
 
@@ -67,8 +67,14 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
             raise ConfigurationError('Configured certificate directory does not exist')
 
     # setup server
-
-    cdb = couchdb.Database(cfg.get(config.SERVER_BLOCK, config.DB))
+    db_url = cfg.get(config.SERVER_BLOCK, config.DB)
+    if db_url.startswith('http'):
+        from sgas.database.couchdb import database
+        db = database.CouchDBDatabase(db_url)
+    else:
+        from sgas.database.postgresql import database
+        db = database.PostgreSQLDatabase(db_url)
+#    cdb = couchdb.Database(cfg.get(config.SERVER_BLOCK, config.DB))
 
     view_specs = {}
     for block in cfg.sections():
@@ -76,18 +82,18 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
             view_name = block.split(':',1)[-1]
             view_specs[view_name] = dict(cfg.items(block))
 
-    chunk_manager = None
-    ci_design = cfg.get(config.SERVER_BLOCK, config.COREINFO_DESIGN, None)
-    ci_view   = cfg.get(config.SERVER_BLOCK, config.COREINFO_VIEW, None)
-    if ci_design and ci_view:
-        chunk_manager = chunks.InformationChunkManager(cdb, ci_design, ci_view)
-    views = dict([ (view_name,customview.createCustomView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
-    ur_db = database.UsageRecordDatabase(cdb, chunk_manager, views)
+#    chunk_manager = None
+#    ci_design = cfg.get(config.SERVER_BLOCK, config.COREINFO_DESIGN, None)
+#    ci_view   = cfg.get(config.SERVER_BLOCK, config.COREINFO_VIEW, None)
+#    if ci_design and ci_view:
+#        chunk_manager = chunks.InformationChunkManager(cdb, ci_design, ci_view)
+#    views = dict([ (view_name,customview.createCustomView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
+#    ur_db = database.UsageRecordDatabase(cdb, chunk_manager, views)
 
     az = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
     web_files_path = cfg.get(config.SERVER_BLOCK, config.WEB_FILES)
 
-    site = createSite(ur_db, az, web_files_path)
+    site = createSite(db, az, web_files_path)
 
     # setup application
     application = service.Application("sgas")
