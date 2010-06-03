@@ -13,7 +13,7 @@ from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.server import authz
-from sgas.database import error
+from sgas.database import error as dberror
 
 
 
@@ -34,7 +34,6 @@ class InsertResource(resource.Resource):
             request.finish()
 
         def insertError(error):
-            from sgas.database import error as dberror
             log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.server.InsertResource')
 
             error_msg = error.getErrorMessage()

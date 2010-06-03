@@ -9,12 +9,13 @@ from pyPgSQL import libpq, PgSQL
 
 from zope.interface import implements
 
+from twisted.python import log
 from twisted.internet import defer
+from twisted.enterprise import adbapi 
 
 from sgas.database import ISGASDatabase, error, queryparser
 from sgas.database.postgresql import urparser, queryengine
 
-from twisted.enterprise import adbapi 
 
 
 
