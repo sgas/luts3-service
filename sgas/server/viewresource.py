@@ -11,8 +11,8 @@ import urllib
 from twisted.python import log
 from twisted.web import resource, server
 
-from sgas.common import couchdb
-from sgas.server import authz, convert, database, viewresourcehelper
+from sgas.database import error as dberror
+from sgas.server import authz, convert, viewresourcehelper
 
 
 JSON_MIME_TYPE = 'application/json'
@@ -58,16 +58,7 @@ def getReturnMimeType(request):
 # generic error handler
 def handleViewError(error, request, view_name):
     error_msg = error.getErrorMessage()
-    if error.check(database.InvalidViewError):
-        request.setResponseCode(404)
-        request.write(error.getErrorMessage())
-    elif error.check(couchdb.InvalidViewError):
-        log.msg('Error accessing view specified in view definition %s' % view_name, system='sgas.viewresource')
-        log.msg('This is probably an error in the configuration or a view that has not been created', system='sgas.viewresource')
-        log.err(error)
-        request.setResponseCode(500)
-        error_msg = 'Error accessing view in database (punch the admin)'
-    elif error.check(couchdb.DatabaseUnavailableError):
+    if error.check(dberror.DatabaseUnavailableError):
         error.printTraceback()
         log.err(error)
         request.setResponseCode(503)

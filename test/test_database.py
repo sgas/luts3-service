@@ -9,8 +9,6 @@ import os
 from twisted.trial import unittest
 from twisted.internet import defer
 
-from sgas.server import database
-
 from . import ursampledata
 
 

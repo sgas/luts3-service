@@ -4,7 +4,7 @@ import json
 from twisted.internet import defer
 from twisted.trial import unittest
 
-from sgas.common import couchdb
+from sgas.database.couchdb import couchdbclient
 
 
 
@@ -27,13 +27,13 @@ class CouchDBTest(unittest.TestCase):
     @defer.inlineCallbacks
     def testUnavailability(self):
 
-        couch = couchdb.CouchDB('http://localhost:9999')
+        couch = couchdbclient.CouchDB('http://localhost:9999')
 
         try:
             db = yield couch.createDatabase('phony')
             self.fail('Should have failed with DatabaseNotAvailableError')
 
-        except couchdb.DatabaseUnavailableError:
+        except couchdbclient.DatabaseUnavailableError:
             pass
 
 
@@ -41,7 +41,7 @@ class CouchDBTest(unittest.TestCase):
     def testEverything(self):
 
         #couch = couchdb.CouchDB('http://localhost:5984/')
-        couch = couchdb.CouchDB(self.base_url)
+        couch = couchdbclient.CouchDB(self.base_url)
 
         try:
             db = yield couch.createDatabase(self.db_name)
