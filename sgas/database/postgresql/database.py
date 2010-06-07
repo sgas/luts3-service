@@ -36,11 +36,12 @@ class PostgreSQLDatabase:
                                                                   insert_identity=insert_identity,
                                                                   insert_hostname=insert_hostname)
             result = yield self.dbpool.runQuery(insert_stms)
-            # getting results from functions is a bit strange...
-            id_dict = dict( [ r[0][1:-1].rsplit(',',2) for r in result ] )
-            for k,v in id_dict.items():
-                if v.isdigit():
-                    id_dict[k] = int(v)
+            id_dict = {}
+            for r in result:
+                record_id, row_id = r.get('urcreate')
+                assert record_id.startswith('0:1]={') # bad array parser in pyPgSQL
+                record_id = record_id.replace('0:1]={','')
+                id_dict[record_id] = row_id
             defer.returnValue(id_dict)
         except libpq.DatabaseError, e:
             #if 'Connection refused' in e.message:
@@ -50,7 +51,7 @@ class PostgreSQLDatabase:
         except Exception, e:
             print e
             log.msg('Unexpected database error')
-            log.error(r)
+            log.err(r)
             raise
 
 
