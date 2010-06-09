@@ -5,17 +5,22 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-from pyPgSQL import libpq, PgSQL
+import decimal
+
+import psycopg2
 
 from zope.interface import implements
 
 from twisted.python import log
 from twisted.internet import defer
-from twisted.enterprise import adbapi 
+from twisted.enterprise import adbapi
 
 from sgas.database import ISGASDatabase, error, queryparser
 from sgas.database.postgresql import urparser, queryengine
 
+
+
+DEFAULT_POSTGRESQL_PORT = 5432
 
 
 
@@ -25,33 +30,43 @@ class PostgreSQLDatabase:
 
     def __init__(self, connect_info):
 
-        self.dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', connect_info)
+        args = [ e or None for e in connect_info.split(':') ]
+        host, port, database, user, password, _ = args
+        if port is None:
+            port = DEFAULT_POSTGRESQL_PORT
+        self.dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
 
 
     @defer.inlineCallbacks
     def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None):
         # inserts usage record
+        arg_list = urparser.buildArgList(usagerecord_data, insert_identity=insert_identity, insert_hostname=insert_hostname)
         try:
-            insert_stms = urparser.usageRecordsToInsertStatements(usagerecord_data,
-                                                                  insert_identity=insert_identity,
-                                                                  insert_hostname=insert_hostname)
-            result = yield self.dbpool.runQuery(insert_stms)
             id_dict = {}
-            for r in result:
-                record_id, row_id = r.get('urcreate')
-                assert record_id.startswith('0:1]={') # bad array parser in pyPgSQL
-                record_id = record_id.replace('0:1]={','')
-                id_dict[record_id] = row_id
-            defer.returnValue(id_dict)
-        except libpq.DatabaseError, e:
-            #if 'Connection refused' in e.message:
+            conn = adbapi.Connection(self.dbpool)
+            try:
+                trans = adbapi.Transaction(self, conn)
+
+                for args in arg_list:
+                    yield trans.callproc('urcreate', args)
+                    r = yield trans.fetchall()
+                    record_id, row_id = r[0][0]
+                    id_dict[record_id] = str(row_id)
+
+                trans.close()
+                conn.commit()
+                defer.returnValue(id_dict)
+            except:
+                conn.rollback()
+                raise
+
+        except psycopg2.OperationalError, e:
             if 'Connection refused' in str(e):
                 raise error.DatabaseUnavailableError(str(e))
             raise # re-raise current exception
         except Exception, e:
-            print e
             log.msg('Unexpected database error')
-            log.err(r)
+            log.err(e)
             raise
 
 
@@ -61,11 +76,9 @@ class PostgreSQLDatabase:
         def buildValue(value):
             if type(value) in (unicode, str, int, float, bool):
                 return value
-            if isinstance(value, PgSQL.PgNumeric):
-                if value.getPrecision() == 0:
-                    return int(value)
-                else:
-                    return float(value)
+            if isinstance(value, decimal.Decimal):
+                sv = str(value)
+                return int(sv) if sv.isalnum() else float(sv)
             # bad catch-all
             return str(value)
 
