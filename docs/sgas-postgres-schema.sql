@@ -64,6 +64,30 @@ CREATE TABLE usagedata (
 );
 
 
+-- this is the table used for storing aggregated usage information in
+CREATE TABLE uraggregated (
+    execution_time      date,
+    insert_time         date,
+    machine_name        varchar,
+    user_identity       varchar,
+    vo_issuer           varchar,
+    vo_name             varchar,
+    vo_group            varchar,
+    vo_role             varchar,
+    n_jobs               integer,
+    cputime             integer,
+    walltime            integer,
+    generate_time       timestamp
+);
+
+-- this table is used for storing information about which parts
+-- of the aggregartion table that needs to be updated
+CREATE TABLE uraggregated_update (
+    insert_time         date,
+    host                varchar
+);
+
+
 -- embedded function for inserting usage records
 CREATE OR REPLACE FUNCTION urcreate (
     in_record_id               varchar,
@@ -243,6 +267,12 @@ BEGIN
                         in_insert_time
                     )
             RETURNING id into usagerecord_id;
+
+    -- finally we update the table describing what aggregated information should be updated
+    PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND host = in_machine_name;
+    IF NOT FOUND THEN
+        INSERT INTO uraggregated_update (insert_time, host) VALUES (in_insert_time, in_machine_name);
+    END IF;
 
     result[0] = in_record_id;
     result[1] = usagerecord_id;

@@ -185,9 +185,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def triggerAggregateUpdate(self):
         # should update the uraggregate table here
-        from . import postgres
-        yield self.postgres_dbpool.runOperation(postgres.AGGREGATE_STATEMENT)
-        defer.returnValue(None)
+        yield self.db.updater.performUpdate()
 
 
     def setUp(self):
@@ -210,6 +208,8 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         yield self.db.stopService()
         # delete all ur rows in the database
         delete_stms = \
+        "TRUNCATE uraggregated;"            + \
+        "TRUNCATE uraggregated_update;"     + \
         "TRUNCATE usagedata;"               + \
         "TRUNCATE globalusername CASCADE;"  + \
         "TRUNCATE insertidentity CASCADE;"  + \

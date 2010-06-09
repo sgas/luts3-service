@@ -17,7 +17,7 @@ from twisted.enterprise import adbapi
 from twisted.application import service
 
 from sgas.database import ISGASDatabase, error, queryparser
-from sgas.database.postgresql import urparser, queryengine
+from sgas.database.postgresql import urparser, queryengine, updater
 
 
 
@@ -37,15 +37,17 @@ class PostgreSQLDatabase(service.Service):
             port = DEFAULT_POSTGRESQL_PORT
         self.dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
 
+        self.updater = updater.AggregationUpdater(self.dbpool)
+
 
     def startService(self):
         service.Service.startService(self)
-        return defer.succeed(None)
+        return self.updater.startService()
 
 
     def stopService(self):
         service.Service.stopService(self)
-        return defer.succeed(None)
+        return self.updater.stopService()
 
 
     @defer.inlineCallbacks
@@ -66,6 +68,8 @@ class PostgreSQLDatabase(service.Service):
 
                 trans.close()
                 conn.commit()
+                # NOTIFY does not appear to work under adbapi, so we just do the notification here
+                self.updater.updateNotification()
                 defer.returnValue(id_dict)
             except:
                 conn.rollback()
@@ -85,7 +89,7 @@ class PostgreSQLDatabase(service.Service):
     def query(self, selects, filters=None, groups=None, orders=None):
 
         def buildValue(value):
-            if type(value) in (unicode, str, int, float, bool):
+            if type(value) in (unicode, str, int, long, float, bool):
                 return value
             if isinstance(value, decimal.Decimal):
                 sv = str(value)

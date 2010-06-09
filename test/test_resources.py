@@ -143,6 +143,7 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
 
         self.db = database.PostgreSQLDatabase(db_url)
+        yield self.db.startService()
         # for unavalable test
         self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:")
 
@@ -153,6 +154,7 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
     @defer.inlineCallbacks
     def tearDown(self):
         yield ResourceTest.tearDown(self)
+        yield self.db.stopService()
         # delete all ur rows in the database
         delete_stms = \
         "TRUNCATE usagedata;"               + \
