@@ -74,7 +74,6 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
     else:
         from sgas.database.postgresql import database
         db = database.PostgreSQLDatabase(db_url)
-#    cdb = couchdb.Database(cfg.get(config.SERVER_BLOCK, config.DB))
 
     view_specs = {}
     for block in cfg.sections():
@@ -97,6 +96,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
 
     # setup application
     application = service.Application("sgas")
+
+    db.setServiceParent(application)
 
     if use_ssl:
         hostkey  = cfg.get(config.SERVER_BLOCK, config.HOSTKEY)
