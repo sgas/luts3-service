@@ -10,19 +10,30 @@ from zope.interface import implements
 
 from twisted.python import log
 from twisted.internet import defer
+from twisted.application import service
 
 from sgas.database import ISGASDatabase, error
 from sgas.database.couchdb import couchdbclient, urparser
 
 
 
-class CouchDBDatabase:
+class CouchDBDatabase(service.Service):
 
     implements(ISGASDatabase)
 
     def __init__(self, couchdb_url):
 
         self.db = couchdbclient.Database(couchdb_url)
+
+
+    def startService(self):
+        service.Service.startService(self)
+        return defer.succeed(None)
+
+
+    def stopService(self):
+        service.Service.stopService(self)
+        return defer.succeed(None)
 
 
     @defer.inlineCallbacks

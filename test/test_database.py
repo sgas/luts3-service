@@ -155,10 +155,12 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
         self.couch_database = yield self.couch_dbms.createDatabase(self.couch_database_name)
 
         self.db = database.CouchDBDatabase(url)
+        yield self.db.startService()
 
 
     @defer.inlineCallbacks
     def tearDown(self):
+        yield self.db.stopService()
         yield self.couch_dbms.deleteDatabase(self.couch_database_name)
 
 
@@ -200,10 +202,12 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
 
         self.db = database.PostgreSQLDatabase(db_url)
+        return self.db.startService()
 
 
     @defer.inlineCallbacks
     def tearDown(self):
+        yield self.db.stopService()
         # delete all ur rows in the database
         delete_stms = \
         "TRUNCATE usagedata;"               + \

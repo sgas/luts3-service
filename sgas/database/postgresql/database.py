@@ -14,6 +14,7 @@ from zope.interface import implements
 from twisted.python import log
 from twisted.internet import defer
 from twisted.enterprise import adbapi
+from twisted.application import service
 
 from sgas.database import ISGASDatabase, error, queryparser
 from sgas.database.postgresql import urparser, queryengine
@@ -24,7 +25,7 @@ DEFAULT_POSTGRESQL_PORT = 5432
 
 
 
-class PostgreSQLDatabase:
+class PostgreSQLDatabase(service.Service):
 
     implements(ISGASDatabase)
 
@@ -35,6 +36,16 @@ class PostgreSQLDatabase:
         if port is None:
             port = DEFAULT_POSTGRESQL_PORT
         self.dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
+
+
+    def startService(self):
+        service.Service.startService(self)
+        return defer.succeed(None)
+
+
+    def stopService(self):
+        service.Service.stopService(self)
+        return defer.succeed(None)
 
 
     @defer.inlineCallbacks
