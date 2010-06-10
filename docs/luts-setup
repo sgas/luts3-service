@@ -9,66 +9,27 @@ a mechanism for retrieving aggregated information from these.
 * Python 2.5 or later
 * Twisted Core and Web (http://twistedmatrix.com/)
 * PyOpenSSL (https://launchpad.net/pyopenssl)
-* CouchDB 0.9 or later (0.8 will NOT work) (http://couchdb.apache.org/) 0.10 is
-  highly recommended, and will probably be required in future versions.
+* CouchDB or PostgreSQL as backend database.
 
 Debian/Ubuntu:
 
 Python comes stock
 Packages: python-twisted python-twisted-web python-openssl
 
-Karmic includes CouchDB version 0.10, package name: couchdb (universe)
-
-For earlier Ubuntu versions it is possible to install CouchDB 0.9+ manually,
-but using the PPA from James Henstridge is much easier. See:
-https://launchpad.net/~jamesh/+archive/ppa
-
 RedHat / CentOS
 
-Typically the Python version is not new enough, and Python and will have to be
-installed manually with dependencies. See the redhat4-setup file for a detailed
-description.
+Typically the Python version is not new enough (Python 2.6 is recommended, 2.4
+will NOT work, 2.5 might work but is not supported), Python and will have to be
+installed manually with dependencies. See the redhat4-notes file for guides.
 
-Packages: couchdb openssl-devel (for compiling pyopenssl)
-
-Other Linux distribution:
-
-You are on your own.
+Packages: openssl-devel (for compiling pyopenssl)
 
 
-== CouchDB ==
+== Database ==
 
-Before installing SGAS, you'll need to get an instance of CouchDB running.
-
-The actual installation is better covered on the CouchDB homepage, so I'll
-assume that you have it up and running.
-
-Note, CouchDB has no limit on access/authorization, but by default only listens
-on the lo interface, meaning that it can only be reached from the machine
-itself. Hence SGAS should be running on the same machine (it is possible to
-have CouchDB listen on external interface, check the documentation, and
-remember to set your iptables).
-
-Optimize view generation performance a bit by setting the following lines in
-the [couchdb] section in the /etc/couchdb/local.ini file:
-batch_save_size = 20000 ; number of docs at which to save a batch
-batch_save_interval = 20000 ; milliseconds after which to save batches
-
-Open the CouchDB administrative interface (called Futon). This is done by
-pointing a browser at localhost:5984 at CouchDB machine. If you don't have a
-browser (or X tunneling) at the machine, you can use ssh port forwarding:
-
-$ ssh -L 6984:localhost:5984 couchdb.example.org
-
-And then point your browser to http://localhost:6984/_utils/
-
-Once you have access to Futon, create a database. Name doesn't matter, but
-"usagerecords" tends to work fine. The url for accessing the database (to be
-used in the sgas configuration) will then be:
-
-http://localhost:5984/usagerecords
-
-Later you will use Futon for creating views, but first lets get SGAS running.
+See couchdb-setup for CouchDB setup or postgres-setup for PostgreSQL setup.
+You only need to install one of them. The CouchDB backend is more well tested
+than the PostgreSQL one, but PostgreSQL is probably the future for SGAS.
 
 
 == Installation & Configuration ==
@@ -79,8 +40,11 @@ Later you will use Futon for creating views, but first lets get SGAS running.
 
 Edit /etc/sgas.conf, the main settings you should worry about is:
 
-# db.url - where to find the database, e.g.,
+# db.url - where to find the database. For CouchDB:
 db.url=http://localhost:5984/usagerecords
+For PostgreSQL:
+db.url=localhost::sgas:sgas:sgas-password:
+(first sgas is database, second is user)
 
 # where to get js/css files (required for html views)
 webfiles=/usr/share/sgas/webfiles
@@ -96,16 +60,4 @@ actions. Subject names must in "", so a line would look like this:
 which will allow retrieval of individual usage records, and access to all views
 for the identity. You probably want to set who can insert usage records, and
 who can access views.
-
-
-== Views ==
-
-You probably want to setup some views in order to get high-level information
-about the usage record data.
-
-See docs/views for more information about setting up views.
-
-Just inserting usage records in itself is rather useless. In order to provide
-high level information about the usage record data, you should configure a set
-of views. This is a bit complicated so it has its own file.
 
