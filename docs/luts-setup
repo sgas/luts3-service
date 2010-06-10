@@ -41,9 +41,9 @@ than the PostgreSQL one, but PostgreSQL is probably the future for SGAS.
 Edit /etc/sgas.conf, the main settings you should worry about is:
 
 # db.url - where to find the database. For CouchDB:
-db.url=http://localhost:5984/usagerecords
+db=http://localhost:5984/usagerecords
 For PostgreSQL:
-db.url=localhost::sgas:sgas:sgas-password:
+db=localhost::sgas:sgas:sgas-password:
 (first sgas is database, second is user)
 
 # where to get js/css files (required for html views)

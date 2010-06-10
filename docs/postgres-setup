@@ -19,8 +19,8 @@ $ psql -U postgres -d postgres < /usr/share/postgresql/8.4/contrib/adminpack.sql
 $ createdb sgas
 $ createlang plpgsql sgas
 $ psql sgas
-sgas=# CREATE USER 'sgas' PASSWORD 'sgas-password';
-sgas=# \i /usr/share/sgas/postgres/sgas-postgres-schema.sql
+sgas=# CREATE USER sgas PASSWORD 'sgas-password';
+sgas=# \i /usr/local/share/sgas/postgres/sgas-postgres-schema.sql
 sgas=# \q
 
 # please remember use another password
