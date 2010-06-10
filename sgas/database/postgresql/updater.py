@@ -15,10 +15,10 @@ Copyright: Nordic Data Grid Facility (2010)
 """
 
 from twisted.python import log
-from twisted.internet import defer, reactor, task
+from twisted.internet import defer, reactor
 from twisted.application import service
 
-from sgas.database import error
+
 
 UPDATE_INFO_QUERY = '''SELECT * FROM uraggregated_update'''
 TRUNCATE_UPDATE_TABLE = '''TRUNCATE uraggregated_update'''
@@ -85,6 +85,10 @@ class AggregationUpdater(service.Service):
 
     def startService(self):
         service.Service.startService(self)
+        # we might have been shutdown while some updates where pending,
+        # or some records could have been inserted outside SGAS, so we
+        # always schedule an update when starting
+        self.scheduleUpdate()
         return defer.succeed(None)
 
 
