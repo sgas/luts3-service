@@ -5,7 +5,7 @@ This document covers setting up PostgreSQL as a backend for SGAS.
 
 In Debian / Ubuntu:
 
-$ sudo apt-get install postgresql postgrsql-contrib
+$ sudo apt-get install postgresql postgresql-contrib
 
 
 2. Setup Database:
