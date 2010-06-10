@@ -38,8 +38,14 @@ INSERT INTO uraggregated SELECT
         THEN (machine_name || ':' || local_user_id)
         ELSE global_user_name
     END                                 AS user_identity,
-        vo_issuer AS vo_issuer,
-        vo_name AS vo_name,
+    CASE WHEN vo_issuer LIKE 'file:///%%'
+        THEN NULL
+        ELSE vo_issuer
+    END                                 AS vo_issuer,
+    CASE WHEN vo_name LIKE '/%%'
+        THEN NULL
+        ELSE vo_name
+    END                                 AS vo_name,
     vo_attributes[1][1]                 AS vo_group,
     vo_attributes[1][2]                 AS vo_role,
     count(*)                            AS n_jobs,
@@ -130,14 +136,13 @@ class AggregationUpdater(service.Service):
             rows = yield self.dbpool.runQuery(UPDATE_INFO_QUERY)
             n_rows = len(rows)
             #print 'Updates: %i to be performed' % n_rows
+            # this strategy may need to be updated at some time...
             for row in rows:
                 insert_date, machine_name = row
                 insert_date = str(insert_date)
 
                 yield self.dbpool.runOperation(DELETE_AGGREGATED_INFO, (insert_date, machine_name))
                 yield self.dbpool.runOperation(UPDATE_AGGREGATED_INFO, (insert_date, machine_name))
-                #stm = UPDATE_AGGREGATED_INFO.replace('\n', ' ').replace('  ', ' ')
-                #yield self.dbpool.runOperation(stm, (insert_date, machine_name))
 
             yield self.dbpool.runOperation(TRUNCATE_UPDATE_TABLE)
 
