@@ -1,3 +1,7 @@
+// This file is NOT a view
+// It shows a example of how a ur document in CouchDB would be structured
+// This is often handy as a reference when creating views.
+
 {'_id': 'af04d0ee3f36f1bfb8ac60ed660186c4ff16394d22baf9112c5b1d56',
  '_rev': '1-580ec265d53eec01dd2c49e1c05cf2e0',
  'charge': 11432.74,
