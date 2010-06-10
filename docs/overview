@@ -1,4 +1,7 @@
-This document intends to gave an overview of the SGAS LUTS system.
+This document provides an overview of the SGAS LUTS accounting system.
+
+For instructions on installation, see the luts-setup file.
+
 
 The SGAS LUTS system is intended for accounting infrastructure in grid and HPC
 systems.
@@ -11,9 +14,10 @@ systems.
 * Usage Record
 
 An XML document adhering the OGF-98 standard. The document describes the job
-and consumed resource for a job run on a grid or cluster. Most accounting
+and consumed resource for a job executed on a grid or cluster. Most accounting
 systems use a number of extensions for the OGF standard to describe additional
-information.
+information. The file UR-extensions provide an overview of the extensions used
+in SGAS.
 
 Usage Records is typically abbreviated to UR.
 
@@ -72,13 +76,25 @@ views (can be done via browser or view data can be fetched using ordinary HTTP
 client libraries).
 
 The LUTS service is essentially a thin wrapper over a database (the server code
-is only ~1500 lines). It performs mainly authorization and data transformation.
+is only ~2500 lines). It performs mainly authorization and data transformation.
 Proxy certificates are not yet supported, but host certificates (for
-registration), and ordinary grid user certificates (for accessing view in in the
-browser), works fine.
+registration), and ordinary grid user certificates (for accessing view in in
+the browser), works fine.
 
-The underlying database is CouchDB, a document-oriented JSON database. It has a
-web page at: http://couchdb.apache.org/
+SGAS currently supports two backend databases: CouchDB and PostgreSQL.
+
+CouchDB is a a document-oriented JSON database. Web page:
+http://couchdb.apache.org/. The CouchDB backend is deployed several places and
+very stable. CouchDB however has problems when performing queries for large
+amounts of data. It is also somewhat space hungry.
+
+PostgreSQL is relational database. Webpage: http://www.postgresql.org/ The
+PostgreSQL backend is never and not ye well tested. PostgreSQL handles large
+amounts of data much better than CouchDB, but is not particular flexible. It is
+probably the future database backend for SGAS.
+
+Note: A lot of the text in this document has not been updated since CouchDB was
+the only backend for SGAS.
 
 
 * Insertion
