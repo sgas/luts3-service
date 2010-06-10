@@ -1,11 +1,12 @@
 This document covers setting up PostgreSQL as a backend for SGAS.
 
 
-1. Install PostgreSQL and contrib package.
+1. Install PostgreSQL, PostgreSQL Contrib, and Psycopg2 (PostgreSQL Python
+client)
 
 In Debian / Ubuntu:
 
-$ sudo apt-get install postgresql postgresql-contrib
+$ sudo apt-get install postgresql postgresql-contrib python-psycopg2
 
 
 2. Setup Database:
@@ -18,8 +19,11 @@ $ psql -U postgres -d postgres < /usr/share/postgresql/8.4/contrib/adminpack.sql
 # create the database, user, and schema
 $ createdb sgas
 $ createlang plpgsql sgas
+
+# Note: the following commands MUST be done by the SGAS database user,
+# not the postgresql administrative user.
 $ psql sgas
-sgas=# CREATE USER sgas PASSWORD 'sgas-password';
+sgas=# CREATE USER root PASSWORD 'db-password';
 sgas=# \i /usr/local/share/sgas/postgres/sgas-postgres-schema.sql
 sgas=# \q
 
