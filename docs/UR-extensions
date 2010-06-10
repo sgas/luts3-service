@@ -1,6 +1,7 @@
-SGAS features a number of extensions to the UR format.
+SGAS features a number of extensions to the UR format, as defined in the GFD-98
+format recommendation. This file documents the extensions.
 
-There are three namespaces / extention groups:
+There are three namespaces / extensions groups:
 
 
 * DEISA Submit time
