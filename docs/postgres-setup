@@ -1,0 +1,50 @@
+This document covers setting up PostgreSQL as a backend for SGAS.
+
+
+1. Install PostgreSQL and contrib package.
+
+In Debian / Ubuntu:
+
+$ sudo apt-get install postgresql postgrsql-contrib
+
+
+2. Setup Database:
+
+# these steps should be done as the postgres system user
+
+# Enable some adminstrative things, needed for pgadmin3
+$ psql -U postgres -d postgres < /usr/share/postgresql/8.4/contrib/adminpack.sql
+
+# create the database, user, and schema
+$ createdb sgas
+$ createlang plpgsql sgas
+$ psql sgas
+sgas=# CREATE USER 'sgas' PASSWORD 'sgas-password';
+sgas=# \i /usr/share/sgas/postgres/sgas-postgres-schema.sql
+sgas=# \q
+
+# please remember use another password
+
+
+3. Optimizations
+
+None of these steps are necessary, but are provided as an easy way to solve
+some performance problems. Note that setting these settings without having
+performance problems will just result in PostgreSQL using more memory.
+
+The following parameters should be set in the postgresql.conf file, typically
+located at: /etc/postgresql/8.4/main/postgresql.conf or similar.
+
+Parameters:
+
+work_mem=16MB           # good if performing large GROUP BY statements
+                        # even higher,e.g., 64-128 MB can be good.
+
+shared_buffers = 64MB   # this is essentially disk cache, good if you have
+                        # I/O problems. Note that for setting it higher
+                        # than 28-30 MB requires changing a kernel/sysctl
+                        # parameter.
+
+If you have additional suggestions for performance improvements, please mail me
+at htj _at_ ndgf.org. Thanks.
+
