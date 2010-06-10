@@ -5,6 +5,7 @@
 # Copyright: Nordic Data Grid Facility (2009, 2010)
 
 import os
+import time
 
 from twisted.trial import unittest
 from twisted.internet import defer
@@ -217,5 +218,33 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         "TRUNCATE voinformation  CASCADE;"
         yield self.postgres_dbpool.runOperation(delete_stms)
         yield self.postgres_dbpool.close()
+
+
+    @defer.inlineCallbacks
+    def testUpdateAfterSingleInsert(self):
+
+        doc_ids = yield self.db.insert(ursampledata.UR1)
+
+        rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
+
+        self.failUnlessEqual(len(rows), 1)
+
+        # do the date dance!
+        gmt = time.gmtime()
+        date = '%s-%s-%s' % (gmt.tm_mday, gmt.tm_mon, gmt.tm_year)
+        mxd = rows[0][0]
+        row_date = '%s-%s-%s' % (mxd.day, mxd.month, mxd.year)
+
+        self.failUnlessEqual( [ (row_date, rows[0][1]) ], [ (date, 'benedict.grid.aau.dk') ])
+
+
+    @defer.inlineCallbacks
+    def testUpdateAfterTrigger(self):
+
+        doc_ids = yield self.db.insert(ursampledata.CUR)
+        yield self.triggerAggregateUpdate()
+
+        rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
+        self.failUnlessEqual(len(rows), 0)
 
 
