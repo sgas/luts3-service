@@ -24,13 +24,13 @@ cmdclasses = {'install_data': InstallSGASData}
 
 
 setup(name='sgas-luts-service',
-      version='3.1.0-svn',
+      version='3.1.1-svn',
       description='SGAS LUTS Accounting Server',
       author='Henrik Thostrup Jensen',
       author_email='htj@ndgf.org',
       url='http://www.sgas.se/',
-      packages=['sgas', 'sgas/common', 'sgas/server', 'sgas/viewengine',
-                'sgas/ext', 'sgas/ext/isodate'],
+      packages=['sgas', 'sgas/database', 'sgas/database/couchdb', 'sgas/database/postgresql',
+                'sgas/ext', 'sgas/ext/isodate', 'sgas/server', 'sgas/usagerecord', 'sgas/viewengine'],
 
       cmdclass = cmdclasses,
 
@@ -40,6 +40,8 @@ setup(name='sgas-luts-service',
                                         'datafiles/share/webfiles/css/view.visualize.css']),
           ('share/sgas/webfiles/js',   ['datafiles/share/webfiles/js/jquery-1.3.2.min.js',
                                         'datafiles/share/webfiles/js/visualize.jQuery.js']),
+          ('share/sgas/postgres',      ['datafiles/share/postgresql/docs/sgas-postgres-schema.sql',
+                                        'datafiles/share/postgresql/docs/sgas-postgres-schema-drop.sql']),
           ('/etc/init.d',              ['datafiles/etc/sgas']),
           ('/etc/',                    ['datafiles/etc/sgas.conf']),
           ('/etc/',                    ['datafiles/etc/sgas.authz'])
