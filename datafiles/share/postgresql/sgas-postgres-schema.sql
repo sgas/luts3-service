@@ -2,7 +2,7 @@
 -- The schema is not really designed to follow any normal form, though it does
 -- try to minimize duplicate information by putting out "common" information
 -- into seperate tables. The schema is a star-schema, which are typically
--- fairly good for data mining
+-- fairly good for data mining (but consider using the uraggregate view)
 
 
 CREATE TABLE globalusername (
@@ -269,9 +269,9 @@ BEGIN
             RETURNING id into usagerecord_id;
 
     -- finally we update the table describing what aggregated information should be updated
-    PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND host = in_machine_name;
+    PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND machine_name = in_machine_name;
     IF NOT FOUND THEN
-        INSERT INTO uraggregated_update (insert_time, host) VALUES (in_insert_time, in_machine_name);
+        INSERT INTO uraggregated_update (insert_time, machine_name) VALUES (in_insert_time, in_machine_name);
     END IF;
 
     result[0] = in_record_id;
