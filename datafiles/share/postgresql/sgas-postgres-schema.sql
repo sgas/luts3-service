@@ -84,7 +84,7 @@ CREATE TABLE uraggregated (
 -- of the aggregartion table that needs to be updated
 CREATE TABLE uraggregated_update (
     insert_time         date,
-    host                varchar
+    machine_name        varchar
 );
 
 

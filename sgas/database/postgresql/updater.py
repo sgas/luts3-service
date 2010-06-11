@@ -20,10 +20,10 @@ from twisted.application import service
 
 
 
-UPDATE_INFO_QUERY = '''SELECT * FROM uraggregated_update'''
-TRUNCATE_UPDATE_TABLE = '''TRUNCATE uraggregated_update'''
+AGGREGATE_UPDATE_QUERY = '''SELECT * FROM uraggregated_update'''
 
-DELETE_AGGREGATED_INFO = """DELETE FROM uraggregated_update WHERE insert_time = %s AND host = %s"""
+DELETE_AGGREGATED_UPDATE = '''DELETE FROM uraggregated_update WHERE insert_time = %s AND machine_name = %s'''
+DELETE_AGGREGATED_INFO = '''DELETE FROM uraggregated WHERE insert_time = %s AND machine_name = %s'''
 
 # a nice small insert statement
 UPDATE_AGGREGATED_INFO = '''
@@ -137,7 +137,7 @@ class AggregationUpdater(service.Service):
 
         try:
             # first we get the info for what should be updated
-            rows = yield self.dbpool.runQuery(UPDATE_INFO_QUERY)
+            rows = yield self.dbpool.runQuery(AGGREGATE_UPDATE_QUERY)
             n_rows = len(rows)
             #print 'Updates: %i to be performed' % n_rows
             # this strategy may need to be updated at some time...
@@ -145,10 +145,9 @@ class AggregationUpdater(service.Service):
                 insert_date, machine_name = row
                 insert_date = str(insert_date)
 
+                yield self.dbpool.runOperation(DELETE_AGGREGATED_UPDATE, (insert_date, machine_name))
                 yield self.dbpool.runOperation(DELETE_AGGREGATED_INFO, (insert_date, machine_name))
                 yield self.dbpool.runOperation(UPDATE_AGGREGATED_INFO, (insert_date, machine_name))
-
-            yield self.dbpool.runOperation(TRUNCATE_UPDATE_TABLE)
 
         except Exception, e:
             print e
