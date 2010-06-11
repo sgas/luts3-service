@@ -68,6 +68,7 @@ class PostgreSQLDatabase(service.Service):
 
                 trans.close()
                 conn.commit()
+                log.msg('Database: %i records inserted' % len(id_dict))
                 # NOTIFY does not appear to work under adbapi, so we just do the notification here
                 self.updater.updateNotification()
                 defer.returnValue(id_dict)

@@ -58,6 +58,7 @@ class CouchDBDatabase(service.Service):
             id_result = dict( [ (r['id'], r) for r in result ] )
             # record_id -> document _id (from database)
             return_data = dict( [ (record_id, id_result[id_]['id']) for record_id, id_ in idmap.items() ] )
+            log.msg('Database: %i records inserted' % len(docs))
             defer.returnValue(return_data)
         except couchdbclient.DatabaseUnavailableError, e:
             raise error.DatabaseUnavailableError(str(e))
