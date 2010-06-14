@@ -49,8 +49,10 @@ INSERT INTO uraggregated SELECT
     vo_attributes[1][1]                 AS vo_group,
     vo_attributes[1][2]                 AS vo_role,
     count(*)                            AS n_jobs,
-    SUM(COALESCE(cpu_duration,0))       AS sum_cputime,
-    SUM(COALESCE(wall_duration,0))      AS sum_walltime,
+    SUM(COALESCE(cpu_duration,0))  / 3600.0
+                                        AS sum_cputime,
+    SUM(COALESCE(wall_duration,0)) / 3600.0
+                                        AS sum_walltime,
     now()                               AS generate_time
 FROM
     usagerecords
