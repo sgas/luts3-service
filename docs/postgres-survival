@@ -1,0 +1,31 @@
+A short survival guide to using PostgreSQL with SGAS:
+
+
+## Checking the consistency of the aggregration table
+
+Check that the following two quries give the same result:
+
+SELECT sum(n_jobs) FROM uraggregated;
+
+SELECT count(*) FROM usagerecords ;
+
+If there exist rows in the uraggregated_table, some deviations should exist.
+If the table is empty, the numbers should match EXACTLY!
+
+
+
+## Triggering full aggregation regeneration
+
+Stop sgas.
+
+In the database shell:
+
+TRUNCATE TABLE uraggregated;
+TRUNCATE TABLE uraggregated_update ;
+INSERT INTO uraggregated_update SELECT DISTINCT insert_time::date, machine_name FROM usagerecords;
+
+And start SGAS to trigger the update run.
+
+Technically this can be done with SGAS running, but I don't recommend it.
+
+
