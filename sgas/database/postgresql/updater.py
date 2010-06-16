@@ -36,9 +36,13 @@ INSERT INTO uraggregated SELECT
         THEN NULL
         ELSE vo_issuer
     END,
-    CASE WHEN vo_name LIKE '/%%'
-        THEN NULL
-        ELSE vo_name
+    CASE WHEN vo_name is NULL
+        THEN COALESCE(machine_name || ':' || project_name)
+        ELSE
+            CASE WHEN vo_name LIKE '/%%'
+                THEN NULL
+                ELSE vo_name
+            END
     END,
     vo_attributes[1][1],
     vo_attributes[1][2],
@@ -56,7 +60,14 @@ GROUP BY
     machine_name,
     COALESCE(global_user_name, machine_name || ':' || local_user_id),
     vo_issuer,
-    vo_name,
+    CASE WHEN vo_name is NULL
+        THEN COALESCE(machine_name || ':' || project_name)
+        ELSE
+            CASE WHEN vo_name LIKE '/%%'
+                THEN NULL
+                ELSE vo_name
+            END
+    END,
     vo_attributes
 ;'''
 
