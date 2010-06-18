@@ -25,7 +25,7 @@ CREATE TABLE machinename (
 
 CREATE TABLE insertidentity (
     id                      serial          NOT NULL PRIMARY KEY,
-    insert_identity         varchar(1024)   NOT NULL
+    insert_identity         varchar(1024)   NOT NULL UNIQUE
 );
 
 CREATE TABLE usagedata (
