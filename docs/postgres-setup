@@ -20,14 +20,16 @@ $ psql -U postgres -d postgres < /usr/share/postgresql/8.4/contrib/adminpack.sql
 $ createdb sgas
 $ createlang plpgsql sgas
 
-# Note: the following commands MUST be done by the SGAS database user,
-# not the postgresql administrative user.
+# create user, please remember to use another password
 $ psql sgas
 sgas=# CREATE USER root PASSWORD 'db-password';
+
+# Note: The following commands MUST be done by the SGAS database user,
+#       NOT the postgresql administrative user.
 sgas=# \i /usr/local/share/sgas/postgres/sgas-postgres-schema.sql
+sgas=# \i /usr/local/share/sgas/postgres/sgas-postgres-functions.sql
 sgas=# \q
 
-# please remember use another password
 
 
 3. Optimizations
