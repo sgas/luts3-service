@@ -44,17 +44,39 @@ DECLARE
     voinformation_id        integer;
     machinename_id          integer;
     insertidentity_id       integer;
-    usagerecord_id          integer;
+
+    ur_id                   integer;
+    ur_global_job_id        varchar;
+    ur_machine_name         varchar;
+    ur_insert_time          date;
+
     result                  varchar[];
 BEGIN
     -- first check that we do not have the record already
-    SELECT INTO usagerecord_id id
+    SELECT usagedata.id, global_job_id, machine_name, insert_time::date
+           INTO ur_id, ur_global_job_id, ur_machine_name, ur_insert_time
            FROM usagedata
+               LEFT OUTER JOIN machinename ON (usagedata.machine_name_id = machinename.id)
            WHERE record_id = in_record_id;
     IF FOUND THEN
-        result[0] = in_record_id;
-        result[1] = usagerecord_id;
-        RETURN result;
+        -- this will decide if a record should replace another:
+        -- if the global_job_id of the new record is similar to the global_job_id record
+        -- it is considered identical. Furthermore if the global_job_id and the record_id
+        -- of the incoming record are identical, the record is considered to have minimal
+        -- information, and will not replace the existing record
+        --
+        -- this means that if the incoming record has global_job_id different from the existing
+        -- record (they have the same record_id) and its global_job_id is different from the
+        -- record_id, the new record will replace the existing record (the ELSE block)
+        IF in_global_job_id = ur_global_job_id OR in_global_job_id = in_record_id THEN
+            result[0] = in_record_id;
+            result[1] = ur_id;
+            RETURN result;
+        ELSE
+            -- delete record, mark update, and continue as normal
+            DELETE from usagedata WHERE record_id = in_record_id;
+            INSERT INTO uraggregated_update (insert_time, machine_name) VALUES (ur_insert_time, ur_machine_name);
+        END IF;
     END IF;
 
     -- global user name
@@ -178,7 +200,7 @@ BEGIN
                         insertidentity_id,
                         in_insert_time
                     )
-            RETURNING id into usagerecord_id;
+            RETURNING id into ur_id;
 
     -- finally we update the table describing what aggregated information should be updated
     PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND machine_name = in_machine_name;
@@ -187,10 +209,11 @@ BEGIN
     END IF;
 
     result[0] = in_record_id;
-    result[1] = usagerecord_id;
+    result[1] = ur_id;
     RETURN result;
 
 END;
 $recordid_rowid$
 LANGUAGE plpgsql;
+
 
