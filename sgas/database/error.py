@@ -35,3 +35,10 @@ class DatabaseQueryError(SGASDatabaseError):
     Error raised when a query threw an error.
     """
 
+
+class SecurityError(SGASDatabaseError):
+    """
+    Error raised when the data in the usage record does not match the identity
+    of the inserter, or for another reason not allowed to insert data.
+    """
+

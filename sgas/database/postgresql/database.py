@@ -16,7 +16,7 @@ from twisted.internet import defer
 from twisted.enterprise import adbapi
 from twisted.application import service
 
-from sgas.database import ISGASDatabase, error, queryparser
+from sgas.database import ISGASDatabase, error, queryparser, hostcheck
 from sgas.database.postgresql import urparser, queryengine, updater
 
 
@@ -54,6 +54,9 @@ class PostgreSQLDatabase(service.Service):
     def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None):
         # inserts usage record
         arg_list = urparser.buildArgList(usagerecord_data, insert_identity=insert_identity, insert_hostname=insert_hostname)
+
+        self._checkIdentityConsistency(insert_identity, insert_hostname, arg_list)
+
         try:
             id_dict = {}
             conn = adbapi.Connection(self.dbpool)
@@ -109,4 +112,16 @@ class PostgreSQLDatabase(service.Service):
             results.append( [ buildValue(e) for e in row ] )
 
         defer.returnValue(results)
+
+
+    def _checkIdentityConsistency(self, insert_identity, insert_hostname, arg_list):
+        # check the consistency between machine_name in records and the identity of the inserter
+
+	docs = [ dict(zip(urparser.ARG_LIST, args)) for args in arg_list ]
+
+        fqdn = hostcheck.extractFQDNfromX509Identity(insert_identity)
+
+        for doc in docs:
+            mn = doc.get('machine_name')
+            hostcheck.checkMatch(mn, fqdn)
 
