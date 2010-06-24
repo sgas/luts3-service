@@ -171,13 +171,15 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def fetchUsageRecord(self, record_id):
 
+        import sgas.database.postgresql.urparser as pgurparser
+
         stm = "SELECT * from usagerecords where record_id = %s"
-        res = yield self.postgres_dbpool.runQuery(stm, record_id)
+        res = yield self.postgres_dbpool.runQuery(stm, (record_id,))
 
         if res == []:
             defer.returnValue(None)
         elif len(res) == 1:
-            ur_doc = dict(res[0].items())
+            ur_doc = dict( zip(pgurparser.ARG_LIST, res[0]) )
             defer.returnValue(ur_doc)
         else:
             self.fail('Multiple results returned for a single usage record')
@@ -198,7 +200,11 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         config = json.load(file(SGAS_TEST_FILE))
         db_url = config['postgresql.url']
 
-        self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
+        args = [ e or None for e in db_url.split(':') ]
+        host, port, db, user, password, _ = args
+        if port is None: port = 5432
+
+        self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
         self.db = database.PostgreSQLDatabase(db_url)
         return self.db.startService()

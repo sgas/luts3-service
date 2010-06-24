@@ -140,7 +140,11 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         config = json.load(file(SGAS_TEST_FILE))
         db_url = config['postgresql.url']
 
-        self.postgres_dbpool = adbapi.ConnectionPool('pyPgSQL.PgSQL', db_url)
+        args = [ e or None for e in db_url.split(':') ]
+        host, port, db, user, password, _ = args
+        if port is None: port = 5432
+
+        self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
         self.db = database.PostgreSQLDatabase(db_url)
         yield self.db.startService()
