@@ -29,7 +29,7 @@ class PostgreSQLDatabase(service.Service):
 
     implements(ISGASDatabase)
 
-    def __init__(self, connect_info):
+    def __init__(self, connect_info, check_depth):
 
         args = [ e or None for e in connect_info.split(':') ]
         host, port, database, user, password, _ = args
@@ -38,6 +38,8 @@ class PostgreSQLDatabase(service.Service):
         self.dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
 
         self.updater = updater.AggregationUpdater(self.dbpool)
+
+        self.check_depth = check_depth
 
 
     def startService(self):
@@ -117,11 +119,11 @@ class PostgreSQLDatabase(service.Service):
     def _checkIdentityConsistency(self, insert_identity, insert_hostname, arg_list):
         # check the consistency between machine_name in records and the identity of the inserter
 
-	docs = [ dict(zip(urparser.ARG_LIST, args)) for args in arg_list ]
+        docs = [ dict(zip(urparser.ARG_LIST, args)) for args in arg_list ]
 
         fqdn = hostcheck.extractFQDNfromX509Identity(insert_identity)
 
         for doc in docs:
             mn = doc.get('machine_name')
-            hostcheck.checkMatch(mn, fqdn)
+            hostcheck.checkMatch(mn, fqdn, self.check_depth)
 

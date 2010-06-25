@@ -68,12 +68,17 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
 
     # setup server
     db_url = cfg.get(config.SERVER_BLOCK, config.DB)
+    try:
+        check_depth = int(cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_DEPTH))
+    except ValueError:
+        check_depth = config.DEFAULT_HOSTNAME_CHECK_DEPTH
+
     if db_url.startswith('http'):
         from sgas.database.couchdb import database
-        db = database.CouchDBDatabase(db_url)
+        db = database.CouchDBDatabase(db_url, check_depth)
     else:
         from sgas.database.postgresql import database
-        db = database.PostgreSQLDatabase(db_url)
+        db = database.PostgreSQLDatabase(db_url, check_depth)
 
     view_specs = {}
     for block in cfg.sections():

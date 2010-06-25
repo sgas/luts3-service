@@ -20,6 +20,9 @@ def extractFQDNfromX509Identity(identity):
 
     this function returns the FQDN of the identity.
     """
+    if identity is None:
+        return '.' # this is technically a hostname
+
     tokens = identity.split('/')
 
     if tokens[-2] == 'CN=host':

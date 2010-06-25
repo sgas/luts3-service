@@ -155,7 +155,7 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
         self.couch_dbms = couchdbclient.CouchDB(base_url)
         self.couch_database = yield self.couch_dbms.createDatabase(self.couch_database_name)
 
-        self.db = database.CouchDBDatabase(url)
+        self.db = database.CouchDBDatabase(url, 0)
         yield self.db.startService()
 
 
@@ -206,7 +206,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url)
+        self.db = database.PostgreSQLDatabase(db_url, 0)
         return self.db.startService()
 
 

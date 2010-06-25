@@ -52,6 +52,9 @@ webfiles=/usr/share/sgas/webfiles
 # authorization file
 authzfile=/etc/sgas.authz
 
+# level of depth to check hostname equivalence between ur machine name and insert identity
+check_depth=2
+
 Hereafter edit /etc/sgas.authz to set which identities can perform which
 actions. Subject names must in "", so a line would look like this:
 
