@@ -129,6 +129,17 @@ class AggregationUpdater(service.Service):
             self.update_def = d
             return d
 
+    # -- end scheduling logic
+
+    def _performUpdate(self, txn, insert_date, machine_name):
+        # this is performed outside the main twisted thread and runs in a blocking manner
+        # i.e., no deferreds should be used
+        # furthermore the function is run within a transaction, so if any errors occurs
+        # everything is rolled back
+        txn.execute(DELETE_AGGREGATED_INFO, (insert_date, machine_name))
+        txn.execute(UPDATE_AGGREGATED_INFO, (insert_date, machine_name))
+        txn.execute(DELETE_AGGREGATED_UPDATE, (insert_date, machine_name))
+
 
     @defer.inlineCallbacks
     def update(self):
@@ -147,9 +158,7 @@ class AggregationUpdater(service.Service):
                 insert_date, machine_name = row
                 insert_date = str(insert_date)
 
-                yield self.dbpool.runOperation(DELETE_AGGREGATED_UPDATE, (insert_date, machine_name))
-                yield self.dbpool.runOperation(DELETE_AGGREGATED_INFO, (insert_date, machine_name))
-                yield self.dbpool.runOperation(UPDATE_AGGREGATED_INFO, (insert_date, machine_name))
+                yield self.dbpool.runInteraction(self._performUpdate, insert_date, machine_name)
 
         except Exception, e:
             print e
