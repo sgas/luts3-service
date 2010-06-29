@@ -1,5 +1,25 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.2.0:
+
+New database backend, which adds support for PostgreSQL along with the existing
+CouchDB support. The PostgreSQL backend performs automatic aggregation of the
+usage records.
+
+Better record duplicate detection and overwriting, making it possible to log
+the same job from multiple places, and keep the record with the most
+information (required for setups using both ARC and LRMSURGen).
+
+Host-record consistency check during insert. Hosts can now only register
+records with machine names in their own domain (matched with the X509
+identity). Strictness is configurable.
+
+Support and configuration option for running as non-root user.
+
+Possible to specify logfile in configuration file.
+
+There is an experimental query and view engine but it is not finalized.
+
 
 3.1.0:
 
