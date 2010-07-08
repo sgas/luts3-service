@@ -80,7 +80,7 @@ class QueryDatabaseTest:
 
         yield self.triggerAggregateUpdate()
 
-        result = yield self.db.query('distinct:user_identity')
+        result = yield self.db.query('SELECT distinct(user_identity) FROM uraggregated;')
         self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User']])
 
 
@@ -91,7 +91,7 @@ class QueryDatabaseTest:
         yield self.db.insert(ursampledata.UR2)
         yield self.triggerAggregateUpdate()
 
-        result = yield self.db.query('user_identity, sum:n_jobs', groups='user_identity')
+        result = yield self.db.query('SELECT user_identity, sum(n_jobs) FROM uraggregated GROUP BY user_identity')
         self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 2]])
 
 
@@ -101,7 +101,8 @@ class QueryDatabaseTest:
         yield self.db.insert(ursampledata.CUR)
         yield self.triggerAggregateUpdate()
 
-        result = yield self.db.query('user_identity, sum:n_jobs', filters='machine_name = fyrgrid.grid.aau.dk', groups='user_identity')
+        result = yield self.db.query('SELECT user_identity, sum(n_jobs) FROM uraggregated ' +
+                                     'WHERE machine_name = \'%s\' GROUP BY user_identity' % ('fyrgrid.grid.aau.dk',))
         self.failUnlessEqual(result, [['/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User', 1]])
 
 
@@ -111,7 +112,7 @@ class QueryDatabaseTest:
         yield self.db.insert(ursampledata.CUR)
         yield self.triggerAggregateUpdate()
 
-        result = yield self.db.query('machine_name', orders='machine_name')
+        result = yield self.db.query('SELECT machine_name FROM uraggregated ORDER BY machine_name')
         self.failUnlessEqual(result, [['benedict.grid.aau.dk'], ['fyrgrid.grid.aau.dk']])
 
 

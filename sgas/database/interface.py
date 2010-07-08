@@ -48,12 +48,11 @@ class ISGASDatabase(Interface):
 
 
 
-    def query(selects, filters, groups, order):
+    def query(query, query_args=None):
         """
-        Queries the database, returning a table of information, not too
-        different from a relational database.
+        Queries the database, returning rows of information.
 
-        The following entry names should be supported for querying:
+        The following entry/column names should be supported for querying:
         * execution_date : Day the job(s) was executed.
         * insert_date    : Day the usage record was inserted into the database.
         * machine_name   : Host FQDN of the machine executing the job.
@@ -67,32 +66,9 @@ class ISGASDatabase(Interface):
         * wallhours      : Number of Wall hours used by the jobs.
         * generate_time  : Timestamp for when the entry was generated.
 
-        @param selects: A string or list of strings describing the attributes
-                        wanted for the query. Summed, unique, etc. can be
-                        requested. Examples:
-                        'user_identity'
-                        'user_identity, machine_name, sum(wallhours)
-                        ['user_identity', 'machine_name', 'sum(wallhours)' ]
+        @param query     : A string describing the query.
 
-        @param filters: A string or list of strings describing filters for the
-                        query.
-                        Operators: =, !=, <, >, <=, >=, ^, $
-                        The ^ operator is startswith for strings, and $ is
-                        endswith for strings.
-                        Examples:
-                        "user_identity = '/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen'"
-                        machine_name $ '.no', n_jobs > 200
-
-        @param groups:  A string or list of strings describing how to group the
-                        query. The group statements must be consistent in
-                        accordance with the selected attributes. Examples:
-                        'user_identity'
-                        'machine_name, user_identity'
-                        ['machine_name', 'vo_name']
-
-        @param order:   A string or a list of strings containing attributes for
-                        how the result should be ordered. Examples:
-                        'user_identity'
-                        ['machine_name', 'user_identity']
+        @param query_args : An optional dictoary of paramteres that should be
+                            interpolated into the query.
         """
 

@@ -16,7 +16,7 @@ from twisted.internet import defer
 from twisted.enterprise import adbapi
 from twisted.application import service
 
-from sgas.database import ISGASDatabase, error, queryparser, hostcheck
+from sgas.database import ISGASDatabase, error, hostcheck
 from sgas.database.postgresql import urparser, queryengine, updater
 
 
@@ -92,7 +92,7 @@ class PostgreSQLDatabase(service.Service):
 
 
     @defer.inlineCallbacks
-    def query(self, selects, filters=None, groups=None, orders=None):
+    def query(self, query, query_args=None):
 
         def buildValue(value):
             if type(value) in (unicode, str, int, long, float, bool):
@@ -103,11 +103,7 @@ class PostgreSQLDatabase(service.Service):
             # bad catch-all
             return str(value)
 
-        q = queryparser.QueryParser(selects, filters, groups, orders)
-
-        query_stm = queryengine.buildQuery(q)
-
-        query_result = yield self.dbpool.runQuery(query_stm)
+        query_result = yield self.dbpool.runQuery(query, query_args)
 
         results = []
         for row in query_result:

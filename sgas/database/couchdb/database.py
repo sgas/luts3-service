@@ -64,6 +64,6 @@ class CouchDBDatabase(service.Service):
             raise error.DatabaseUnavailableError(str(e))
 
 
-    def query(self, selects, filters=None, groups=None, orders=None):
+    def query(self, *args, **kwargs):
         raise NotImplementedError('Query engine for couchdb is not implemented')
 
