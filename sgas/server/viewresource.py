@@ -108,10 +108,12 @@ class ViewTopResource(resource.Resource):
         ib = 4 * ' '
 
         body =''
-        body += 2*ib + '<div>Hello %(identity)s</div>\n' % {'identity': identity }
-        body += 2*ib + '<h2>Views</h2>\n'
+        body += 2*ib + '<h3>SGAS View Page</h3>\n'
+        body += 2*ib + '<p>\n'
+        body += 2*ib + '<div>Identity: %(identity)s</div>\n' % {'identity': identity }
+        body += 2*ib + '<p> &nbsp; <p>\n'
         for view in self.views:
-            body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.view_name, view.caption)
+            body += 2*ib + '<div><a href=view/%s>%s</a></div><p>\n' % (view.view_name, view.caption)
 
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
