@@ -26,7 +26,7 @@ cmdclasses = {'install_data': InstallSGASData}
 gmt = time.gmtime()
 day = '%04d%02d%02d' % (gmt.tm_year, gmt.tm_mon, gmt.tm_mday)
 
-version='3.1.2-svn-%s' % day
+version='3.2.2-svn-%s' % day
 
 setup(name='sgas-luts-service',
       version=version,
