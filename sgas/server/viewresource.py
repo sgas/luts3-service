@@ -50,54 +50,6 @@ HTML_VIEW_FOOTER = HTML_FOOTER
 
 
 
-class View:
-
-    def __init__(self, view_type, resource_name, caption, query):
-        self.view_type = view_type
-        self.caption = caption
-        self.resource_name = resource_name
-        self.query = query
-
-
-top_users_sql = """SELECT execution_time, user_identity, sum_walltime FROM (
-    SELECT execution_time, user_identity, sum(walltime) AS sum_walltime, rank() OVER (PARTITION BY execution_time ORDER BY sum(walltime) DESC) as rank
-    FROM uraggregated GROUP BY execution_time, user_identity ORDER BY execution_time, sum(walltime) DESC) as q
-WHERE q.rank <= 3 and q.sum_walltime > 0 and execution_time > (current_date - interval '20 days');"""
-#WHERE q.rank <= 3 and q.sum_walltime > 0;"""
-
-VO_HOST_WALLTIME_QUERY = """
-SELECT execution_time, COALESCE(vo_name, 'N/A'), (sum(walltime) / 24.0)::integer
-FROM uraggregated WHERE execution_time > (current_date - interval '250 days')
-GROUP BY execution_time, COALESCE(vo_name, 'N/A');
-"""
-
-inserts_view = View(view_type='stacked_bars', resource_name='inserts', caption='Inserted records per day / host',
-                    query="SELECT insert_time, machine_name, sum(n_jobs) FROM uraggregated WHERE insert_time > (current_date - interval '20 days') GROUP BY insert_time, machine_name;")
-#                    query="SELECT insert_time, machine_name, sum(n_jobs) FROM uraggregated GROUP BY insert_time, machine_name;")
-
-machine_walltime_view = View(view_type='stacked_bars', resource_name='machine_walltime', caption='Aggregated walltime hours per day / host',
-                             query="SELECT execution_time, machine_name, sum(walltime) FROM uraggregated WHERE execution_time > (current_date - interval '10 days') GROUP BY execution_time, machine_name;")
-#                             query="SELECT execution_time, machine_name, sum(walltime) FROM uraggregated GROUP BY execution_time, machine_name;")
-
-user_walltime_view = View(view_type='stacked_bars', resource_name='user_walltime', caption='Top 3 users per day (aggregated walltime)',
-                          #query="SELECT execution_time, user_identity, sum(walltime) FROM uraggregated GROUP BY execution_time, user_identity ORDER BY execution_time, sum(walltime) DESC limit 15;")
-                          query=top_users_sql)
-
-vo_host_walltime = View(view_type='stacked_bars', resource_name='vo_host_walltime', caption='Aggregated walltime days per VO',
-                        query=VO_HOST_WALLTIME_QUERY)
-
-
-executed_total = View(view_type='bars', resource_name='executed_longs', caption='Total Job Walltime Days, Last 150 days',
-                        query="SELECT execution_time, (sum(walltime) / 24.0)::integer FROM uraggregated " + \
-                              "WHERE execution_time > current_date - interval '150 days' GROUP BY execution_time ORDER BY execution_time;")
-
-inserts_total = View(view_type='bars', resource_name='inserts_long', caption='Total Inserts, Last 150 days',
-                        query="SELECT insert_time, sum(n_jobs) FROM uraggregated " + \
-                              "WHERE insert_time > current_date - interval '150 days' GROUP BY insert_time ORDER BY insert_time;")
-
-#VIEWS = [ inserts_view, machine_walltime_view, user_walltime_view, vo_host_walltime, executed_total, inserts_total ]
-
-
 
 def getReturnMimeType(request):
     # given a request, figure out if json or html content should be returned
