@@ -80,7 +80,7 @@ class Authorizer:
             pass
 
         log.msg("Authz check: Subject %s, Action %s, Context: %s. Access allowed: %s" % \
-                 (subject, action, view_name, context, allowed), system='sgas.Authorizer')
+                 (subject, action, context, allowed), system='sgas.Authorizer')
 
         return allowed
 
