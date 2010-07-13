@@ -43,7 +43,7 @@ def createViewDefinition(view_name, view_config):
         elif key == config.VIEW_DESCRIPTION:
             caption = value
 
-        elif key == config.DRAWTABLE:
+        elif key == config.VIEW_DRAWTABLE:
             drawtable = readBoolean(value)
 
         elif key == config.VIEW_DRAWGRAPH:
@@ -52,9 +52,12 @@ def createViewDefinition(view_name, view_config):
         else:
              log.msg("Unknown view definition key: %s" % key, system='sgas.view')
 
-    for cfg_value in [ view_name, view_type, query ]:
-        if cfg_value in (None, ''):
-            raise config.ConfigurationError("Missing or empty value for view definition: %s" % value)
+    if view_name in (None, ''):
+        raise config.ConfigurationError('Missing or empty view name for view definition')
+    if view_type in (None, ''):
+        raise config.ConfigurationError('Missing or empty view type for view definition')
+    if query in (None, ''):
+        raise config.ConfigurationError('Missing or empty query for view definition')
 
     return ViewDefinition(view_type, view_name, query, caption, drawtable, drawgraph)
 

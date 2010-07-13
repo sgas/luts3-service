@@ -102,6 +102,7 @@ bar.anchor("bottom").add(pv.Label)
     .textBaseline("top")
     .text(function() %(columns)s[this.index]);
 
+/* y-scale and ticks */
 vis.add(pv.Rule)
     .data(y.ticks())
     .bottom(function(d) Math.round(y(d)) - .5)
@@ -142,7 +143,7 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
         bar_heigth = int(maximum*1.02)
 
         graph_args = {
-            'data' : matrix, 'width': DEFAULT_GRAPH_WIDTH, 'heigth': DEFAULT_GRAPH_HEIGTH,
+            'data' : data, 'width': DEFAULT_GRAPH_WIDTH, 'heigth': DEFAULT_GRAPH_HEIGTH,
             'n_columns': len(m_columns), 'columns': cols, 'bar_height': bar_heigth
         }
         return JAVASCRIPT_BAR_GRAPH % graph_args
@@ -156,7 +157,7 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
         bar_heigth = int(maximum*1.02)
 
         graph_args = {
-            'data':data, 'width': DEFAULT_GRAPH_WIDTH, 'heigth': DEFAULT_GRAPH_HEIGTH,
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'heigth': DEFAULT_GRAPH_HEIGTH,
             'bar_height':bar_heigth, 'n_columns': len(m_columns), 'columns':cols, 'stacks':m_rows
         }
         return JAVASCRIPT_STACKED_BAR_GRAPH % graph_args

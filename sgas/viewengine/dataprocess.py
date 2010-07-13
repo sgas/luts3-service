@@ -53,7 +53,7 @@ def createJSMatrix(matrix, column_names, row_names):
 
     rows = []
     for rn in row_names:
-        rows.append( '\n[' + ','.join( [ str(matrix[rn,cn]) or '0' for cn in column_names ] ) + ']' )
+        rows.append( '\n[' + ','.join( [ str(matrix.get((rn,cn), '0')) for cn in column_names ] ) + ']' )
     return ','.join(rows)
 
 

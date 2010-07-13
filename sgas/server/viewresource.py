@@ -95,7 +95,7 @@ inserts_total = View(view_type='bars', resource_name='inserts_long', caption='To
                         query="SELECT insert_time, sum(n_jobs) FROM uraggregated " + \
                               "WHERE insert_time > current_date - interval '150 days' GROUP BY insert_time ORDER BY insert_time;")
 
-VIEWS = [ inserts_view, machine_walltime_view, user_walltime_view, vo_host_walltime, executed_total, inserts_total ]
+#VIEWS = [ inserts_view, machine_walltime_view, user_walltime_view, vo_host_walltime, executed_total, inserts_total ]
 
 
 
@@ -135,13 +135,15 @@ def handleViewError(error, request, view_name):
 
 class ViewTopResource(resource.Resource):
 
-    def __init__(self, urdb, authorizer):
+    def __init__(self, urdb, authorizer, views):
         resource.Resource.__init__(self)
         self.urdb = urdb
         self.authorizer = authorizer
 
-        for view in VIEWS:
-            self.putChild(view.resource_name, GraphRenderResource(view, urdb, authorizer))
+        self.views = views
+
+        for view in self.views:
+            self.putChild(view.view_name, GraphRenderResource(view, urdb, authorizer))
 
 
     def render_GET(self, request):
@@ -156,8 +158,8 @@ class ViewTopResource(resource.Resource):
         body =''
         body += 2*ib + '<div>Hello %(identity)s</div>\n' % {'identity': identity }
         body += 2*ib + '<h2>Views</h2>\n'
-        for view in VIEWS:
-            body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.resource_name, view.caption)
+        for view in self.views:
+            body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.view_name, view.caption)
 
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
@@ -210,6 +212,6 @@ class GraphRenderResource(resource.Resource):
 
         d = self.urdb.query(self.view.query)
         d.addCallback(gotResult, return_type)
-        d.addErrback(handleViewError, request, self.view.resource_name)
+        d.addErrback(handleViewError, request, self.view.view_name)
         return server.NOT_DONE_YET
 

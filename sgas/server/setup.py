@@ -46,7 +46,7 @@ def createSite(db, authorizer, views, web_files_path):
     rr = insertresource.InsertResource(db, authz)
 #    rr.putChild('recordid', recordidresource.RecordIDResource(db))
 
-    vr = viewresource.ViewTopResource(db, authz)
+    vr = viewresource.ViewTopResource(db, authz, views)
 
     tr = topresource.TopResource(authz)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
