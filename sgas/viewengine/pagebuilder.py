@@ -14,7 +14,7 @@ DEFAULT_TABLE_RENDER_LIMIT = 15
 def buildViewPage(view, rows):
     # note, just the body of the page is created, not the entire page
 
-    if view.view_type == 'bar':
+    if view.view_type == 'bars':
         row_name = ''
         matrix, m_columns = dataprocess.createMatrixList(rows, row_name)
         m_rows = [row_name]

@@ -75,7 +75,7 @@ var d = [
 
 var data = d,
     w = %(width)i,
-    h = %(heigth)i,
+    h = %(height)i,
     x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w, 4/5),
     y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
 
@@ -137,14 +137,15 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
     if view_type == 'bars':
 
-        data = dataprocess.createJSList(matrix, m_columns, m_rows)
+        assert len(m_rows) == 1, 'Only one row allowed in bar matrix.'
+        data = dataprocess.createJSList(matrix, m_columns, m_rows[0])
         cols = _createColumnNames(m_columns)
         maximum = max(matrix.values())
-        bar_heigth = int(maximum*1.02)
+        bar_height = int(maximum*1.02)
 
         graph_args = {
-            'data' : data, 'width': DEFAULT_GRAPH_WIDTH, 'heigth': DEFAULT_GRAPH_HEIGTH,
-            'n_columns': len(m_columns), 'columns': cols, 'bar_height': bar_heigth
+            'data' : data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'n_columns': len(m_columns), 'columns': cols, 'bar_height': bar_height
         }
         return JAVASCRIPT_BAR_GRAPH % graph_args
 
@@ -154,11 +155,11 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
         data = dataprocess.createJSMatrix(matrix, m_columns, m_rows)
         cols = _createColumnNames(m_columns)
         maximum = dataprocess.calculateStackedMaximum(matrix)
-        bar_heigth = int(maximum*1.02)
+        bar_height = int(maximum*1.02)
 
         graph_args = {
-            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'heigth': DEFAULT_GRAPH_HEIGTH,
-            'bar_height':bar_heigth, 'n_columns': len(m_columns), 'columns':cols, 'stacks':m_rows
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'bar_height':bar_height, 'n_columns': len(m_columns), 'columns':cols, 'stacks':m_rows
         }
         return JAVASCRIPT_STACKED_BAR_GRAPH % graph_args
 
