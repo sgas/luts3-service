@@ -2,17 +2,17 @@
 UsageRecord view resource.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2009)
+Copyright: Nordic Data Grid Facility (2010)
 """
 
 import json
-import urllib
 
 from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.database import error as dberror
-from sgas.server import authz, convert, viewresourcehelper
+from sgas.server import authz
+from sgas.viewengine import pagebuilder
 
 
 JSON_MIME_TYPE = 'application/json'
@@ -27,7 +27,6 @@ HTML_HEADER = """<!DOCTYPE html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>%(title)s</title>
-        <link rel="stylesheet" type="text/css" href="/static/css/view.css" />
     </head>
     <body>
 """
@@ -35,6 +34,68 @@ HTML_HEADER = """<!DOCTYPE html>
 HTML_FOOTER = """   </body>
 </html>
 """
+
+HTML_VIEW_HEADER = """<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>%(title)s</title>
+        <link rel="stylesheet" type="text/css" href="/static/css/view.css" />
+        <script type="text/javascript" src="/static/js/protovis-d3.1.js"></script>
+    </head>
+    <body>
+"""
+
+HTML_VIEW_FOOTER = HTML_FOOTER
+
+
+
+class View:
+
+    def __init__(self, view_type, resource_name, caption, query):
+        self.view_type = view_type
+        self.caption = caption
+        self.resource_name = resource_name
+        self.query = query
+
+
+top_users_sql = """SELECT execution_time, user_identity, sum_walltime FROM (
+    SELECT execution_time, user_identity, sum(walltime) AS sum_walltime, rank() OVER (PARTITION BY execution_time ORDER BY sum(walltime) DESC) as rank
+    FROM uraggregated GROUP BY execution_time, user_identity ORDER BY execution_time, sum(walltime) DESC) as q
+WHERE q.rank <= 3 and q.sum_walltime > 0 and execution_time > (current_date - interval '20 days');"""
+#WHERE q.rank <= 3 and q.sum_walltime > 0;"""
+
+VO_HOST_WALLTIME_QUERY = """
+SELECT execution_time, COALESCE(vo_name, 'N/A'), (sum(walltime) / 24.0)::integer
+FROM uraggregated WHERE execution_time > (current_date - interval '250 days')
+GROUP BY execution_time, COALESCE(vo_name, 'N/A');
+"""
+
+inserts_view = View(view_type='stacked_bars', resource_name='inserts', caption='Inserted records per day / host',
+                    query="SELECT insert_time, machine_name, sum(n_jobs) FROM uraggregated WHERE insert_time > (current_date - interval '20 days') GROUP BY insert_time, machine_name;")
+#                    query="SELECT insert_time, machine_name, sum(n_jobs) FROM uraggregated GROUP BY insert_time, machine_name;")
+
+machine_walltime_view = View(view_type='stacked_bars', resource_name='machine_walltime', caption='Aggregated walltime hours per day / host',
+                             query="SELECT execution_time, machine_name, sum(walltime) FROM uraggregated WHERE execution_time > (current_date - interval '10 days') GROUP BY execution_time, machine_name;")
+#                             query="SELECT execution_time, machine_name, sum(walltime) FROM uraggregated GROUP BY execution_time, machine_name;")
+
+user_walltime_view = View(view_type='stacked_bars', resource_name='user_walltime', caption='Top 3 users per day (aggregated walltime)',
+                          #query="SELECT execution_time, user_identity, sum(walltime) FROM uraggregated GROUP BY execution_time, user_identity ORDER BY execution_time, sum(walltime) DESC limit 15;")
+                          query=top_users_sql)
+
+vo_host_walltime = View(view_type='stacked_bars', resource_name='vo_host_walltime', caption='Aggregated walltime days per VO',
+                        query=VO_HOST_WALLTIME_QUERY)
+
+
+executed_total = View(view_type='bars', resource_name='executed_longs', caption='Total Job Walltime Days, Last 150 days',
+                        query="SELECT execution_time, (sum(walltime) / 24.0)::integer FROM uraggregated " + \
+                              "WHERE execution_time > current_date - interval '150 days' GROUP BY execution_time ORDER BY execution_time;")
+
+inserts_total = View(view_type='bars', resource_name='inserts_long', caption='Total Inserts, Last 150 days',
+                        query="SELECT insert_time, sum(n_jobs) FROM uraggregated " + \
+                              "WHERE insert_time > current_date - interval '150 days' GROUP BY insert_time ORDER BY insert_time;")
+
+VIEWS = [ inserts_view, machine_walltime_view, user_walltime_view, vo_host_walltime, executed_total, inserts_total ]
 
 
 
@@ -79,122 +140,42 @@ class ViewTopResource(resource.Resource):
         self.urdb = urdb
         self.authorizer = authorizer
 
-        self.stock_views = ['user', 'host', 'vo']
-        for va in self.stock_views:
-            self.putChild(va, StockViewResource(va, urdb, authorizer))
-        self.putChild('custom', CustomViewTopResource(urdb, authorizer))
+        for view in VIEWS:
+            self.putChild(view.resource_name, GraphRenderResource(view, urdb, authorizer))
 
 
     def render_GET(self, request):
         subject = authz.getSubject(request)
-        self.renderStartPage(request, subject)
+        return self.renderStartPage(request, subject)
 
 
     def renderStartPage(self, request, identity):
 
-        custom_views = self.urdb.getCustomViewList()
-        allowed_actions = self.authorizer.getAllowedActions(identity)
         ib = 4 * ' '
 
         body =''
         body += 2*ib + '<div>Hello %(identity)s</div>\n' % {'identity': identity }
-        body += 2*ib + '<div>Allowed actions: %(actions)s</div>\n' % {'actions': ''.join(allowed_actions) }
-        body += 2*ib + '<h2>Stock views</h2>\n'
-        for sv in self.stock_views:
-            body += 2*ib + '<div><a href=view/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': sv }
-        body += 2*ib + '<h2>Custom views</h2>\n'
-        for cv in custom_views:
-            body += 2*ib + '<div><a href=view/custom/%(view_name)s>%(view_name)s</a></div>\n' % {'view_name': cv }
+        body += 2*ib + '<h2>Views</h2>\n'
+        for view in VIEWS:
+            body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.resource_name, view.caption)
 
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
         request.write(HTML_FOOTER)
-
-        request.setResponseCode(200)
+        #request.setResponseCode(200)
         request.finish()
 
-
-
-
-class StockViewResource(resource.Resource):
-
-    def __init__(self, base_attribute, urdb, authorizer):
-        resource.Resource.__init__(self)
-        self.base_attribute = base_attribute
-        self.urdb = urdb
-        self.authorizer = authorizer
-
-
-    def getChild(self, path, request):
-        # request for specific subject listing
-        #print "STOCK CHILD", self.base_attribute, path
-        subject = authz.getSubject(request)
-        view_resource = path
-
-        if not self.authorizer.isAllowed(subject, authz.VIEW, self.base_attribute, context=view_resource):
-            request.setResponseCode(403) # forbidden
-            return "Access to view %s not allowed for %s" % (self.base_attribute, subject)
-        else:
-            return StockViewSubjectRenderer(self.urdb, self.base_attribute, view_resource)
-
-
-    def render_GET(self, request):
-        # request for resource list
-
-        #postpath = request.postpath
-        subject = authz.getSubject(request)
-        #print "STOCK", request.prepath, request.postpath
-
-        if not self.authorizer.isAllowed(subject, authz.VIEW, self.base_attribute):
-            request.setResponseCode(403) # forbidden
-            return "Listing for view %s not allowed for %s" % (self.base_attribute, subject)
-        else:
-            return self.renderViewList(request)
-
-
-    def renderViewList(self, request):
-
-        def buildView(viewdata, return_type):
-            if return_type == 'json':
-                sorted_viewdata = list(sorted(viewdata))
-                return_data = json.dumps(sorted_viewdata)
-                request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_TYPE, [JSON_MIME_TYPE])
-                request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_LENGTH, [str(len(return_data))])
-                request.write(json.dumps(return_data))
-            elif return_type == 'html':
-                if None in viewdata:
-                    viewdata.remove(None)
-                table_input = sorted(viewdata)
-                html_table = convert.createLinkedHTMLTableList(table_input,
-                                                               prefix=self.base_attribute + '/',
-                                                               caption="%s list" % self.base_attribute.capitalize())
-                # twisted web sets content-type to text/html per default
-                request.write(HTML_HEADER % {'title': 'View enumeration'} )
-                request.write(str(html_table))
-                request.write(HTML_FOOTER)
-            else:
-                request.setResponseCode(500)
-                request.write('''"Something went wrong when choosing return type"''')
-
-            request.finish()
-
-        #print "RENDER VIEW LIST", self.base_attribute
-        return_type = getReturnMimeType(request)
-
-        d = self.urdb.getViewAttributeList(self.base_attribute)
-        d.addCallback(buildView, return_type)
-        d.addErrback(handleViewError, request, '%s listing' % self.base_attribute.capitalize())
         return server.NOT_DONE_YET
 
 
 
-class StockViewSubjectRenderer(resource.Resource):
+class GraphRenderResource(resource.Resource):
 
-    def __init__(self, urdb, base_attribute, view_resource):
+    def __init__(self, view, urdb, authorizer):
         resource.Resource.__init__(self)
+        self.view = view
         self.urdb = urdb
-        self.base_attribute = base_attribute
-        self.view_resource = view_resource
+        self.authorizer = authorizer
 
 
     def render_GET(self, request):
@@ -203,142 +184,32 @@ class StockViewSubjectRenderer(resource.Resource):
 
     def renderView(self, request):
 
-        def createViewOptions(basepath, url_options):
-            i8 = 8 * ' '
-            lines = []
-
-            HREF_BASE = "<a href=%(url)s>%(name)s</a>"
-            OPTION_BASE = "<div>%(description)s: %(hrefs)s (current: %(current)s)</div>"
-
-            createHref = lambda options, name : HREF_BASE % {'url': basepath + '?%s' % urllib.urlencode(options), 'name': name }
-            href_frontpage = HREF_BASE % {'url' : basepath.rsplit('/',2)[0], 'name': 'View frontpage'}
-            lines.append("<div>%s</div>" % href_frontpage)
-
-            for q_option in [ 'group', 'timeres' ]:
-#            for q_option in viewresourcehelper.URL_OPTIONS:
-                group_hrefs = []
-
-                option_default = viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option]
-                for option_value in viewresourcehelper.URL_VALID_OPTIONS.get(q_option):
-                    # filter out current option
-                    if option_value == url_options.get(q_option, option_default):
-                        continue
-                    # don't list implicit grouping
-                    if q_option == viewresourcehelper.URL_O_GROUP and option_value == self.base_attribute:
-                        continue
-                    if q_option == viewresourcehelper.URL_O_CLUSTER and option_value == self.base_attribute:
-                        continue
-                    options = { q_option : option_value }
-                    options.update( [ (g,v) for g,v in url_options.items() if g != q_option ] )
-
-                    group_hrefs.append( createHref(options, option_value) )
-
-                shrefs = ' '.join(group_hrefs)
-
-                line = OPTION_BASE % {
-                    'description' : viewresourcehelper.URL_O_DESCRIPTIONS.get(q_option),
-                    'hrefs': shrefs,
-                    'current': url_options.get(q_option, viewresourcehelper.URL_O_DEFAULTS[self.base_attribute][q_option])
-                }
-                lines.append(line)
-
-            return '\n'.join( [ i8 + line for line in lines ] )
-
-
-        def buildTables(query_result, url_options):
-            #print "QUERY_RESULTS:", len(query_result)
-
-            page_title = '%s view for %s' % (self.base_attribute.capitalize(), self.view_resource)
-
-            href_options = createViewOptions(request.path, url_options)
-            html_table = convert.rowsToHTMLTable(query_result, caption=page_title)
-
-            request.write(HTML_HEADER % {'title': page_title } )
-            request.write(href_options)
-            request.write("<div>&nbsp;</div>") # create some vertical sapce
-            request.write(html_table)
-            request.write(HTML_FOOTER)
-            request.finish()
-
-        # get parameters
-
-        url_options = viewresourcehelper.parseURLParameters(request.args)
-        print "URL O", url_options
-
-        query_options = viewresourcehelper.createQueryOptions(url_options, self.base_attribute, self.view_resource)
-
-        d = self.urdb.viewQuery(query_options)
-        d.addCallback(buildTables, url_options)
-        d.addErrback(handleViewError, request, '%s/%s' % (self.base_attribute, self.view_resource))
-        return server.NOT_DONE_YET
-
-
-
-class CustomViewTopResource(resource.Resource):
-
-
-    def __init__(self, urdb, authorizer):
-        resource.Resource.__init__(self)
-        self.urdb = urdb
-        self.authorizer = authorizer
-
-
-    def getChild(self, path, request):
-        # request for custom view
-        print "CUSTOM getChild", path, request
-        subject = authz.getSubject(request)
-
-        view_name = path
-        if not self.authorizer.isAllowed(subject, authz.VIEW, view_name):
-            request.setResponseCode(403) # forbidden
-            return "Access to view %s not allowed for %s" % (view_name, subject)
-        else:
-            return CustomViewResourceRenderer(self.urdb, view_name)
-
-
-    def render_GET(self, request):
-        print "CUSTOM TOP", request.prepath, request.postpath
-        request.setResponseCode(404)
-        return 'Please specify specific view resource'
-
-
-
-class CustomViewResourceRenderer(resource.Resource):
-
-    def __init__(self, urdb, view_name):
-        resource.Resource.__init__(self)
-        self.urdb = urdb
-        self.view_name = view_name
-
-
-    def render_GET(self, request):
-        return self.renderView(request)
-
-
-    def renderView(self, request):
-
-        def gotResult((rows, view_description), return_type):
+        def gotResult(rows, return_type):
+            return_type = 'html'
             if return_type == 'json':
                 retval = json.dumps(rows)
                 request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_TYPE, [JSON_MIME_TYPE])
                 request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_LENGTH, [str(len(retval))])
                 request.write(json.dumps(rows))
+
             elif return_type == 'html':
-                html_table = convert.rowsToHTMLTable(rows, caption=view_description)
                 # twisted web sets content-type to text/html per default
-                request.write(HTML_HEADER % {'title': view_description} )
-                request.write(str(html_table))
-                request.write(HTML_FOOTER)
+                page_body = pagebuilder.buildViewPage(self.view, rows)
+
+                request.write(HTML_VIEW_HEADER % {'title': self.view.caption} )
+                request.write(page_body)
+                request.write(HTML_VIEW_FOOTER)
+
             else:
                 request.setResponseCode(500)
-                request.write('''"Something went wrong when choosing return type"''')
+                request.write('<html><body>Something went wrong when choosing return type</body></html>')
 
             request.finish()
 
         return_type = getReturnMimeType(request)
 
-        d = self.urdb.getCustomViewData(self.view_name)
+        d = self.urdb.query(self.view.query)
         d.addCallback(gotResult, return_type)
-        d.addErrback(handleViewError, request, 'custom/%s' % self.view_name)
+        d.addErrback(handleViewError, request, self.view.resource_name)
         return server.NOT_DONE_YET
 

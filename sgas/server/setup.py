@@ -8,7 +8,7 @@ from twisted.web import resource, server
 
 from sgas.server import config, ssl, authz, \
                         topresource, insertresource, recordidresource, viewresource, staticresource
-#from sgas.viewengine import customview, chunks
+from sgas.viewengine import viewdefinition
 
 
 # -- constants
@@ -26,24 +26,38 @@ class ConfigurationError(Exception):
     """
 
 
+def buildViewList(cfg):
 
-def createSite(db, authz, web_files_path):
+    views = []
+
+    for block in cfg.sections():
+        if block.startswith(config.VIEW_PREFIX):
+            view_name = block.split(':',1)[-1]
+            view_args = dict(cfg.items(block))
+            view = viewdefinition.createViewDefinition(view_name, view_args)
+            views.append(view)
+
+    return views
+
+
+
+def createSite(db, authorizer, views, web_files_path):
 
     rr = insertresource.InsertResource(db, authz)
 #    rr.putChild('recordid', recordidresource.RecordIDResource(db))
 
-#    vr = viewresource.ViewTopResource(db, authz)
+    vr = viewresource.ViewTopResource(db, authz)
 
     tr = topresource.TopResource(authz)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
 #    tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
-#    tr.registerService(vr, 'view', (('View', 'view'),))
+    tr.registerService(vr, 'view', (('View', 'view'),))
 
-    sr = staticresource.StaticResource(web_files_path)
+#    sr = staticresource.StaticResource(web_files_path)
 
     root = resource.Resource()
     root.putChild('sgas', tr)
-    root.putChild('static', sr)
+#    root.putChild('static', sr)
 
     site = server.Site(root)
     return site
@@ -80,24 +94,11 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
         from sgas.database.postgresql import database
         db = database.PostgreSQLDatabase(db_url, check_depth)
 
-    view_specs = {}
-    for block in cfg.sections():
-        if block.startswith(config.VIEW_PREFIX):
-            view_name = block.split(':',1)[-1]
-            view_specs[view_name] = dict(cfg.items(block))
-
-#    chunk_manager = None
-#    ci_design = cfg.get(config.SERVER_BLOCK, config.COREINFO_DESIGN, None)
-#    ci_view   = cfg.get(config.SERVER_BLOCK, config.COREINFO_VIEW, None)
-#    if ci_design and ci_view:
-#        chunk_manager = chunks.InformationChunkManager(cdb, ci_design, ci_view)
-#    views = dict([ (view_name,customview.createCustomView(view_name, view_cfg)) for view_name, view_cfg in view_specs.items() ])
-#    ur_db = database.UsageRecordDatabase(cdb, chunk_manager, views)
-
-    az = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
+    views = buildViewList(cfg)
+    authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
     web_files_path = cfg.get(config.SERVER_BLOCK, config.WEB_FILES)
 
-    site = createSite(db, az, web_files_path)
+    site = createSite(db, authorizer, views, web_files_path)
 
     # setup application
     application = service.Application("sgas")
