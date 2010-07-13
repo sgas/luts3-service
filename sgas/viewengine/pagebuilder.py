@@ -27,9 +27,8 @@ def buildViewPage(view, rows):
 
 
     body = ''
-    print m_columns
-    if shouldRenderTable(view, len(m_columns)):
-        table = htmltable.createHTMLTable(m_columns, m_rows, matrix, view.caption)
+    if shouldRenderTable(view, m_columns):
+        table = htmltable.createHTMLTable(matrix, m_columns, m_rows, view.caption)
         body += table
 
     if shouldRenderGraph(view):

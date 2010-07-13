@@ -37,7 +37,7 @@ def createHTMLTable(matrix, column_names, row_names, caption=None, base_indent=8
         res += i2 + '<tr>\n'
         res += i3 + '<th>' + str(rn) + '</th>\n'
         for cn in column_names:
-            res += i3 + '<td>' + formatValue(matrix[rn,cn]) + '</td>\n'
+            res += i3 + '<td>' + formatValue(matrix.get((rn,cn), '')) + '</td>\n'
         res += i2 + '</tr>\n'
     res += i1 + '</tbody>\n'
 
