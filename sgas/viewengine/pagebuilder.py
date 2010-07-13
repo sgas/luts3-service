@@ -25,13 +25,18 @@ def buildViewPage(view, rows):
     else:
         raise AssertionError('Invalid view type specified (%s)' % view.view_type)
 
+    render_table = shouldRenderTable(view, m_columns)
+    render_graph = shouldRenderGraph(view)
 
-    body = ''
-    if shouldRenderTable(view, m_columns):
-        table = htmltable.createHTMLTable(matrix, m_columns, m_rows, view.caption)
+    body = view.caption + '\n<p>\n'
+    if render_table:
+        table = htmltable.createHTMLTable(matrix, m_columns, m_rows)
         body += table
 
-    if shouldRenderGraph(view):
+    if render_table and render_graph:
+        body += '    <p> &nbsp; <p>\n'
+
+    if render_graph:
         graph = graphbuilder.buildGraph(view.view_type, matrix, m_columns, m_rows)
         body += graph
 
