@@ -35,7 +35,7 @@ class ResourceTest:
     @defer.inlineCallbacks
     def setUp(self):
         # self.db should be created by subclass
-        site = setup.createSite(self.db, FakeAuthorizer(), '/tmp') # no views
+        site = setup.createSite(self.db, FakeAuthorizer(), [], '/tmp') # no views
         self.iport = reactor.listenTCP(self.port, site)
         self.service_url = 'http://localhost:%i/sgas' % self.port
         yield defer.succeed(None)
@@ -67,7 +67,7 @@ class ResourceTest:
         yield self.iport.stopListening()
 
         # setup a new service with the "bad" database
-        site = setup.createSite(self.bad_db, FakeAuthorizer(), '/tmp')
+        site = setup.createSite(self.bad_db, FakeAuthorizer(), [], '/tmp')
         self.iport = reactor.listenTCP(self.port, site)
 
         # the actual test

@@ -42,10 +42,10 @@ def buildViewList(cfg):
 
 def createSite(db, authorizer, views, web_files_path):
 
-    rr = insertresource.InsertResource(db, authz)
-    vr = viewresource.ViewTopResource(db, authz, views)
+    rr = insertresource.InsertResource(db, authorizer)
+    vr = viewresource.ViewTopResource(db, authorizer, views)
 
-    tr = topresource.TopResource(authz)
+    tr = topresource.TopResource(authorizer)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
     tr.registerService(vr, 'view', (('View', 'view'),))
 
