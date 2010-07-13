@@ -135,7 +135,13 @@ class GraphRenderResource(resource.Resource):
 
 
     def render_GET(self, request):
-        return self.renderView(request)
+        subject = authz.getSubject(request)
+        if self.authorizer.isAllowed(subject, 'view', self.view.view_name):
+            return self.renderView(request)
+        else:
+            request.write('<html><body>Access to view %s not allowed for %s</body></html>' % (self.view.view_name, subject))
+            request.finish()
+            return server.NOT_DONE_YET
 
 
     def renderView(self, request):
