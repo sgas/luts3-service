@@ -23,7 +23,7 @@ var d = [%(data)s];
 var w = %(width)i;
 var h = %(height)i;
 
-var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-80, 4/5);
+var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w, 4/5);
 var y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
 
 var vis = new pv.Panel()
@@ -107,6 +107,7 @@ vis.add(pv.Rule)
     .data(y.ticks())
     .bottom(function(d) Math.round(y(d)) - .5)
     .strokeStyle(function(d) d ? "rgba(255,255,255,.0)" : "#000")
+    .width(w-75)
     .add(pv.Rule)
     .left(0)
     .width(0)
