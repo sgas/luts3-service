@@ -1,35 +1,66 @@
 """
-Various data processing functionality for views.
+Data processing functionaliy.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2009-2010)
 """
 
-import time
+
+def createMatrix(rows):
+
+    row_set = set()
+    col_set = set()
+    matrix = {}
+
+    for col_value, row_value, value in rows:
+        row_set.add(row_value)
+        col_set.add(col_value)
+        matrix[row_value,col_value] = value
+
+    rowss   = sorted(row_set)
+    columns = sorted(col_set)
+
+    return matrix, columns, rowss
 
 
 
-SECONDS_PER_WEEK = 7 * 24 * 60 * 60
+def createMatrixList(rows, row_name):
+
+    col_set = set()
+    matrix = {}
+
+    for col_value, value in rows:
+        col_set.add(col_value)
+        matrix[row_name, col_value] = value
+
+    columns = sorted(col_set)
+
+    return matrix, columns
 
 
-def swap(l,x,y):
-    l[x] = (l[x], l[y])
-    l[y] = l[x][0]
-    l[x] = l[x][1]
-    return l
+
+def calculateStackedMaximum(matrix):
+
+    stack_values = {}
+    for (rn, cn), value in matrix.items():
+        stack_values[cn] = stack_values.get(cn, 0) + value
+
+    return max(stack_values.values())
 
 
-FILTERS = {
-    'last_week' :
-     lambda : ('["' + time.strftime('%Y %m %d', time.gmtime(time.time() - SECONDS_PER_WEEK)) + '",{}]', None)
-}
 
-SECONDS_TO_DAYS    = lambda value : (round(value / (24 * 3600.0) , 1))
-SECONDS_TO_HOURS   = lambda value : (round(value / (     3600.0) , 1))
+def createJSMatrix(matrix, column_names, row_names):
 
-POST_PROCESSORS = {
-    'seconds_to_days'    : lambda key, value : (key, SECONDS_TO_DAYS(value)),
-    'seconds_to_hours'   : lambda key, value : (key, SECONDS_TO_HOURS(value)),
-    'flip12'             : lambda key, value : (swap(key, 0, 1), value)
-}
+    rows = []
+    for rn in row_names:
+        rows.append( '\n[' + ','.join( [ str(matrix[rn,cn]) or '0' for cn in column_names ] ) + ']' )
+    return ','.join(rows)
+
+
+
+def createJSList(matrix, column_names, row):
+
+    elements = ','.join( [ str(matrix[row,cn]) or '0' for cn in column_names ] )
+    return elements
+
 

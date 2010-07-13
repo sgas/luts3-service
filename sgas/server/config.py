@@ -41,11 +41,11 @@ COREINFO_VIEW    = 'coreview'
 
 # view options
 VIEW_PREFIX      = 'view:'
-VIEW_DESIGN      = 'design'
-VIEW_NAME        = 'view'
+VIEW_TYPE        = 'type'
+VIEW_QUERY       = 'query'
 VIEW_DESCRIPTION = 'description'
-VIEW_FILTER      = 'filter'
-VIEW_POSTPROCESS = 'postprocess'
+VIEW_DRAWTABLE   = 'drawtable'
+VIEW_DRAWGRAPH   = 'drawgraph'
 
 
 
