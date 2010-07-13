@@ -6,8 +6,7 @@ import os.path
 from twisted.application import internet, service
 from twisted.web import resource, server
 
-from sgas.server import config, ssl, authz, \
-                        topresource, insertresource, recordidresource, viewresource, staticresource
+from sgas.server import config, ssl, authz, topresource, insertresource, viewresource
 from sgas.viewengine import viewdefinition
 
 
@@ -44,20 +43,17 @@ def buildViewList(cfg):
 def createSite(db, authorizer, views, web_files_path):
 
     rr = insertresource.InsertResource(db, authz)
-#    rr.putChild('recordid', recordidresource.RecordIDResource(db))
-
     vr = viewresource.ViewTopResource(db, authz, views)
 
     tr = topresource.TopResource(authz)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
-#    tr.registerService(rr, 'ur', (('Registration', 'ur'),('RecordIDQuery', 'ur/recordid/{recordid}')))
     tr.registerService(vr, 'view', (('View', 'view'),))
 
-#    sr = staticresource.StaticResource(web_files_path)
+    #sr = staticresource.StaticResource(web_files_path)
 
     root = resource.Resource()
     root.putChild('sgas', tr)
-#    root.putChild('static', sr)
+    #root.putChild('static', sr)
 
     site = server.Site(root)
     return site
