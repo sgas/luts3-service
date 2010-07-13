@@ -10,7 +10,7 @@ from sgas.viewengine import dataprocess
 
 
 
-DEFAULT_GRAPH_WIDTH  = 950
+DEFAULT_GRAPH_WIDTH  = 980
 DEFAULT_GRAPH_HEIGTH = 450
 
 
@@ -23,7 +23,7 @@ var d = [%(data)s];
 var w = %(width)i;
 var h = %(height)i;
 
-var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w, 4/5);
+var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-80, 4/5);
 var y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
 
 var vis = new pv.Panel()
@@ -76,7 +76,7 @@ var d = [
 var data = d,
     w = %(width)i,
     h = %(height)i,
-    x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w, 4/5),
+    x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-80, 4/5),
     y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
 
 var vis = new pv.Panel()
@@ -171,14 +171,18 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
 def _createColumnNames(m_columns):
 
-    if len(m_columns) <= 12:
+    n_columns = len(m_columns)
+
+    if n_columns<= 12:
         return m_columns
 
-    if len(m_columns) <= 20:
+    if n_columns <= 20:
         # every other element
         return [ m_columns[i] if i % 2 == 0 else '' for i in range(0, len(m_columns))]
 
-    else:
-        # just assume dates for now
-        return [ c if (c.endswith('01') or c.endswith('15')) else '' for c in m_columns ]
+    # just assume dates for now
+    if n_columns < 100:
+        return [ c if c.endswith('01') or c.endswith('15') else '' for c in m_columns ]
+
+    return [ c if c.endswith('01') else '' for c in m_columns ]
 
