@@ -6,6 +6,9 @@ tables.
 This document explains how to setup the views, and what the view engine is
 capable of.
 
+Note: If you want view, you will have to setup a reverse proxy in front of
+SGAS. See docs/nginx-setup.
+
 
 The SGAS view frontpage is found at the URL path /sgas/view, e.g.,:
 https://host.example.org:6443/sgas/view. Here there are links to view, which

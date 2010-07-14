@@ -1,0 +1,42 @@
+# sgas nginx configuration
+
+server {
+    listen       6143 default;
+    server_name  YOUR_FQDN_NAME_HERE;
+
+    access_log   /var/log/nginx/sgas.access.log;
+
+    ssl on;
+    ssl_certificate      /etc/grid-security/hostcert.pem;
+    ssl_certificate_key  /etc/grid-security/hostkey.pem;
+
+    ssl_client_certificate /etc/grid-security/certificates/1f0e8352.0;
+    ssl_verify_client on;
+
+    ssl_protocols  TLSv1;
+
+    location /sgas {
+        proxy_pass         http://127.0.0.1:6180/sgas;
+        proxy_redirect     off;
+
+        proxy_set_header   Host             $host;
+        proxy_set_header   X-Real-IP        $remote_addr;
+        proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+
+        proxy_set_header   X-Forwarded-Protocol https;
+        proxy_set_header   X-SSL-Subject    $ssl_client_s_dn;
+        proxy_set_header   X-SSL-Issuer     $ssl_client_i_dn;
+    }
+
+    location /static {
+        alias /usr/local/share/sgas/webfiles;
+        autoindex on;
+    }
+
+    location / {
+        root /var/www/nginx-default;
+        index index.html;
+    }
+
+}
+

@@ -1,0 +1,25 @@
+SGAS NginX setup instructions
+-----------------------------------------------------------------------------
+
+As of version 3.3, the preferred way to run SGAS is behind a reverse proxy,
+specifically NginX. The reason for this is that there way some rare /
+tricky-to-reproduce errors in pyOpenSSL. Secondly the view engine requires
+serving of static files, which is not a task suitable for Twisted (though it
+works fine, but it isn't the point).
+
+NginX exists in most distributions package systems and is a fairly small
+package to install.
+
+Basically copy sgas.nginx to the nginx sites-enabled directory and set a couple
+of values. The sites-enabled directory is typically located at
+/etc/nginx/sites-enabled. Just call the file sgas, the .nginx suffix is just to
+make it clear what it is.
+
+In the file you need to set at least the server_name, which you should be FQDN
+of the machine. Furthermore you may need to set port, or directory for the SGAS
+web files. For certificates the default grid locations are specified in the
+file. Note that only one CA client file can be set. By default it is set to
+1f0e8352.0, which is the NorduGrid CA. You may need to change this. It is
+possible to have multiple client CAs by catting several CA files together (they
+typically end with 0.).
+
