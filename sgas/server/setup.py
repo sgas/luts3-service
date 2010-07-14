@@ -40,7 +40,7 @@ def buildViewList(cfg):
 
 
 
-def createSite(db, authorizer, views, web_files_path):
+def createSite(db, authorizer, views):
 
     rr = insertresource.InsertResource(db, authorizer)
     vr = viewresource.ViewTopResource(db, authorizer, views)
@@ -89,9 +89,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
 
     views = buildViewList(cfg)
     authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
-    web_files_path = cfg.get(config.SERVER_BLOCK, config.WEB_FILES)
 
-    site = createSite(db, authorizer, views, web_files_path)
+    site = createSite(db, authorizer, views)
 
     # setup application
     application = service.Application("sgas")
