@@ -69,8 +69,37 @@ def readConfig(filename):
     cfg.set(SERVER_BLOCK, COREINFO_VIEW,        DEFAULT_COREINFO_VIEW)
     cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_DEPTH, DEFAULT_HOSTNAME_CHECK_DEPTH)
 
+    fp = open(filename)
+    proxy_fp = MultiLineFileReader(fp)
+
     # read cfg file
-    cfg.readfp(open(filename))
+    cfg.readfp(proxy_fp)
 
     return cfg
+
+
+
+class MultiLineFileReader:
+    # implements the readline call for lines broken with \
+    # readline is the only method called by configparser
+    # so this is enough
+
+    def __init__(self, fp):
+        self._fp = fp
+
+    def readline(self):
+
+        line = self._fp.readline()
+
+        while line.endswith('\\\n') or line.endswith('\\ \n'):
+            if line.endswith('\\\n')  : i = -2
+            if line.endswith('\\ \n') : i = -3
+
+            newline = self._fp.readline()
+            while newline.startswith('  '):
+                newline = newline[1:]
+
+            line = line[:i] + newline
+
+        return line
 
