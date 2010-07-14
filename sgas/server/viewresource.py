@@ -27,6 +27,7 @@ HTML_HEADER = """<!DOCTYPE html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>%(title)s</title>
+        <link rel="stylesheet" type="text/css" href="/static/css/view.frontpage.css" />
     </head>
     <body>
 """
@@ -40,7 +41,7 @@ HTML_VIEW_HEADER = """<!DOCTYPE html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>%(title)s</title>
-        <link rel="stylesheet" type="text/css" href="/static/css/view.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/view.table.css" />
         <script type="text/javascript" src="/static/js/protovis-d3.1.js"></script>
     </head>
     <body>
@@ -111,9 +112,9 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<h3>SGAS View Page</h3>\n'
         body += 2*ib + '<p>\n'
         body += 2*ib + '<div>Identity: %(identity)s</div>\n' % {'identity': identity }
-        body += 2*ib + '<p> &nbsp; <p>\n'
+        body += 2*ib + '<p>\n'
         for view in self.views:
-            body += 2*ib + '<div><a href=view/%s>%s</a></div><p>\n' % (view.view_name, view.caption)
+            body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.view_name, view.caption)
 
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
