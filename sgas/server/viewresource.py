@@ -115,6 +115,8 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<p>\n'
         for view in self.views:
             body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.view_name, view.caption)
+        if not self.views:
+            body += 2*ib + '<div>No views defined in configuration file. See docs/views in the documentation for how specify views.</div>\n'
 
         request.write(HTML_HEADER % {'title': 'View startpage'} )
         request.write(body)
