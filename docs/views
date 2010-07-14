@@ -1,0 +1,82 @@
+
+As of version 3.3, SGAS features a small, but quite usefull view engine. The
+view engine is capable of visualizing information in browsers, using graphs and
+tables.
+
+This document explains how to setup the views, and what the view engine is
+capable of.
+
+
+The SGAS view frontpage is found at the URL path /sgas/view, e.g.,:
+https://host.example.org:6443/sgas/view. Here there are links to view, which
+are defined in sgas.conf.
+
+
+A basic view example follows:
+
+[view:insert_total]
+type=bars
+description=Total Inserts, Last 150 days
+query=SELECT insert_time, sum(n_jobs) FROM uraggregated \
+      WHERE insert_time > current_date - interval '150 days' GROUP BY insert_time ORDER BY insert_time;
+
+Here the view name is "insert_total", and is a standard bar chart. A
+description is made, and query to the database is specified (note that it is
+possible to have long entries split across several lines by using \). They
+query is stock SQL, and is send to the database as is. This provides great
+freedom for information retrieval.
+
+By default SGAS will display both an HTML table with the results and a
+visualize the data in graph using javascript. Note that a faily new browser is
+needed. For large series of data, the table rendering is disabled, as large
+tables are usually rather useless. It is however possible to force rendering of
+it, by setting "drawtable=true", or disabling explicitely by setting
+"drawtable=false". The same goes for the graph, e.g., "drawgraph=false". By
+default the graph is always rendered.
+
+For rendering bar charts the result of the query should be keyed and
+one-dimensional, i.e., the rows returned should be of length 2, with the first
+entry being the key, and the second the value. The key should be unique, or
+strange things will happen (typically one should do a GROUP BY statement).
+Besides bar charts, stacked bar charts is also supported. For such charts, data
+should be keyed two-dimensional. I.e., a row should be of length 3, with the
+first two values being the "key" and the third value the actual value. The
+first value is the column. An example of query for a stacked bar is:
+
+    SELECT execution_time, machine_name, sum(walltime) FROM uraggregated \
+    WHERE execution_time > (current_date - interval '10 days') GROUP BY execution_time, machine_name;
+
+Which will display the walltime used by each machine over the last ten days.
+
+Authorization can specified per view or an all-access pass can be granted. To
+grant access to a specific view, make an in sgas.authz similar to this:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:inserts
+
+It is also possible to specify multiple views by comma seperating them, e.g.,:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:inserts,view:vo_walltime
+
+To grant a person access to all views, just specify view, e.g.:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               view
+
+
+Note that SGAS must be restarted in order for any configuration or
+authorization changes to take place.
+
+Hopefully this guide can get you started. Finally here are some more examples:
+
+[view:executed_total]
+type=bars
+description=Total Job Walltime Days, Last 50 days
+query=SELECT execution_time, (sum(walltime) / 24.0)::integer FROM uraggregated \
+      WHERE execution_time > current_date - interval '50 days' GROUP BY execution_time ORDER BY execution_time;
+
+[view:vo_walltime]
+type=stacked_bars
+description=Aggregated walltime days per VO
+query=SELECT execution_time, COALESCE(vo_name, 'N/A'), (sum(walltime) / 24.0)::integer FROM uraggregated \
+      WHERE execution_time > (current_date - interval '200 days') GROUP BY execution_time, COALESCE(vo_name, 'N/A');
+
+
