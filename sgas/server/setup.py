@@ -49,11 +49,8 @@ def createSite(db, authorizer, views, web_files_path):
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
     tr.registerService(vr, 'view', (('View', 'view'),))
 
-    #sr = staticresource.StaticResource(web_files_path)
-
     root = resource.Resource()
     root.putChild('sgas', tr)
-    #root.putChild('static', sr)
 
     site = server.Site(root)
     return site
