@@ -65,7 +65,10 @@ To grant a person access to all views, just specify view, e.g.:
 Note that SGAS must be restarted in order for any configuration or
 authorization changes to take place.
 
-Hopefully this guide can get you started. Finally here are some more examples:
+Hopefully this guide can get you started. Remember that you can use the psql
+shell to play around with queries before using them in views.
+
+Finally here are some more view examples:
 
 [view:executed_total]
 type=bars
