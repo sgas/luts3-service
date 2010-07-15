@@ -29,6 +29,7 @@ ARG_LIST = [
     'queue',
     'host',
     'node_count',
+    'processors',
     'project_name',
     'submit_host',
     'start_time',

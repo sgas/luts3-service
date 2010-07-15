@@ -117,6 +117,7 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         elif element.tag == ur.WALL_DURATION:  r['wall_duration']  = parseISODuration(element.text)
         elif element.tag == ur.CPU_DURATION:   r['cpu_duration']   = parseISODuration(element.text)
         elif element.tag == ur.NODE_COUNT:     r['node_count']     = parseInt(element.text)
+        elif element.tag == ur.PROCESSORS:     r['processors']     = parseInt(element.text)
         elif element.tag == ur.START_TIME:     r['start_time']     = parseISODateTime(element.text)
         elif element.tag == ur.END_TIME:       r['end_time']       = parseISODateTime(element.text)
         elif element.tag == ur.PROJECT_NAME:   r['project_name']   = element.text
@@ -135,7 +136,17 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         elif element.tag == ur.MAJOR_PAGE_FAULTS:   r['major_page_faults']   = parseInt(element.text)
         elif element.tag == ur.RUNTIME_ENVIRONMENT: r.setdefault('runtime_environments', []).append(element.text)
 
-        else: print "Unhandled element:", element.tag
+        else:
+            log.msg("Unhandled UR element: %s" % element.tag, system='sgas.usagerecord')
+
+        # backwards logger compatability
+        # alot of loggers set node_count when they should have used processors, therefore:
+        # if node_count is set, but processors is not, processors is set to the value of node_count
+        # the node_count value is reset.
+        # If both values are set (which they should with updated loggers) nothing is done
+        if 'processors' not in r and 'node_count' in r:
+            r['processors'] = r['node_count']
+            del r['node_count']
 
     return r
 
