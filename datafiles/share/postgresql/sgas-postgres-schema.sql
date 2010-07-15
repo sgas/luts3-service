@@ -75,8 +75,8 @@ CREATE TABLE uraggregated (
     vo_group            varchar,
     vo_role             varchar,
     n_jobs              integer,
-    cputime             integer,
-    walltime            integer,
+    cputime             numeric(14,2),
+    walltime            numeric(14,2),
     generate_time       timestamp
 );
 
