@@ -32,6 +32,23 @@ You only need to install one of them. The CouchDB backend is more well tested
 than the PostgreSQL one, but PostgreSQL is probably the future for SGAS.
 
 
+== NginX ==
+
+As of version 3.3, it is recommended to use SGAS behind the NginX reverse
+proxy, and is required for rendering views.
+
+In order to keep backwards compatability, SGAS must be explicitely configured
+to run behind a reverse proxy. This is done by setting:
+
+reverseproxy=true
+
+in the SGAS configuration file. Note that this will be included in the shipped
+config file as of 3.3, but existing installations moving to an NginX setup,
+will have to set it manually.
+
+See docs/nginx-setup for how to setup NginX.
+
+
 == Installation & Configuration ==
 
 1. Unpack the tarball (you have probably already done this)
@@ -43,11 +60,7 @@ Edit /etc/sgas.conf, the main settings you should worry about is:
 # db.url - where to find the database. For CouchDB:
 db=http://localhost:5984/usagerecords
 For PostgreSQL:
-db=localhost::sgas:sgas:sgas-password:
-(first sgas is database, second is user)
-
-# where to get js/css files (required for html views)
-webfiles=/usr/share/sgas/webfiles
+db=localhost::sgas-db:db-user:db-password:
 
 # authorization file
 authzfile=/etc/sgas.authz
@@ -62,9 +75,9 @@ check_depth=2
 Hereafter edit /etc/sgas.authz to set which identities can perform which
 actions. Subject names must in "", so a line would look like this:
 
-"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     retrieval,view
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     insert,view
 
-which will allow retrieval of individual usage records, and access to all views
-for the identity. You probably want to set who can insert usage records, and
-who can access views.
+which will allow insertion of usage records, and access to all views for the
+identity. Initially, you will at least want to set who can insert usage
+records.
 

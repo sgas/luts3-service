@@ -57,11 +57,28 @@ def createSite(db, authorizer, views):
 
 
 
-def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
+def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
 
     cfg = config.readConfig(config_file)
 
-    # sanity checks
+    # first figure out if SGAS should run behind a reverse proxy
+
+    cfg_proxy_value = cfg.get(config.SERVER_BLOCK, config.REVERSE_PROXY).lower()
+    if cfg_proxy_value == 'true':
+        reverse_proxy = True
+    elif cfg_proxy_value == 'false':
+        reverse_proxy = False
+    else:
+        raise ConfigurationError('Invalid value for reverseproxy in configuration.')
+
+    if reverse_proxy:
+        use_ssl = False
+
+    # if ssl usage hasn't been defined, we default to true for backward compatability
+    if use_ssl is None:
+        use_ssl = True
+
+    # ssl sanity checks
     if use_ssl:
         hostkey  = cfg.get(config.SERVER_BLOCK, config.HOSTKEY)
         hostcert = cfg.get(config.SERVER_BLOCK, config.HOSTCERT)
@@ -74,12 +91,14 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
             raise ConfigurationError('Configured certificate directory does not exist')
 
     # setup server
+
     db_url = cfg.get(config.SERVER_BLOCK, config.DB)
     try:
         check_depth = int(cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_DEPTH))
     except ValueError:
         check_depth = config.DEFAULT_HOSTNAME_CHECK_DEPTH
 
+    # database
     if db_url.startswith('http'):
         from sgas.database.couchdb import database
         db = database.CouchDBDatabase(db_url, check_depth)
@@ -87,12 +106,12 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=True, port=None):
         from sgas.database.postgresql import database
         db = database.PostgreSQLDatabase(db_url, check_depth)
 
-    views = buildViewList(cfg)
+    # http site
     authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
-
+    views = buildViewList(cfg)
     site = createSite(db, authorizer, views)
 
-    # setup application
+    # application
     application = service.Application("sgas")
 
     db.setServiceParent(application)

@@ -21,10 +21,8 @@ DEFAULT_HOSTKEY               = '/etc/grid-security/hostkey.pem'
 DEFAULT_HOSTCERT              = '/etc/grid-security/hostcert.pem'
 DEFAULT_CERTDIR               = '/etc/grid-security/certificates'
 DEFAULT_AUTHZ_FILE            = '/etc/sgas.authz'
-DEFAULT_WEB_FILES             = '/usr/local/share/sgas/webfiles'
-DEFAULT_COREINFO_DESIGN       = ''
-DEFAULT_COREINFO_VIEW         = ''
 DEFAULT_HOSTNAME_CHECK_DEPTH  = '2'
+DEFAULT_REVERSE_PROXY         = 'false'
 
 # server options
 SERVER_BLOCK         = 'server'
@@ -33,11 +31,8 @@ HOSTCERT             = 'hostcert'
 CERTDIR              = 'certdir'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
-WEB_FILES            = 'webfiles'
 HOSTNAME_CHECK_DEPTH = 'checkdepth'
-
-COREINFO_DESIGN  = 'coredesign'
-COREINFO_VIEW    = 'coreview'
+REVERSE_PROXY        = 'reverseproxy'
 
 # view options
 VIEW_PREFIX      = 'view:'
@@ -64,10 +59,8 @@ def readConfig(filename):
     cfg.set(SERVER_BLOCK, HOSTCERT,             DEFAULT_HOSTCERT)
     cfg.set(SERVER_BLOCK, CERTDIR,              DEFAULT_CERTDIR)
     cfg.set(SERVER_BLOCK, AUTHZ_FILE,           DEFAULT_AUTHZ_FILE)
-    cfg.set(SERVER_BLOCK, WEB_FILES,            DEFAULT_WEB_FILES)
-    cfg.set(SERVER_BLOCK, COREINFO_DESIGN,      DEFAULT_COREINFO_DESIGN)
-    cfg.set(SERVER_BLOCK, COREINFO_VIEW,        DEFAULT_COREINFO_VIEW)
     cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_DEPTH, DEFAULT_HOSTNAME_CHECK_DEPTH)
+    cfg.set(SERVER_BLOCK, REVERSE_PROXY,        DEFAULT_REVERSE_PROXY)
 
     fp = open(filename)
     proxy_fp = MultiLineFileReader(fp)

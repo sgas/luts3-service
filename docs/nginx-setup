@@ -15,11 +15,11 @@ of values. The sites-enabled directory is typically located at
 /etc/nginx/sites-enabled. Just call the file sgas, the .nginx suffix is just to
 make it clear what it is.
 
-In the file you need to set at least the server_name, which you should be FQDN
-of the machine. Furthermore you may need to set port, or directory for the SGAS
-web files. For certificates the default grid locations are specified in the
-file. Note that only one CA client file can be set. By default it is set to
-1f0e8352.0, which is the NorduGrid CA. You may need to change this. It is
-possible to have multiple client CAs by catting several CA files together (they
-typically end with 0.).
+In the file you need to set at least the server_name, which you should be the
+FQDN of the machine. Furthermore you may need to set port, and directory for
+the SGAS web files. For certificates the default grid locations are specified
+in the file. Note that only one file client CAs can be set. By default it is
+set to 1f0e8352.0, which is the NorduGrid CA. You may need to change this. It
+is possible to have multiple client CAs by catting several CA files together
+into one file (the CA typically end with .0).
 
