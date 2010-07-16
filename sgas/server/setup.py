@@ -122,6 +122,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
         certdir  = cfg.get(config.SERVER_BLOCK, config.CERTDIR)
         cf = ssl.ContextFactory(key_path=hostkey, cert_path=hostcert, ca_dir=certdir)
         internet.SSLServer(port or SSL_PORT, site, cf).setServiceParent(application)
+    elif reverse_proxy:
+        internet.TCPServer(port or TCP_PORT, site, interface='localhost').setServiceParent(application)
     else:
         internet.TCPServer(port or TCP_PORT, site).setServiceParent(application)
 
