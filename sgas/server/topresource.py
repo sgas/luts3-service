@@ -62,6 +62,9 @@ class TopResource(resource.Resource):
             return # FIXME this returns 500...
 
         # stuff needed for being cooperative with a reverse proxy
+        # note: once loggers get updated to understands path referrel
+        # (currently they only understand complete URLs) these hacks
+        # can be removed - this will probably be in the beginning of 2011 :-)
         if 'x-forwarded-port' in request.received_headers:
             host += ':' + request.received_headers.get('x-forwarded-port')
 
