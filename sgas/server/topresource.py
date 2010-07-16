@@ -61,8 +61,16 @@ class TopResource(resource.Resource):
             log.msg('Client did not send proper host header.', system='sgas.TopResource')
             return # FIXME this returns 500...
 
+        # stuff needed for being cooperative with a reverse proxy
+        if 'x-forwarded-port' in request.received_headers:
+            host += ':' + request.received_headers.get('x-forwarded-port')
+
+        is_secure = request.isSecure()
+        if request.received_headers.get('x-forwarded-protocol', '') == 'https':
+            is_secure = True
+
         basepath = '/'.join(request.prepath)
-        baseurl = self._createBaseURL(host, request.isSecure(), basepath)
+        baseurl = self._createBaseURL(host, is_secure, basepath)
         #print "BASEURL", baseurl
         tree = self._createServiceTree(baseurl)
         ts = XML_HEADER + ET.tostring(tree) + "\n"
