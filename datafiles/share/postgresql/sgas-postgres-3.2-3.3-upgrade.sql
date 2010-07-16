@@ -11,6 +11,16 @@ UPDATE usagedata SET processors = node_count;
 UPDATE usagedata SET node_count = NULL;
 
 
+-- drop urcreate function
+
+DROP FUNCTION urcreate (varchar, timestamp without time zone, varchar, varchar, varchar, varchar,
+                        varchar, varchar, varchar, varchar[], varchar, varchar, numeric, varchar,
+                        varchar, varchar, integer, varchar, varchar, timestamp, timestamp,timestamp,
+                        numeric, numeric, numeric, numeric, integer, integer, integer, varchar[],
+                        integer, varchar, varchar, timestamp);
+
+-- new urcreate function should come from loading the function file (done seperately)
+
 -- create view with processors column
 
 DROP VIEW usagerecords;
