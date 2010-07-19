@@ -16,10 +16,13 @@ of values. The sites-enabled directory is typically located at
 make it clear what it is.
 
 In the file you need to set at least the server_name, which you should be the
-FQDN of the machine. Furthermore you may need to set port, and directory for
-the SGAS web files. For certificates the default grid locations are specified
-in the file. Note that only one file client CAs can be set. By default it is
-set to 1f0e8352.0, which is the NorduGrid CA. You may need to change this. It
-is possible to have multiple client CAs by catting several CA files together
-into one file (the CA typically end with .0).
+FQDN of the machine. Furthermore you may need to set port (note that the port
+number if both set in the listen directive, as well as in a header), and
+directory for the SGAS web files.
+
+For certificates the default grid locations are specified in the file. Note
+that only one file client CAs can be set. By default it is set to 1f0e8352.0,
+which is the NorduGrid CA. You may need to change this. It is possible to have
+multiple client CAs by catting several CA files together into one file (the CA
+typically end with .0).
 
