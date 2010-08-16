@@ -68,6 +68,13 @@ To grant a person access to all views, just specify view, e.g.:
 Note that SGAS must be restarted in order for any configuration or
 authorization changes to take place.
 
+It is possible to save the rendered graphs as svg files by saving the value of
+the DOM element vis.scene[0].canvas.innerHTML as an svg file. You can use
+firebug for this. It is cumbersome, but works. See the following link for more
+information:
+http://groups.google.com/group/protovis/browse_thread/thread/3169031c3b2aae52
+
+
 Hopefully this guide can get you started. Remember that you can use the psql
 shell to play around with queries before using them in views.
 
