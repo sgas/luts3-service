@@ -42,7 +42,7 @@ CREATE TABLE usagedata (
     charge                  numeric(12,2),
     status                  varchar(100),
     queue                   varchar(200),
-    host                    varchar(500),
+    host                    varchar(1500),
     node_count              integer,
     processors              integer,
     project_name            varchar(200),

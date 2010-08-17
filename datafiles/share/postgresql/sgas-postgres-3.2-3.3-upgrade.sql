@@ -1,6 +1,9 @@
 -- logic for upgrading the SGAS PostgreSQL schema from version 3.2 to 3.3
 -- SGAS should be stopped when performing this upgrade
 
+-- first drop the view, as some ALTER operations cannot be performed while a view
+-- over the relation exists.
+DROP VIEW usagerecords;
 
 -- usagedata
 
@@ -10,6 +13,8 @@ ALTER TABLE usagedata ADD COLUMN processors INTEGER;
 UPDATE usagedata SET processors = node_count;
 UPDATE usagedata SET node_count = NULL;
 
+-- some jobs have a very long host list which does not fit into 500 characters
+ALTER TABLE usagedata ALTER COLUMN host TYPE varchar(1500);
 
 -- drop urcreate function
 
@@ -23,7 +28,6 @@ DROP FUNCTION urcreate (varchar, timestamp without time zone, varchar, varchar, 
 
 -- create view with processors column
 
-DROP VIEW usagerecords;
 
 CREATE VIEW usagerecords AS
 SELECT
