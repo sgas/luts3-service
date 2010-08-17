@@ -69,8 +69,14 @@ authzfile=/etc/sgas.authz
 # e.g., a check depth of 2 will okay host1.example.org host2.example.org, where a depth 3
 # will not. This mechanisms ensures that hosts do not register data for machines outside
 # their domain. A value of 2 is the default and pretty much always work. A value of 3 is
-# recommended, but does not always work.
+# recommended, but does not always work. Setting the check_depth to 0 will disable the
+# checking.
 check_depth=2
+
+# it is also possible to specify a whitelist certain inserters which are able
+# to bypass the check, while keeping the check for all other hosts.
+check_whitelist=host1.example.org,host2.example.org
+
 
 Hereafter edit /etc/sgas.authz to set which identities can perform which
 actions. Subject names must in "", so a line would look like this:

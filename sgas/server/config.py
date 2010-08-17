@@ -2,7 +2,7 @@
 Configuration utils.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2009)
+Copyright: Nordic Data Grid Facility (2009, 2010)
 """
 
 import ConfigParser
@@ -22,6 +22,7 @@ DEFAULT_HOSTCERT              = '/etc/grid-security/hostcert.pem'
 DEFAULT_CERTDIR               = '/etc/grid-security/certificates'
 DEFAULT_AUTHZ_FILE            = '/etc/sgas.authz'
 DEFAULT_HOSTNAME_CHECK_DEPTH  = '2'
+DEFAULT_HOSTNAME_CHECK_WHITELIST = ''
 DEFAULT_REVERSE_PROXY         = 'false'
 
 # server options
@@ -32,6 +33,7 @@ CERTDIR              = 'certdir'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
 HOSTNAME_CHECK_DEPTH = 'checkdepth'
+HOSTNAME_CHECK_WHITELIST = 'checkwhitelist'
 REVERSE_PROXY        = 'reverseproxy'
 
 # view options
@@ -60,6 +62,7 @@ def readConfig(filename):
     cfg.set(SERVER_BLOCK, CERTDIR,              DEFAULT_CERTDIR)
     cfg.set(SERVER_BLOCK, AUTHZ_FILE,           DEFAULT_AUTHZ_FILE)
     cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_DEPTH, DEFAULT_HOSTNAME_CHECK_DEPTH)
+    cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_WHITELIST, DEFAULT_HOSTNAME_CHECK_WHITELIST)
     cfg.set(SERVER_BLOCK, REVERSE_PROXY,        DEFAULT_REVERSE_PROXY)
 
     fp = open(filename)

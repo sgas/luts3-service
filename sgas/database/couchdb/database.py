@@ -21,7 +21,7 @@ class CouchDBDatabase(service.Service):
 
     implements(ISGASDatabase)
 
-    def __init__(self, couchdb_url, check_depth):
+    def __init__(self, couchdb_url, checker):
         # check depth is not implemented for couchdb
         self.db = couchdbclient.Database(couchdb_url)
 

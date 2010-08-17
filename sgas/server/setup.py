@@ -6,7 +6,7 @@ import os.path
 from twisted.application import internet, service
 from twisted.web import resource, server
 
-from sgas.server import config, ssl, authz, topresource, insertresource, viewresource
+from sgas.server import config, ssl, authz, hostcheck, topresource, insertresource, viewresource
 from sgas.viewengine import viewdefinition
 
 
@@ -95,16 +95,20 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
     db_url = cfg.get(config.SERVER_BLOCK, config.DB)
     try:
         check_depth = int(cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_DEPTH))
-    except ValueError:
-        check_depth = config.DEFAULT_HOSTNAME_CHECK_DEPTH
+    except ValueError: # in case casting goes wrong
+        raise ConfigurationError('Configured check depth is invalid')
+    # read whitelist, but filter out '' values
+    check_whitelist = [ x.strip() for  x in cfg.get(config.HOSTNAME_CHECK_WHITELIST) if x.strip() ]
+
+    checker = hostcheck.InsertionChecker(check_depth, whitelist=check_whitelist)
 
     # database
     if db_url.startswith('http'):
         from sgas.database.couchdb import database
-        db = database.CouchDBDatabase(db_url, check_depth)
+        db = database.CouchDBDatabase(db_url, checker)
     else:
         from sgas.database.postgresql import database
-        db = database.PostgreSQLDatabase(db_url, check_depth)
+        db = database.PostgreSQLDatabase(db_url, checker)
 
     # http site
     authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))

@@ -12,7 +12,7 @@ from twisted.trial import unittest
 from twisted.internet import defer, reactor
 from twisted.web import error as weberror
 
-from sgas.server import setup
+from sgas.server import setup, hostcheck
 
 from . import rclient, ursampledata
 
@@ -115,9 +115,9 @@ class CouchDBResourceTest(ResourceTest, unittest.TestCase):
         self.couchdb = couchdbclient.CouchDB(base_url)
         _ = yield self.couchdb.createDatabase(self.couch_database_name)
 
-        self.db = database.CouchDBDatabase(url, 0)
+        self.db = database.CouchDBDatabase(url, hostcheck.InsertionChecker(0))
         # for unavailable test
-        self.bad_db = database.CouchDBDatabase('http://localhost:9999/nosuchdb', 0)
+        self.bad_db = database.CouchDBDatabase('http://localhost:9999/nosuchdb', hostcheck.InsertionChecker(0))
 
         yield ResourceTest.setUp(self)
 
@@ -146,10 +146,10 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url, 0)
+        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0))
         yield self.db.startService()
         # for unavalable test
-        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:", 0)
+        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:", hostcheck.InsertionChecker(0))
 
         yield ResourceTest.setUp(self)
 

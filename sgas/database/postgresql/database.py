@@ -16,7 +16,7 @@ from twisted.internet import defer
 from twisted.enterprise import adbapi
 from twisted.application import service
 
-from sgas.database import ISGASDatabase, error, hostcheck
+from sgas.database import ISGASDatabase, error
 from sgas.database.postgresql import urparser, queryengine, updater
 
 
@@ -29,7 +29,7 @@ class PostgreSQLDatabase(service.Service):
 
     implements(ISGASDatabase)
 
-    def __init__(self, connect_info, check_depth):
+    def __init__(self, connect_info, checker):
 
         args = [ e or None for e in connect_info.split(':') ]
         host, port, database, user, password, _ = args
@@ -39,7 +39,7 @@ class PostgreSQLDatabase(service.Service):
 
         self.updater = updater.AggregationUpdater(self.dbpool)
 
-        self.check_depth = check_depth
+        self.checker = checker
 
 
     def startService(self):
@@ -57,7 +57,7 @@ class PostgreSQLDatabase(service.Service):
         # inserts usage record
         arg_list = urparser.buildArgList(usagerecord_data, insert_identity=insert_identity, insert_hostname=insert_hostname)
 
-        self._checkIdentityConsistency(insert_identity, insert_hostname, arg_list)
+        self._checkIdentityConsistency(insert_identity, arg_list)
 
         try:
             id_dict = {}
@@ -112,14 +112,14 @@ class PostgreSQLDatabase(service.Service):
         defer.returnValue(results)
 
 
-    def _checkIdentityConsistency(self, insert_identity, insert_hostname, arg_list):
+    def _checkIdentityConsistency(self, insert_identity, arg_list):
         # check the consistency between machine_name in records and the identity of the inserter
 
         docs = [ dict(zip(urparser.ARG_LIST, args)) for args in arg_list ]
 
-        fqdn = hostcheck.extractFQDNfromX509Identity(insert_identity)
-
         for doc in docs:
-            mn = doc.get('machine_name')
-            hostcheck.checkMatch(mn, fqdn, self.check_depth)
+            machine_name = doc.get('machine_name')
+            if not self.checker.isInsertAllowed(insert_identity, machine_name):
+                MSG = 'Machine name (%s) does not match FQDN of identity (%s) to sufficient degree'
+                raise error.SecurityError(MSG % (machine_name, insert_identity))
 
