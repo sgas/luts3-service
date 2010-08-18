@@ -15,7 +15,7 @@ DEFAULT_GRAPH_HEIGTH = 450
 
 
 
-JAVASCRIPT_BAR_GRAPH = """
+JAVASCRIPT_COLUMN_GRAPH = """
      <script type="text/javascript+protovis">
 
 var d = [%(data)s];
@@ -24,7 +24,7 @@ var w = %(width)i;
 var h = %(height)i;
 
 var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w, 4/5);
-var y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
+var y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
 var vis = new pv.Panel()
     .width(w)
@@ -65,7 +65,7 @@ vis.render();
 
 
 
-JAVASCRIPT_STACKED_BAR_GRAPH = """
+JAVASCRIPT_STACKED_COLUMN_GRAPH = """
     <script type="text/javascript+protovis">
 
 c = pv.Colors.category20();
@@ -77,7 +77,7 @@ var data = d,
     w = %(width)i,
     h = %(height)i,
     x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-80, 4/5),
-    y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
+    y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
 var vis = new pv.Panel()
     .width(w)
@@ -141,13 +141,13 @@ var data = [
 ];
 
 var n = %(n_groups)i;
-var m = %(n_bars)i;
+var m = %(n_columns)i;
 
 /* Sizing and scales. */
 var w = %(width)s;
 var h = %(height)s;
 var x = pv.Scale.ordinal(pv.range(n)).splitBanded(0, w-80, 0.8);
-var y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
+var y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
 
 /* The root panel */
@@ -196,9 +196,9 @@ vis.add(pv.Rule)
     .text(function(d) parseInt(d.toFixed(1)));
 
 
-/* Bar color legend */
+/* Column color legend */
 vis.add(pv.Dot)
-    .data(%(bar_names)s)
+    .data(%(column_names)s)
     .right(10)
     .top(function() 5 + this.index * 20)
     .size(50)
@@ -217,45 +217,45 @@ vis.render();
 
 def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
-    if view_type == 'bars':
+    if view_type == 'columns':
 
-        assert len(m_rows) == 1, 'Only one row allowed in bar matrix.'
+        assert len(m_rows) == 1, 'Only one row allowed in column matrix.'
         data = dataprocess.createJSList(matrix, m_columns, m_rows[0])
         cols = _createColumnNames(m_columns)
         maximum = max(matrix.values())
-        bar_height = int(maximum*1.02)
+        column_height = int(maximum*1.02)
 
         graph_args = {
             'data' : data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
-            'n_columns': len(m_columns), 'columns': cols, 'bar_height': bar_height
+            'n_columns': len(m_columns), 'columns': cols, 'column_height': column_height
         }
-        return JAVASCRIPT_BAR_GRAPH % graph_args
+        return JAVASCRIPT_COLUMN_GRAPH % graph_args
 
 
-    elif view_type == 'stacked_bars':
+    elif view_type == 'stacked_columns':
 
         data = dataprocess.createJSMatrix(matrix, m_columns, m_rows)
         cols = _createColumnNames(m_columns)
         maximum = dataprocess.calculateStackedMaximum(matrix)
-        bar_height = int(maximum*1.02)
+        column_height = int(maximum*1.02)
 
         graph_args = {
             'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
-            'bar_height':bar_height, 'n_columns': len(m_columns), 'columns':cols, 'stacks':m_rows
+            'column_height':column_height, 'n_columns': len(m_columns), 'columns':cols, 'stacks':m_rows
         }
-        return JAVASCRIPT_STACKED_BAR_GRAPH % graph_args
+        return JAVASCRIPT_STACKED_COLUMN_GRAPH % graph_args
 
     elif view_type == 'grouped_columns':
 
         data = dataprocess.createJSTransposedMatrix(matrix, m_columns, m_rows, fill_value='undefined')
         cols = _createColumnNames(m_columns)
         maximum = dataprocess.calculateStackedMaximum(matrix)
-        bar_height = int(maximum*1.02)
+        column_height = int(maximum*1.02)
 
         graph_args = {
             'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
-            'n_groups':len(m_columns), 'n_bars':len(m_rows), 'bar_height':bar_height,
-            'group_names': m_columns, 'bar_names':m_rows
+            'n_groups':len(m_columns), 'n_columns':len(m_rows), 'column_height':column_height,
+            'group_names': m_columns, 'column_names':m_rows
         }
         return JAVASCRIPT_GROUPED_COLUMN_GRAPH % graph_args
 

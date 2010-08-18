@@ -18,12 +18,12 @@ are defined in sgas.conf.
 A basic view example follows:
 
 [view:insert_total]
-type=bars
+type=columns
 description=Total Inserts, Last 150 days
 query=SELECT insert_time, sum(n_jobs) FROM uraggregated \
       WHERE insert_time > current_date - interval '150 days' GROUP BY insert_time ORDER BY insert_time;
 
-Here the view name is "insert_total", and is a standard bar chart. A
+Here the view name is "insert_total", and is a standard column chart. A
 description is made, and query to the database is specified (note that it is
 possible to have long entries split across several lines by using \). They
 query is stock SQL, and is send to the database as is. This provides great
@@ -37,16 +37,16 @@ it, by setting "drawtable=true", or disabling explicitely by setting
 "drawtable=false". The same goes for the graph, e.g., "drawgraph=false". By
 default the graph is always rendered.
 
-For rendering bar charts the result of the query should be keyed and
+For rendering column charts the result of the query should be keyed and
 one-dimensional, i.e., the rows returned should be of length 2, with the first
 entry being the key, and the second the value. The key should be unique, or
 strange things will happen (typically one should do a GROUP BY statement).
 
-Besides bar charts, stacked bar charts, and grouped column charts are also
-supported. For both stacked bar charts and grouped columns charts, data should
+Besides column charts, stacked column charts, and grouped column charts are also
+supported. For both stacked column charts and grouped columns charts, data should
 be keyed two-dimensional. I.e., a row should be of length 3, with the first two
 values being the "key" and the third value the actual value. The first value is
-the column. An example of query for a stacked bar is:
+the column. An example of query for a stacked column is:
 
     SELECT execution_time, machine_name, sum(walltime) FROM uraggregated \
     WHERE execution_time > (current_date - interval '10 days') GROUP BY execution_time, machine_name;
@@ -86,13 +86,13 @@ shell to play around with queries before using them in views.
 Finally here are some more view examples:
 
 [view:executed_total]
-type=bars
+type=columns
 description=Total Job Walltime Days, Last 50 days
 query=SELECT execution_time, (sum(walltime) / 24.0)::integer FROM uraggregated \
       WHERE execution_time > current_date - interval '50 days' GROUP BY execution_time ORDER BY execution_time;
 
 [view:vo_walltime]
-type=stacked_bars
+type=stacked_columns
 description=Aggregated walltime days per VO
 query=SELECT execution_time, COALESCE(vo_name, 'N/A'), (sum(walltime) / 24.0)::integer FROM uraggregated \
       WHERE execution_time > (current_date - interval '200 days') GROUP BY execution_time, COALESCE(vo_name, 'N/A');
