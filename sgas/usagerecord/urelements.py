@@ -13,7 +13,8 @@ from xml.etree.cElementTree import QName
 OGF_UR_NAMESPACE    = "http://schema.ogf.org/urf/2003/09/urf"
 DEISA_NAMESPACE     = "http://rmis.deisa.org/acct"
 SGAS_VO_NAMESPACE   = "http://www.sgas.se/namespaces/2009/05/ur/vo"
-SGAS_UR_NAMESPACE   = "http://www.sgas.se/namespaces/2009/07/ur";
+SGAS_UR_NAMESPACE   = "http://www.sgas.se/namespaces/2009/07/ur"
+LOGGER_NAMESPACE    = "http://www.sgas.se/namespaces/2010/08/logger"
 
 # usage record tag names
 USAGE_RECORDS       = QName("{%s}UsageRecords"   % OGF_UR_NAMESPACE)
@@ -67,4 +68,8 @@ KERNEL_TIME         = QName("{%s}KernelTime"         % SGAS_UR_NAMESPACE)
 EXIT_CODE           = QName("{%s}ExitCode"           % SGAS_UR_NAMESPACE)
 MAJOR_PAGE_FAULTS   = QName("{%s}MajorPageFaults"    % SGAS_UR_NAMESPACE)
 RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % SGAS_UR_NAMESPACE)
+
+# logger elements and attributes
+LOGGER_NAME         = QName("{%s}LoggerName"         % LOGGER_NAMESPACE)
+LOGGER_VERSION      = QName("{%s}version"            % LOGGER_NAMESPACE)
 

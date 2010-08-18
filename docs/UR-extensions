@@ -99,7 +99,8 @@ Example         :  <sgas:KSI2KWallDuration>PT8488.44S</sgas:KSI2KWallDuration>
 Attribute name  :  insertTime
 Element name    :  RecordIdentity
 Description     :  ISO time for when the usage record was inserted into the
-                   database.
+                   database. Typically added if a usage record is extracted
+                   from a database.
 Example         :  <ur:RecordIdentity sgas:insertTime="2009-07-07T09:06:52Z" />
 
 Element name    :  UserTime
@@ -127,4 +128,27 @@ Parent element  :  JobUsageRecord
 Description     :  Runtime environment used (or requested) by the job.
                    Note, repetitions are allowed.
 Example         :  <sgas:RuntimeEnvironment>APPS/HEP/ATLAS-13.0.40</sgas:RuntimeEnvironment>
+
+
+
+* Logger information:
+
+Information about the logger who produced the job record. This information does
+not describe the job in any way, but can be practical for identifying the
+source of the record and detect incompatabilities.
+
+
+Namespace       :  http://www.sgas.se/namespaces/2010/08/logger
+Preferred abr.  :  logger
+
+Element name    :  LoggerName
+Attributes      :  version
+Parent element  :  ur:JobUsageRecord
+Description     :  A string describing the identity of the logger who produced
+                   the usage record. The name should be selected in a way to
+                   have a high change of being unique. Furthermore a version
+                   attribute can be added to the element describing the version
+                   of the logger.
+Example         :  <logger:LoggerName>ARC0-URLogger</logger:LoggerName>
+                   <logger:LoggerName logger:version="0.8.2.2">ARC0-URLogger</logger:LoggerName>
 
