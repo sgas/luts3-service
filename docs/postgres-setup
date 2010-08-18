@@ -4,7 +4,8 @@ This document covers setting up PostgreSQL as a backend for SGAS.
 1. Install PostgreSQL, PostgreSQL Contrib, and Psycopg2 (PostgreSQL Python
 client)
 
-Note: PostgreSQL version 8.4 or later is required.
+Note: Only PostgreSQL version 8.4 or later is supported, but the schema might
+work with earlier versions (should work with 8.3).
 
 In Debian / Ubuntu:
 
