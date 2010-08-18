@@ -22,6 +22,9 @@ def buildViewPage(view, rows):
     elif view.view_type == 'stacked_bars':
         matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
 
+    elif view.view_type == 'grouped_columns':
+        matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
+
     else:
         raise AssertionError('Invalid view type specified (%s)' % view.view_type)
 

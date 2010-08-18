@@ -41,10 +41,12 @@ For rendering bar charts the result of the query should be keyed and
 one-dimensional, i.e., the rows returned should be of length 2, with the first
 entry being the key, and the second the value. The key should be unique, or
 strange things will happen (typically one should do a GROUP BY statement).
-Besides bar charts, stacked bar charts is also supported. For such charts, data
-should be keyed two-dimensional. I.e., a row should be of length 3, with the
-first two values being the "key" and the third value the actual value. The
-first value is the column. An example of query for a stacked bar is:
+
+Besides bar charts, stacked bar charts, and grouped column charts are also
+supported. For both stacked bar charts and grouped columns charts, data should
+be keyed two-dimensional. I.e., a row should be of length 3, with the first two
+values being the "key" and the third value the actual value. The first value is
+the column. An example of query for a stacked bar is:
 
     SELECT execution_time, machine_name, sum(walltime) FROM uraggregated \
     WHERE execution_time > (current_date - interval '10 days') GROUP BY execution_time, machine_name;
@@ -95,4 +97,12 @@ description=Aggregated walltime days per VO
 query=SELECT execution_time, COALESCE(vo_name, 'N/A'), (sum(walltime) / 24.0)::integer FROM uraggregated \
       WHERE execution_time > (current_date - interval '200 days') GROUP BY execution_time, COALESCE(vo_name, 'N/A');
 
+[view:vo_efficiency]
+type=grouped_columns
+description=Job efficiency per VO
+query=SELECT execution_time AS date, vo_name, round(sum(cputime) / sum(walltime),2) as efficiancy \
+      FROM uraggregated \
+      WHERE execution_time > (current_date - interval '10 days') AND walltime >= 1 \
+      GROUP BY execution_time, vo_name \
+      ORDER BY execution_time, vo_name;
 

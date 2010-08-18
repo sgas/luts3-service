@@ -133,6 +133,87 @@ vis.render();
 
 
 
+JAVASCRIPT_GROUPED_COLUMN_GRAPH = """
+    <script type="text/javascript+protovis">
+
+var data = [
+    %(data)s
+];
+
+var n = %(n_groups)i;
+var m = %(n_bars)i;
+
+/* Sizing and scales. */
+var w = %(width)s;
+var h = %(height)s;
+var x = pv.Scale.ordinal(pv.range(n)).splitBanded(0, w-80, 0.8);
+var y = pv.Scale.linear(0, %(bar_height)i).range(0, h);
+
+
+/* The root panel */
+var vis = new pv.Panel()
+    .width(w)
+    .height(h)
+    .bottom(20)
+    .left(50)
+    .right(5)
+    .top(5);
+
+
+/* The columns */
+var bar = vis.add(pv.Panel)
+    .data(data)
+    .left(function() x(this.index))
+  .add(pv.Bar)
+    .data(function(a) a)
+    .left(function() this.index * x.range().band / m)
+    .width(x.range().band / m)
+    .bottom(0)
+    .height(y)
+    .fillStyle(pv.Colors.category20().by(pv.index));
+
+
+/* X-axis group labels */
+vis.add(pv.Label)
+    .data(pv.range(n))
+    .bottom(0)
+    .left(function() x(this.index) + x.range().band * 0.45)
+    .textMargin(5)
+    .textBaseline("top")
+    .text(function() %(group_names)s[this.index]);
+
+
+/* Y-axis labels and ticks */
+vis.add(pv.Rule)
+    .data(y.ticks(10))
+    .bottom(function(d) Math.round(y(d)) - .5 )
+    .strokeStyle(function(d) d ? "rgba(255,255,255,.2)" : "#000")
+  .add(pv.Rule)
+    .left(0)
+    .width(0) // axis tick length
+    .strokeStyle("#000")
+  .anchor("left").add(pv.Label)
+    .text(function(d) parseInt(d.toFixed(1)));
+
+
+/* Bar color legend */
+vis.add(pv.Dot)
+    .data(%(bar_names)s)
+    .right(10)
+    .top(function() 5 + this.index * 20)
+    .size(50)
+    .strokeStyle('#444444')
+    .fillStyle(pv.Colors.category20().by(pv.index))
+    .anchor("left")
+    .add(pv.Label);
+
+
+vis.render();
+
+    </script>
+"""
+
+
 
 def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
@@ -164,6 +245,19 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
         }
         return JAVASCRIPT_STACKED_BAR_GRAPH % graph_args
 
+    elif view_type == 'grouped_columns':
+
+        data = dataprocess.createJSTransposedMatrix(matrix, m_columns, m_rows, fill_value='undefined')
+        cols = _createColumnNames(m_columns)
+        maximum = dataprocess.calculateStackedMaximum(matrix)
+        bar_height = int(maximum*1.02)
+
+        graph_args = {
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'n_groups':len(m_columns), 'n_bars':len(m_rows), 'bar_height':bar_height,
+            'group_names': m_columns, 'bar_names':m_rows
+        }
+        return JAVASCRIPT_GROUPED_COLUMN_GRAPH % graph_args
 
     else:
         raise AssertionError('Invalid view type specified (%s)' % view_type)
