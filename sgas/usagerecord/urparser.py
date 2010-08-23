@@ -142,14 +142,14 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         else:
             log.msg("Unhandled UR element: %s" % element.tag, system='sgas.usagerecord')
 
-        # backwards logger compatability
-        # alot of loggers set node_count when they should have used processors, therefore:
-        # if node_count is set, but processors is not, processors is set to the value of node_count
-        # the node_count value is reset.
-        # If both values are set (which they should with updated loggers) nothing is done
-        if 'processors' not in r and 'node_count' in r:
-            r['processors'] = r['node_count']
-            del r['node_count']
+    # backwards logger compatability
+    # alot of loggers set node_count when they should have used processors, therefore:
+    # if node_count is set, but processors is not, processors is set to the value of node_count
+    # the node_count value is reset.
+    # If both values are set (which they should with updated loggers) nothing is done
+    if 'processors' not in r and 'node_count' in r:
+        r['processors'] = r['node_count']
+        del r['node_count']
 
     return r
 
