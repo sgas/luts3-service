@@ -98,7 +98,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
     except ValueError: # in case casting goes wrong
         raise ConfigurationError('Configured check depth is invalid')
     # read whitelist, but filter out '' values
-    check_whitelist = [ x.strip() for  x in cfg.get(config.HOSTNAME_CHECK_WHITELIST) if x.strip() ]
+    cfg_whitelist = cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_WHITELIST)
+    check_whitelist = [ x.strip() for  x in cfg_whitelist if x.strip() ]
 
     checker = hostcheck.InsertionChecker(check_depth, whitelist=check_whitelist)
 
