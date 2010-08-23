@@ -40,6 +40,8 @@ class InsertResource(resource.Resource):
             if error.check(dberror.DatabaseUnavailableError):
                 request.setResponseCode(503) # service unavailable
                 error_msg = 'Database currently unavailable. Please try again later.'
+            elif error.check(dberror.SecurityError):
+                request.setResponseCode(406) # not acceptable
             else:
                 request.setResponseCode(500)
 
