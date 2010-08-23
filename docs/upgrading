@@ -14,8 +14,12 @@ $ cd sgas-luts-service-3.3
 $ python setup.py build
 $ sudo python setup.py install
 
+3. Backup database
 
-3. Upgrade Database Schema
+$sudo su - sgas                 # Or whatever user SGAS is running at
+$ pg_dump sgas > sgas-db-backup.sql
+
+4. Upgrade Database Schema
 
 $ sudo su - sgas                # Or whatever user SGAS is running as
 $ psql sgas                     # Or whatever the database is called
