@@ -32,9 +32,9 @@ HOSTCERT             = 'hostcert'
 CERTDIR              = 'certdir'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
-HOSTNAME_CHECK_DEPTH = 'checkdepth'
-HOSTNAME_CHECK_WHITELIST = 'checkwhitelist'
-REVERSE_PROXY        = 'reverseproxy'
+HOSTNAME_CHECK_DEPTH = 'check_depth'
+HOSTNAME_CHECK_WHITELIST = 'check_whitelist'
+REVERSE_PROXY        = 'reverse_proxy'
 
 # view options
 VIEW_PREFIX      = 'view:'

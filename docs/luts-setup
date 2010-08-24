@@ -40,7 +40,7 @@ proxy, and is required for rendering views.
 In order to keep backwards compatability, SGAS must be explicitely configured
 to run behind a reverse proxy. This is done by setting:
 
-reverseproxy=true
+reverse_proxy=true
 
 in the SGAS configuration file. Note that this will be included in the shipped
 config file as of 3.3, but existing installations moving to an NginX setup,

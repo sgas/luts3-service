@@ -69,7 +69,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
     elif cfg_proxy_value == 'false':
         reverse_proxy = False
     else:
-        raise ConfigurationError('Invalid value for reverseproxy in configuration.')
+        raise ConfigurationError('Invalid value for reverse_proxy in configuration.')
 
     if reverse_proxy:
         use_ssl = False
