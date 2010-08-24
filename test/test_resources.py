@@ -6,7 +6,6 @@
 
 import os
 import json
-import urllib
 
 from twisted.trial import unittest
 from twisted.internet import defer, reactor

@@ -17,7 +17,7 @@ from twisted.enterprise import adbapi
 from twisted.application import service
 
 from sgas.database import ISGASDatabase, error
-from sgas.database.postgresql import urparser, queryengine, updater
+from sgas.database.postgresql import urparser, updater
 
 
 

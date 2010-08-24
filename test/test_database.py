@@ -129,7 +129,6 @@ class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
     @defer.inlineCallbacks
     def fetchUsageRecord(self, record_id):
 
-        import json
         from sgas.database.couchdb import urparser, couchdbclient
 
         db_id = urparser.createID(record_id)
