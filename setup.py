@@ -22,7 +22,7 @@ class InstallSGASData(install_data):
 
 cmdclasses = {'install_data': InstallSGASData} 
 
-version='3.3.0' % day
+version='3.3.0'
 
 setup(name='sgas-luts-service',
       version=version,
