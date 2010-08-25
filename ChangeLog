@@ -1,5 +1,31 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.3.0:
+
+New (rewritten from scratch) visualization engine. The graphs are accessable
+via HTTPS and hence viewable ih the browser. Data sources are specified via SQL
+in the configuration file. Currently supported graph types are columns, stacked
+columns, grouped columns. View authorization happens via the sgas.authz file.
+
+SGAS now supports running from behind a reverse proxy (nginx). This is partly
+due to some strange behaviour from the Python SSL wrapper and that the new
+visualization engine must service .css and .js files, for which Twisted Web is
+not well suited for. For the visualization engine to work, the LUTS must run
+behind a reverse proxy.
+
+Support for UR processor field. Previously node_count has been used for
+counting processors (incorrect). The LUTS will detect old loggers only using
+node_count and adapt the usage record to the new schema. The schema should
+now also be compatable with PostgreSQL 8.3.
+
+Minor updates to the PostgreSQL schema after getting feedback on the 3.2 schema
+(some integer -> numeric conversions and longer fields).
+
+Added white list option for bypassing the host - machine name consistency check
+as some loggers must be able to register usage records on behalf of other
+sites.
+
+
 3.2.0:
 
 New database backend, which adds support for PostgreSQL along with the existing
