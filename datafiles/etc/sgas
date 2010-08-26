@@ -51,7 +51,7 @@ case "$1" in
     do_stop
     ;;
   restart|reload)
-    echo "Restarting sgas accounting server"
+    echo "Restarting SGAS accounting server"
     do_stop
     # erhm...
     sleep 1
