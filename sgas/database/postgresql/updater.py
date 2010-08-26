@@ -48,7 +48,7 @@ INSERT INTO uraggregated SELECT
     vo_attributes[1][2],
     count(*),
     SUM(COALESCE(cpu_duration,0))  / 3600.0,
-    SUM(COALESCE(wall_duration * COALESCE(processors,0))) / 3600.0,
+    SUM(COALESCE(wall_duration,0) * COALESCE(processors,1)) / 3600.0,
     now()
 FROM
     usagerecords
