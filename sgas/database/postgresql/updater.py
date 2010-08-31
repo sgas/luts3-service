@@ -113,7 +113,7 @@ class AggregationUpdater(service.Service):
     def scheduleUpdate(self, delay=20):
         # only schedule call if no other call is planned
         if self.update_call is None:
-            log.msg('Scheduling update for aggregated table in 20 seconds.')
+            log.msg('Scheduling update for aggregated table in %i seconds.' % delay)
             self.update_call = reactor.callLater(delay, self.performUpdate, True)
 
 
@@ -121,8 +121,8 @@ class AggregationUpdater(service.Service):
         if remove_call:
             self.update_call = None
         if self.updating:
-            # if an update is running, defer this update to later
-            self.scheduleUpdate(delay=30)
+            # if an update is running, defer this update to (much) later
+            self.scheduleUpdate(delay=300)
             return defer.succeed(None)
         else:
             d = self.update()
