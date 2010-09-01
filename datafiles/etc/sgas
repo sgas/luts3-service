@@ -31,7 +31,7 @@ do_start() {
     USER=`grep ^user= $CONFIG_FILE | tail -n 1 | cut -f2 -d'='`
     USER=${USER:-$DEFAULT_USER}
     USER_ID=`id -u $USER`
-    GROUP_ID=`id -u $USER`
+    GROUP_ID=`id -g $USER`
 
     # start the SGAS LUTS server using twistd
     twistd --pidfile $PIDFILE -l $LOGFILE -y $TACFILE -u $USER_ID -g $GROUP_ID
