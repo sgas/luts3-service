@@ -249,7 +249,7 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
         data = dataprocess.createJSTransposedMatrix(matrix, m_columns, m_rows, fill_value='undefined')
         cols = _createColumnNames(m_columns)
-        maximum = dataprocess.calculateStackedMaximum(matrix)
+        maximum = max(matrix.values() + [1])
         column_height = int(maximum*1.02)
 
         graph_args = {
