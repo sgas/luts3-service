@@ -222,7 +222,7 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
         assert len(m_rows) == 1, 'Only one row allowed in column matrix.'
         data = dataprocess.createJSList(matrix, m_columns, m_rows[0])
         cols = _createColumnNames(m_columns)
-        maximum = max(matrix.values())
+        maximum = max(matrix.values() + [1])
         column_height = int(maximum*1.02)
 
         graph_args = {

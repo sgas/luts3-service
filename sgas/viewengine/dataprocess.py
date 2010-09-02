@@ -45,7 +45,7 @@ def calculateStackedMaximum(matrix):
     for (rn, cn), value in matrix.items():
         stack_values[cn] = stack_values.get(cn, 0) + value
 
-    return max(stack_values.values())
+    return max(stack_values.values() + [1])
 
 
 
