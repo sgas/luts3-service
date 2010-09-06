@@ -1,5 +1,28 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.3.1:
+
+Use OrderedDict for parsing configuration file to make the view list on the
+SGAS view page the same order as in the configuration file.
+
+Add a PostgreSQL script for doing complete aggregation recalculation in
+database (without using SGAS).
+
+New implementation aggregation updater as the old one had a race condition.
+
+Update NginX documentation with details on bug with SSL session and client
+certificates.
+
+Ensure that graph y-value height is always at least 1.
+
+Fix group id setting in init.d script.
+
+Correctly calculate maximum y-value for grouped column charts.
+
+Be less aggresive in the aggregation updater timer when the updater is already
+running.
+
+
 3.3.0:
 
 New (rewritten from scratch) visualization engine. The graphs are accessable
