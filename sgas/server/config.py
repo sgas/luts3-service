@@ -7,6 +7,8 @@ Copyright: Nordic Data Grid Facility (2009, 2010)
 
 import ConfigParser
 
+from sgas.ext.python.collections import OrderedDict
+
 
 # log isn't loaded yet, so make a fake log
 class FakeLog:
@@ -53,7 +55,7 @@ class ConfigurationError(Exception):
 
 def readConfig(filename):
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = ConfigParser.SafeConfigParser(dict_type=OrderedDict)
 
     # add defaults
     cfg.add_section(SERVER_BLOCK)
