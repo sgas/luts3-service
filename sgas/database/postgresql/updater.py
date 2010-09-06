@@ -28,15 +28,16 @@ DELETE_AGGREGATED_INFO = '''DELETE FROM uraggregated WHERE insert_time = %s AND 
 
 # a nice small insert statement
 UPDATE_AGGREGATED_INFO = '''
-INSERT INTO uraggregated SELECT
-    COALESCE(end_time::DATE, create_time::DATE),
-    insert_time::DATE,
-    machine_name,
-    COALESCE(global_user_name, machine_name || ':' || local_user_id),
+INSERT INTO uraggregated
+SELECT
+    COALESCE(end_time::DATE, create_time::DATE)                      AS s_execute_time,
+    insert_time::DATE                                                AS s_insert_time,
+    machine_name                                                     AS s_machine_name,
+    COALESCE(global_user_name, machine_name || ':' || local_user_id) AS s_user_identity,
     CASE WHEN vo_issuer LIKE 'file:///%%'
         THEN NULL
         ELSE vo_issuer
-    END,
+    END                                                              AS s_vo_issuer,
     CASE WHEN vo_name is NULL
         THEN COALESCE(machine_name || ':' || project_name)
         ELSE
@@ -44,33 +45,20 @@ INSERT INTO uraggregated SELECT
                 THEN NULL
                 ELSE vo_name
             END
-    END,
-    vo_attributes[1][1],
-    vo_attributes[1][2],
-    count(*),
-    SUM(COALESCE(cpu_duration,0))  / 3600.0,
-    SUM(COALESCE(wall_duration,0) * COALESCE(processors,1)) / 3600.0,
-    now()
+    END                                                              AS s_vo_name,
+    vo_attributes[1][1]                                              AS s_vo_group,
+    vo_attributes[1][2]                                              AS s_vo_role,
+    count(*)                                                         AS s_n_jobs,
+    SUM(COALESCE(cpu_duration,0))  / 3600.0                          AS s_cputime,
+    SUM(COALESCE(wall_duration,0) * COALESCE(processors,1)) / 3600.0 AS s_walltime,
+    now()                                                            AS s_generate_time
 FROM
     usagerecords
 WHERE
     insert_time::date = %s AND machine_name = %s
 GROUP BY
-    COALESCE(end_time::DATE, create_time::DATE),
-    insert_time::DATE,
-    machine_name,
-    COALESCE(global_user_name, machine_name || ':' || local_user_id),
-    vo_issuer,
-    CASE WHEN vo_name is NULL
-        THEN COALESCE(machine_name || ':' || project_name)
-        ELSE
-            CASE WHEN vo_name LIKE '/%%'
-                THEN NULL
-                ELSE vo_name
-            END
-    END,
-    vo_attributes
-;'''
+    s_execute_time, s_insert_time, s_machine_name, s_user_identity, s_vo_issuer, s_vo_name, s_vo_group, s_vo_role;
+'''
 
 
 
