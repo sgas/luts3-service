@@ -20,7 +20,8 @@ from twisted.application import service
 
 
 
-AGGREGATE_UPDATE_QUERY = '''SELECT * FROM uraggregated_update'''
+
+AGGREGATE_UPDATE_QUERY = '''SELECT * FROM uraggregated_update ORDER BY insert_time LIMIT 1'''
 
 DELETE_AGGREGATED_UPDATE = '''DELETE FROM uraggregated_update WHERE insert_time = %s AND machine_name = %s'''
 DELETE_AGGREGATED_INFO = '''DELETE FROM uraggregated WHERE insert_time = %s AND machine_name = %s'''
@@ -81,6 +82,7 @@ class AggregationUpdater(service.Service):
 
         self.need_update = False
         self.updating    = False
+        self.stopping    = False
         self.update_call = None
         self.update_def  = None
 
@@ -95,6 +97,7 @@ class AggregationUpdater(service.Service):
 
 
     def stopService(self):
+        self.stopping = True
         service.Service.stopService(self)
         if self.update_call is not None:
             self.update_call.cancel()
@@ -131,14 +134,25 @@ class AggregationUpdater(service.Service):
 
     # -- end scheduling logic
 
-    def _performUpdate(self, txn, insert_date, machine_name):
-        # this is performed outside the main twisted thread and runs in a blocking manner
-        # i.e., no deferreds should be used
-        # furthermore the function is run within a transaction, so if any errors occurs
-        # everything is rolled back
+    def _performUpdate(self, txn):
+        # This is performed outside the main Twisted thread and runs in a
+        # blocking manner # i.e., no deferreds should be used.
+        # Furthermore the function is run within a transaction, so if any
+        # errors occurs everything is rolled back.
+
+        txn.execute(AGGREGATE_UPDATE_QUERY)
+        rows = txn.fetchall()
+        if not rows:
+            return # nothin to do
+
+        assert len(rows) == 1, 'Multiple rows returned for LIMIT 1 query'
+        insert_date, machine_name = rows[0]
+        insert_date = str(insert_date)
+
         txn.execute(DELETE_AGGREGATED_INFO, (insert_date, machine_name))
         txn.execute(UPDATE_AGGREGATED_INFO, (insert_date, machine_name))
         txn.execute(DELETE_AGGREGATED_UPDATE, (insert_date, machine_name))
+        return insert_date, machine_name
 
 
     @defer.inlineCallbacks
@@ -149,20 +163,18 @@ class AggregationUpdater(service.Service):
         self.updating = True
 
         try:
-            # first we get the info for what should be updated
-            rows = yield self.dbpool.runQuery(AGGREGATE_UPDATE_QUERY)
-            n_rows = len(rows)
-            #print 'Updates: %i to be performed' % n_rows
-            # this strategy may need to be updated at some time...
-            for row in rows:
-                insert_date, machine_name = row
-                insert_date = str(insert_date)
-
-                yield self.dbpool.runInteraction(self._performUpdate, insert_date, machine_name)
+            while True:
+                idmn = yield self.dbpool.runInteraction(self._performUpdate)
+                if idmn:
+                    insert_date, machine_name = idmn
+                    log.msg('Aggregation update: %s / %s' % (insert_date, machine_name))
+                else: # no more updates to perform
+                    break
+                if self.stopping:
+                    break
 
         except Exception, e:
-            print e
-            print dir(e)
+            log.err(e)
             raise
 
         finally:
