@@ -113,7 +113,7 @@ class AggregationUpdater(service.Service):
             self.update_call = None
         if self.updating:
             # if an update is running, defer this update to (much) later
-            self.scheduleUpdate(delay=300)
+            self.scheduleUpdate(delay=120)
             return defer.succeed(None)
         else:
             d = self.update()
