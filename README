@@ -25,5 +25,17 @@ Credits:
 Gerhard Weis for writing the excellent isodate module, which
 is used (and included in a modified form) in this software.
 
-Olli Tourunen and Jost Berthold for testing and feedback.
+Armin Ronacher and Raymond Hettinger for writing PEP-0372 and the code for the
+ordered dictionary included in this software.
+
+The following peope have provided valuable feedback, testing or code:
+
+Olli Tourunen
+Jost Berthold
+Placi Flury
+Tore Mauset
+Ake Sandgren
+
+
+Thanks!
 
