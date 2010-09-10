@@ -10,8 +10,8 @@ from sgas.viewengine import dataprocess
 
 
 
-DEFAULT_GRAPH_WIDTH  = 980
-DEFAULT_GRAPH_HEIGTH = 450
+DEFAULT_GRAPH_WIDTH  = 1020
+DEFAULT_GRAPH_HEIGTH = 460
 
 
 
@@ -76,7 +76,7 @@ var d = [
 var data = d,
     w = %(width)i,
     h = %(height)i,
-    x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-80, 4/5),
+    x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-100, 4/5),
     y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
 var vis = new pv.Panel()
@@ -146,7 +146,7 @@ var m = %(n_columns)i;
 /* Sizing and scales. */
 var w = %(width)s;
 var h = %(height)s;
-var x = pv.Scale.ordinal(pv.range(n)).splitBanded(0, w-80, 0.8);
+var x = pv.Scale.ordinal(pv.range(n)).splitBanded(0, w-100, 0.8);
 var y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
 
