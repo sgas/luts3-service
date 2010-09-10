@@ -119,7 +119,7 @@ vis.add(pv.Rule)
 vis.add(pv.Dot)
     .data(%(stacks)s)
     .right(10)
-    .top(function() 5 + this.index * 18)
+    .top(function() (5 + (%(n_stacks)i * 18))  - (this.index * 18))
     .size(40)
     .strokeStyle('#444444')
     .fillStyle(function(d) c(this.index) )
@@ -241,7 +241,8 @@ def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
         graph_args = {
             'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
-            'column_height':column_height, 'n_columns': len(m_columns), 'columns':cols, 'stacks':m_rows
+            'column_height': column_height, 'n_columns': len(m_columns), 'columns': cols,
+            'n_stacks': len(m_rows), 'stacks':m_rows
         }
         return JAVASCRIPT_STACKED_COLUMN_GRAPH % graph_args
 
