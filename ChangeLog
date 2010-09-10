@@ -3,8 +3,8 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 3.3.1:
 
 Flip legend for stacked columns to fit with stack order. Also make a bit more
-room for the legend to avoid column-legend overlap and increase graph size
-slightly.
+room for the legend to avoid column-legend overlap, increase legend spacing
+a bit, and increase graph size slightly.
 
 Use OrderedDict for parsing configuration file to make the view list on the
 SGAS view page the same order as in the configuration file.
