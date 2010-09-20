@@ -25,15 +25,15 @@ DEFAULT_POSTGRESQL_PORT = 5432
 
 
 
-class PostgreSQLDatabase(service.Service):
+class _DatabasePoolProxy:
+    # abstraction over a database pool object, so we can provide a sensible way
+    # to replcate the pool if something goes wrong.
 
-    implements(ISGASDatabase)
+    def __init__(self, connect_info):
 
-    def __init__(self, connect_info, checker):
         self.connect_info = connect_info
-        self.dbpool = self._setupPool(self.connect_info)
-        self.updater = updater.AggregationUpdater(self.dbpool)
-        self.checker = checker
+        self.dbpool = None
+        self.reconnect()
 
 
     def _setupPool(self, connect_info):
@@ -42,6 +42,36 @@ class PostgreSQLDatabase(service.Service):
         if port is None:
             port = DEFAULT_POSTGRESQL_PORT
         return adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
+
+
+    def reconnect(self):
+        # close dbpool before creating an new (to stop the threadpool mainly)
+        # we assume that reconnect is only invoked when the connection is faulty
+        # hence we can remove the shutdown trigger (which would cause an error on exit otherwise)
+
+#        if self.dbpool is not None and self.dbpool.shutdownID is not None:
+#            from twisted.internet import reactor
+#            reactor.removeSystemEventTrigger(self.dbpool.shutdownID)
+#            self.dbpool.shutdownID = None
+        if self.dbpool is not None:
+            log.msg('Closing failed connection before reconnecting.')
+            log.msg('This will likely cause psycopg2.InterfaceError, as the connection is half-closed.')
+            self.dbpool.close()
+
+        self.dbpool = self._setupPool(self.connect_info)
+
+
+
+
+class PostgreSQLDatabase(service.Service):
+
+    implements(ISGASDatabase)
+
+    def __init__(self, connect_info, checker):
+        self.pool_proxy = _DatabasePoolProxy(connect_info)
+        #self.dbpool = self._setupPool(self.connect_info)
+        self.updater = updater.AggregationUpdater(self.pool_proxy)
+        self.checker = checker
 
 
     def startService(self):
@@ -63,7 +93,7 @@ class PostgreSQLDatabase(service.Service):
 
         try:
             id_dict = {}
-            conn = adbapi.Connection(self.dbpool)
+            conn = adbapi.Connection(self.pool_proxy.dbpool)
             try:
                 trans = adbapi.Transaction(self, conn)
 
@@ -79,6 +109,9 @@ class PostgreSQLDatabase(service.Service):
                 # NOTIFY does not appear to work under adbapi, so we just do the notification here
                 self.updater.updateNotification()
                 defer.returnValue(id_dict)
+            except psycopg2.InterfaceError:
+                # error (usually) implies that the connection is closed, can't rollback
+                raise
             except:
                 conn.rollback()
                 raise
@@ -91,8 +124,9 @@ class PostgreSQLDatabase(service.Service):
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if not retry:
-                log.msg('Got interface error while attempting insert (%s), attempting to reconnect' % str(e))
-                self.dbpool = self._setupPool(self.connect_info)
+                log.msg('Got interface error while attempting insert: %s.' % str(e))
+                log.msg('Attempting to reconnect.')
+                self.pool_proxy.reconnect()
                 yield self.insert(usagerecord_data, insert_identity=insert_identity,
                                   insert_hostname=insert_hostname, retry=True)
             if retry:
@@ -118,7 +152,7 @@ class PostgreSQLDatabase(service.Service):
             return str(value)
 
         try:
-            query_result = yield self.dbpool.runQuery(query, query_args)
+            query_result = yield self.pool_proxy.dbpool.runQuery(query, query_args)
             results = []
             for row in query_result:
                 results.append( [ buildValue(e) for e in row ] )

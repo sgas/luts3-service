@@ -14,6 +14,8 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
+import psycopg2
+
 from twisted.python import log
 from twisted.internet import defer, reactor
 from twisted.application import service
@@ -65,9 +67,9 @@ GROUP BY
 
 class AggregationUpdater(service.Service):
 
-    def __init__(self, dbpool):
+    def __init__(self, pool_proxy):
 
-        self.dbpool = dbpool
+        self.pool_proxy = pool_proxy
 
         self.need_update = False
         self.updating    = False
@@ -154,17 +156,31 @@ class AggregationUpdater(service.Service):
         # specified to need an update in the update table
 
         self.updating = True
+        self.has_reconnected = False
 
         try:
             while True:
-                idmn = yield self.dbpool.runInteraction(self._performUpdate)
-                if idmn:
-                    insert_date, machine_name = idmn
-                    log.msg('Aggregation update: %s / %s' % (insert_date, machine_name))
-                else: # no more updates to perform
-                    break
-                if self.stopping:
-                    break
+                try:
+                    idmn = yield self.pool_proxy.dbpool.runInteraction(self._performUpdate)
+                    if idmn:
+                        insert_date, machine_name = idmn
+                        log.msg('Aggregation updated: %s / %s' % (insert_date, machine_name))
+                    else: # no more updates to perform
+                        break
+                    if self.stopping:
+                        break
+                except psycopg2.OperationalError, e:
+                    # if the transaction fails due to closed connection, it will cause an interface error
+                    # however dbapi will try to rollback, which will wrap/cause OperationalError instead
+                    # FIXME in the future the updating should be done in pgplsql function to avoid this
+                    if self.has_reconnected:
+                        log.msg('Reconnect in update failed, bailing out.')
+                        raise
+                    else:
+                        log.msg('Got OperationalError while attempting update: %s.' % str(e))
+                        log.msg('Attempting reconnect.')
+                        self.has_reconnected = True
+                        self.pool_proxy.reconnect()
 
         except Exception, e:
             log.err(e)
