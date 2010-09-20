@@ -1,5 +1,13 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.3.2:
+
+Avoid update race condition by running updater in serialized transaction mode.
+
+Deal with closed database connection errors (typically caused by db restarts)
+in PostgreSQL database module.
+
+
 3.3.1:
 
 Flip legend for stacked columns to fit with stack order. Also make a bit more
