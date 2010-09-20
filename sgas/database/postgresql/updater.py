@@ -20,6 +20,7 @@ from twisted.application import service
 
 
 
+SQL_SERIALIZABLE_TRANSACTION = '''SET TRANSACTION ISOLATION LEVEL SERIALIZABLE'''
 
 AGGREGATE_UPDATE_QUERY = '''SELECT * FROM uraggregated_update ORDER BY insert_time LIMIT 1'''
 
@@ -128,6 +129,10 @@ class AggregationUpdater(service.Service):
         # Furthermore the function is run within a transaction, so if any
         # errors occurs everything is rolled back.
 
+        # FIXME make a pg/plsql function for this, to avoid ping-ponging
+        # with the database
+
+        txn.execute(SQL_SERIALIZABLE_TRANSACTION)
         txn.execute(AGGREGATE_UPDATE_QUERY)
         rows = txn.fetchall()
         if not rows:
