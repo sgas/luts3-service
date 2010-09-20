@@ -3,9 +3,11 @@ Server-setup logic
 """
 import os.path
 
+from twisted.python import log
 from twisted.application import internet, service
 from twisted.web import resource, server
 
+from sgas import __version__
 from sgas.server import config, ssl, authz, hostcheck, topresource, insertresource, viewresource
 from sgas.viewengine import viewdefinition
 
@@ -131,6 +133,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
         internet.TCPServer(port or TCP_PORT, site, interface='localhost').setServiceParent(application)
     else:
         internet.TCPServer(port or TCP_PORT, site).setServiceParent(application)
+
+    log.msg('SGAS %s twistd application created, starting server.' % __version__)
 
     return application
 
