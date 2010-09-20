@@ -30,16 +30,18 @@ class PostgreSQLDatabase(service.Service):
     implements(ISGASDatabase)
 
     def __init__(self, connect_info, checker):
+        self.connect_info = connect_info
+        self.dbpool = self._setupPool(self.connect_info)
+        self.updater = updater.AggregationUpdater(self.dbpool)
+        self.checker = checker
 
+
+    def _setupPool(self, connect_info):
         args = [ e or None for e in connect_info.split(':') ]
         host, port, database, user, password, _ = args
         if port is None:
             port = DEFAULT_POSTGRESQL_PORT
-        self.dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
-
-        self.updater = updater.AggregationUpdater(self.dbpool)
-
-        self.checker = checker
+        return adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
 
 
     def startService(self):
@@ -53,7 +55,7 @@ class PostgreSQLDatabase(service.Service):
 
 
     @defer.inlineCallbacks
-    def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None):
+    def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None, retry=False):
         # inserts usage record
         arg_list = urparser.buildArgList(usagerecord_data, insert_identity=insert_identity, insert_hostname=insert_hostname)
 
@@ -85,6 +87,18 @@ class PostgreSQLDatabase(service.Service):
             if 'Connection refused' in str(e):
                 raise error.DatabaseUnavailableError(str(e))
             raise # re-raise current exception
+        except psycopg2.InterfaceError, e:
+            # this usually happens if the database was restarted,
+            # and the existing connection to the database was closed
+            if not retry:
+                log.msg('Got interface error while attempting insert (%s), attempting to reconnect' % str(e))
+                self.dbpool = self._setupPool(self.connect_info)
+                yield self.insert(usagerecord_data, insert_identity=insert_identity,
+                                  insert_hostname=insert_hostname, retry=True)
+            if retry:
+                log.msg('Got interface error after retrying to connect, bailing out.')
+                raise error.DatabaseUnavailableError(str(e))
+
         except Exception, e:
             log.msg('Unexpected database error')
             log.err(e)
@@ -92,7 +106,7 @@ class PostgreSQLDatabase(service.Service):
 
 
     @defer.inlineCallbacks
-    def query(self, query, query_args=None):
+    def query(self, query, query_args=None, retry=False):
 
         def buildValue(value):
             if type(value) in (unicode, str, int, long, float, bool):
@@ -103,13 +117,22 @@ class PostgreSQLDatabase(service.Service):
             # bad catch-all
             return str(value)
 
-        query_result = yield self.dbpool.runQuery(query, query_args)
-
-        results = []
-        for row in query_result:
-            results.append( [ buildValue(e) for e in row ] )
-
-        defer.returnValue(results)
+        try:
+            query_result = yield self.dbpool.runQuery(query, query_args)
+            results = []
+            for row in query_result:
+                results.append( [ buildValue(e) for e in row ] )
+            defer.returnValue(results)
+        except psycopg2.InterfaceError, e:
+            # this usually happens if the database was restarted,
+            # and the existing connection to the database was closed
+            if not retry:
+                log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e))
+                self.dbpool = self._setupPool(self.connect_info)
+                yield self.query(query, query_args, retry=True)
+            if retry:
+                log.msg('Got interface error after retrying to connect, bailing out.')
+                raise error.DatabaseUnavailableError(str(e))
 
 
     def _checkIdentityConsistency(self, insert_identity, arg_list):
