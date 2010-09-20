@@ -46,13 +46,6 @@ class _DatabasePoolProxy:
 
     def reconnect(self):
         # close dbpool before creating an new (to stop the threadpool mainly)
-        # we assume that reconnect is only invoked when the connection is faulty
-        # hence we can remove the shutdown trigger (which would cause an error on exit otherwise)
-
-#        if self.dbpool is not None and self.dbpool.shutdownID is not None:
-#            from twisted.internet import reactor
-#            reactor.removeSystemEventTrigger(self.dbpool.shutdownID)
-#            self.dbpool.shutdownID = None
         if self.dbpool is not None:
             log.msg('Closing failed connection before reconnecting.')
             log.msg('This will likely cause psycopg2.InterfaceError, as the connection is half-closed.')
