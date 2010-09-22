@@ -64,6 +64,8 @@ CREATE TABLE usagedata (
     insert_time             timestamp
 );
 
+CREATE INDEX insert_time_date_hash_idx ON usagedata USING HASH (date(insert_time));
+
 
 -- this is the table used for storing aggregated usage information in
 CREATE TABLE uraggregated (
