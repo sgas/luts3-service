@@ -36,7 +36,7 @@ class InstallSGASData(install_data):
 
         # check that we don't overwrite /etc files
         for (prefix, files) in reversed(self.data_files):
-            if prefix.startswith(os.path.join(RELOCATE, 'etc')):
+            if prefix.startswith(os.path.join(RELOCATE or '', 'etc')):
                 for basefile in files:
                     fn = os.path.join(prefix, os.path.basename(basefile))
                     if os.path.exists(fn):
