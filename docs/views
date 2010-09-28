@@ -53,6 +53,14 @@ the column. An example of query for a stacked column is:
 
 Which will display the walltime used by each machine over the last ten days.
 
+SGAS 2.4 also feature lines rendering. The data format should be:
+time series (discrete), group (discrete), data value
+Query example:
+
+    SELECT execution_time, COALESCE(vo_name, 'NO PROJECT') AS vo_name, \
+    (SUM(walltime) OVER (PARTITION BY vo_name ORDER BY execution_time) / 24.0)::INTEGER AS walltime \
+    FROM uraggregated  WHERE execution_time > current_date - 50  ORDER BY execution_time, vo_name;
+
 Authorization can specified per view or an all-access pass can be granted. To
 grant access to a specific view, make an in sgas.authz similar to this:
 

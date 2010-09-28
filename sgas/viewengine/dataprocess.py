@@ -39,6 +39,20 @@ def createMatrixList(rows, row_name):
 
 
 
+def linearizeBlanks(matrix, m_rows, m_columns):
+    # set blank values to previous values in data series
+    for mr in m_rows:
+        blank_value = 0
+        for mc in m_columns:
+            if matrix.get((mr,mc)) is None:
+                matrix[mr,mc] = blank_value
+            else:
+                blank_value = matrix[mr,mc]
+
+    return matrix
+
+
+
 def calculateStackedMaximum(matrix):
 
     stack_values = {}

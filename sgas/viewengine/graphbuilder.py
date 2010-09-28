@@ -15,6 +15,78 @@ DEFAULT_GRAPH_HEIGTH = 460
 
 
 
+JAVASCRIPT_LINE_GRAPH = """
+    <script type="text/javascript+protovis">
+
+var c = pv.Colors.category20();
+
+var data = [
+    %(data)s
+];
+
+var w = %(width)i;
+var h = %(height)i;
+
+var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).split(0, w-120);
+var y = pv.Scale.linear(0, %(graph_heigth)i).range(0, h);
+
+
+var vis = new pv.Panel()
+    .width(w)
+    .height(h)
+    .bottom(20)
+    .left(50)
+    .right(5)
+    .top(5);
+
+/* x-axis ticks */
+vis.add(pv.Panel)
+    .data(%(x_markers)s)
+  .add(pv.Label)
+    .textBaseline("top")
+    .bottom(-2)
+    .left(function(d) x(this.parent.index))
+    .text(function(d) d);
+
+/* y ticks */
+vis.add(pv.Rule)
+    .data(y.ticks())
+    .bottom(y)
+    .width(w-120)
+    .strokeStyle(function(d) d ? "#ccc" : "#000")
+  .anchor("left").add(pv.Label)
+    .textStyle(function() i > 0 ? "#000" : "#000")
+    .text(y.tickFormat);
+
+
+/* the lines */
+vis.add(pv.Panel)
+    .data(data)
+  .add(pv.Line)
+    .data(function(d) d)
+    .left(function(d) x(this.index))
+    .bottom(function(d) y(d))
+    .strokeStyle(function(d) c(this.parent.index))
+    .lineWidth(3)
+
+/* legend */
+vis.add(pv.Dot)
+    .data(%(groups)s)
+    .right(10)
+    .top(function() (5 + (%(n_groups)i  - this.index) * 19))
+    .size(40)
+    .strokeStyle('#444444')
+    .fillStyle(function(d) c(this.index) )
+    .anchor("left")
+    .add(pv.Label);
+
+vis.render();
+
+    </script>
+"""
+
+
+
 JAVASCRIPT_COLUMN_GRAPH = """
      <script type="text/javascript+protovis">
 
@@ -217,7 +289,24 @@ vis.render();
 
 def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
-    if view_type == 'columns':
+    if view_type == 'lines':
+        # m_columns -> time series, m_rows -> groups
+
+        # set blank values to previous values in data series
+        matrix = dataprocess.linearizeBlanks(matrix, m_rows, m_columns)
+        data = dataprocess.createJSMatrix(matrix, m_columns, m_rows)
+        x_markers = _createColumnNames(m_columns)
+        maximum = max(matrix.values() + [1])
+
+        graph_args = {
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'graph_heigth': maximum, 'x_markers': x_markers, 'n_columns': len(m_columns),
+            'groups': m_rows, 'n_groups': len(m_rows)
+        }
+        return JAVASCRIPT_LINE_GRAPH % graph_args
+
+
+    elif view_type == 'columns':
 
         assert len(m_rows) == 1, 'Only one row allowed in column matrix.'
         data = dataprocess.createJSList(matrix, m_columns, m_rows[0])
@@ -269,7 +358,7 @@ def _createColumnNames(m_columns):
 
     n_columns = len(m_columns)
 
-    if n_columns<= 12:
+    if n_columns <= 12:
         return m_columns
 
     if n_columns <= 20:
@@ -277,6 +366,9 @@ def _createColumnNames(m_columns):
         return [ m_columns[i] if i % 2 == 0 else '' for i in range(0, len(m_columns))]
 
     # just assume dates for now
+    if n_columns <= 50:
+        return [ c if c.endswith('01') or c.endswith('10') or c.endswith('20') else '' for c in m_columns ]
+
     if n_columns < 100:
         return [ c if c.endswith('01') or c.endswith('15') else '' for c in m_columns ]
 
