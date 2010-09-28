@@ -67,8 +67,8 @@ def createJSMatrix(matrix, column_names, row_names, fill_value='0'):
 
     rows = []
     for rn in row_names:
-        rows.append( '\n[' + ','.join( [ str(matrix.get((rn,cn), fill_value)) for cn in column_names ] ) + ']' )
-    return ','.join(rows)
+        rows.append( '[' + ','.join( [ str(matrix.get((rn,cn), fill_value)) for cn in column_names ] ) + ']' )
+    return ',\n  '.join(rows)
 
 
 
@@ -76,8 +76,8 @@ def createJSTransposedMatrix(matrix, column_names, row_names, fill_value='0'):
 
     rows = []
     for cn in column_names:
-        rows.append( '\n[' + ','.join( [ str(matrix.get((rn,cn), fill_value)) for rn in row_names ] ) + ']' )
-    return ','.join(rows)
+        rows.append( '[' + ','.join( [ str(matrix.get((rn,cn), fill_value)) for rn in row_names ] ) + ']' )
+    return ',\n  '.join(rows)
 
 
 

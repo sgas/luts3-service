@@ -13,15 +13,15 @@ from sgas.viewengine import dataprocess
 DEFAULT_GRAPH_WIDTH  = 1020
 DEFAULT_GRAPH_HEIGTH = 460
 
+JAVASCRIPT_PROTOVIS_HEADER = """    <script type="text/javascript+protovis">\n"""
+JAVASCRIPT_PROTOVIS_FOOTER = """    </script>\n"""
 
 
 JAVASCRIPT_LINE_GRAPH = """
-    <script type="text/javascript+protovis">
-
 var c = pv.Colors.category20();
 
 var data = [
-    %(data)s
+  %(data)s
 ];
 
 var w = %(width)i;
@@ -58,7 +58,6 @@ vis.add(pv.Rule)
     .textStyle(function() i > 0 ? "#000" : "#000")
     .text(y.tickFormat);
 
-
 /* the lines */
 vis.add(pv.Panel)
     .data(data)
@@ -81,15 +80,11 @@ vis.add(pv.Dot)
     .add(pv.Label);
 
 vis.render();
-
-    </script>
 """
 
 
 
 JAVASCRIPT_COLUMN_GRAPH = """
-     <script type="text/javascript+protovis">
-
 var d = [%(data)s];
 
 var w = %(width)i;
@@ -97,6 +92,7 @@ var h = %(height)i;
 
 var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w, 4/5);
 var y = pv.Scale.linear(0, %(column_height)i).range(0, h);
+
 
 var vis = new pv.Panel()
     .width(w)
@@ -123,7 +119,7 @@ vis.add(pv.Rule)
     .data(y.ticks())
     .bottom(function(d) Math.round(y(d)) - .5 )
     .strokeStyle(function(d) d ? "rgba(255,255,255,.3)" : "#000")
-   .add(pv.Rule)
+  .add(pv.Rule)
     .left(0)
     .width(0)
     .strokeStyle("#000")
@@ -131,26 +127,22 @@ vis.add(pv.Rule)
     .text(function(d) parseInt(d.toFixed(1)));
 
 vis.render();
-
-    </script>
 """
 
 
 
 JAVASCRIPT_STACKED_COLUMN_GRAPH = """
-    <script type="text/javascript+protovis">
-
 c = pv.Colors.category20();
-var d = [
-    %(data)s
+var data = [
+  %(data)s
 ];
 
-var data = d,
-    w = %(width)i,
-    h = %(height)i,
-    x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-100, 4/5),
-    y = pv.Scale.linear(0, %(column_height)i).range(0, h);
+var w = %(width)i;
+var h = %(height)i;
+var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).splitBanded(0, w-100, 4/5);
+var y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
+/* panel */
 var vis = new pv.Panel()
     .width(w)
     .height(h)
@@ -159,15 +151,17 @@ var vis = new pv.Panel()
     .right(5)
     .top(5);
 
+/* bars */
 var bar = vis.add(pv.Panel)
     .data(data)
-    .add(pv.Bar)
-    .data(function(a) a)
+  .add(pv.Bar)
+    .data(function(d) d)
     .left(function() x(this.index))
     .width(x.range().band)
     .bottom(pv.Layout.stack())
     .height(y);
 
+/* x-scale ticks */
 bar.anchor("bottom").add(pv.Label)
     .visible(function() !this.parent.index)
     .textMargin(8)
@@ -199,17 +193,13 @@ vis.add(pv.Dot)
     .add(pv.Label);
 
 vis.render();
-
-    </script>
 """
 
 
 
 JAVASCRIPT_GROUPED_COLUMN_GRAPH = """
-    <script type="text/javascript+protovis">
-
 var data = [
-    %(data)s
+  %(data)s
 ];
 
 var n = %(n_groups)i;
@@ -221,7 +211,6 @@ var h = %(height)s;
 var x = pv.Scale.ordinal(pv.range(n)).splitBanded(0, w-100, 0.8);
 var y = pv.Scale.linear(0, %(column_height)i).range(0, h);
 
-
 /* The root panel */
 var vis = new pv.Panel()
     .width(w)
@@ -230,7 +219,6 @@ var vis = new pv.Panel()
     .left(50)
     .right(5)
     .top(5);
-
 
 /* The columns */
 var bar = vis.add(pv.Panel)
@@ -244,7 +232,6 @@ var bar = vis.add(pv.Panel)
     .height(y)
     .fillStyle(pv.Colors.category20().by(pv.index));
 
-
 /* X-axis group labels */
 vis.add(pv.Label)
     .data(pv.range(n))
@@ -253,7 +240,6 @@ vis.add(pv.Label)
     .textMargin(5)
     .textBaseline("top")
     .text(function() %(group_names)s[this.index]);
-
 
 /* Y-axis labels and ticks */
 vis.add(pv.Rule)
@@ -267,7 +253,6 @@ vis.add(pv.Rule)
   .anchor("left").add(pv.Label)
     .text(function(d) parseInt(d.toFixed(1)));
 
-
 /* Column color legend */
 vis.add(pv.Dot)
     .data(%(column_names)s)
@@ -279,15 +264,19 @@ vis.add(pv.Dot)
     .anchor("left")
     .add(pv.Label);
 
-
 vis.render();
-
-    </script>
 """
 
 
 
 def buildGraph(view_type, matrix, m_columns, m_rows=None):
+
+    js = buildProtovisCode(view_type, matrix, m_columns, m_rows)
+
+    return JAVASCRIPT_PROTOVIS_HEADER + js + JAVASCRIPT_PROTOVIS_FOOTER
+
+
+def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
 
     if view_type == 'lines':
         # m_columns -> time series, m_rows -> groups
