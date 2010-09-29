@@ -11,7 +11,7 @@ from sgas.viewengine import dataprocess
 
 
 DEFAULT_GRAPH_WIDTH  = 1020
-DEFAULT_GRAPH_HEIGTH = 460
+DEFAULT_GRAPH_HEIGHT = 460
 
 JAVASCRIPT_PROTOVIS_HEADER = """    <script type="text/javascript+protovis">\n"""
 JAVASCRIPT_PROTOVIS_FOOTER = """    </script>\n"""
@@ -28,7 +28,7 @@ var w = %(width)i;
 var h = %(height)i;
 
 var x = pv.Scale.ordinal(pv.range(%(n_columns)i)).split(0, w-120);
-var y = pv.Scale.linear(0, %(graph_heigth)i).range(0, h);
+var y = pv.Scale.linear(0, %(graph_height)i).range(0, h);
 
 
 var vis = new pv.Panel()
@@ -268,6 +268,73 @@ vis.render();
 """
 
 
+JAVASCRIPT_SCATTERPLOT_GRAPH = """
+var data = [
+%(data)s
+];
+
+/* sizing and scales. */
+var w = %(width)s;
+var h = %(height)s;
+
+var x = pv.Scale.ordinal(pv.range(data.length)).split(0, w-120);
+var y = pv.Scale.linear(0, %(graph_height)i).range(0, h);
+
+var c = pv.Colors.category20();
+
+
+/* root panel. */
+var vis = new pv.Panel()
+    .width(w)
+    .height(h)
+    .bottom(20)
+    .left(50)
+    .right(5)
+    .top(5);
+
+/* y-axis and ticks. */
+vis.add(pv.Rule)
+    .data(y.ticks())
+    .bottom(y)
+    .strokeStyle(function(d) d ? "#eee" : "#000")
+  .anchor("left").add(pv.Label)
+    .text(y.tickFormat);
+
+/* x-axis and ticks. */
+vis.add(pv.Panel)
+    .data(%(x_markers)s)
+  .add(pv.Label)
+    .textBaseline("top")
+    .left(function(d) x(this.parent.index))
+    .text(function(d) d);
+
+/* The dot plot! */
+vis.add(pv.Panel)
+    .data(data)
+  .add(pv.Panel)
+    .data(function(d) d)
+  .add(pv.Dot)
+    .left(function(d) x(this.parent.parent.index))
+    .bottom(function(d) y(d.y))
+    .size(function(d) d.z)
+    .fillStyle(function() c(this.parent.index).alpha(.4))
+    .title(function(d) d.z.toFixed(1));
+
+/* group/color legend */
+vis.add(pv.Dot)
+    .data(%(group_names)s)
+    .right(10)
+    .top(function() 5 + this.index * 19)
+    .size(50)
+    .strokeStyle('#444444')
+    .fillStyle(pv.Colors.category20().by(pv.index))
+    .anchor("left")
+    .add(pv.Label);
+
+vis.render();
+"""
+
+
 
 def buildGraph(view_type, matrix, m_columns, m_rows=None):
 
@@ -288,8 +355,8 @@ def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
         maximum = max(matrix.values() + [1])
 
         graph_args = {
-            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
-            'graph_heigth': maximum, 'x_markers': x_markers, 'n_columns': len(m_columns),
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGHT,
+            'graph_height': maximum, 'x_markers': x_markers, 'n_columns': len(m_columns),
             'groups': m_rows, 'n_groups': len(m_rows)
         }
         return JAVASCRIPT_LINE_GRAPH % graph_args
@@ -304,7 +371,7 @@ def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
         column_height = int(maximum*1.02)
 
         graph_args = {
-            'data' : data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'data' : data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGHT,
             'n_columns': len(m_columns), 'columns': cols, 'column_height': column_height
         }
         return JAVASCRIPT_COLUMN_GRAPH % graph_args
@@ -318,7 +385,7 @@ def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
         column_height = int(maximum*1.02)
 
         graph_args = {
-            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGHT,
             'column_height': column_height, 'n_columns': len(m_columns), 'columns': cols,
             'n_stacks': len(m_rows), 'stacks':m_rows
         }
@@ -332,11 +399,23 @@ def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
         column_height = int(maximum*1.02)
 
         graph_args = {
-            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGTH,
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGHT,
             'n_groups':len(m_columns), 'n_columns':len(m_rows), 'column_height':column_height,
             'group_names': m_columns, 'column_names':m_rows
         }
         return JAVASCRIPT_GROUPED_COLUMN_GRAPH % graph_args
+
+    elif view_type == 'scatterplot':
+
+        data = dataprocess.createScatterData(matrix, m_columns, m_rows)
+        x_markers = _createColumnNames(m_columns)
+        y_max = max( [ e[1] for e in matrix.values() ] )
+
+        graph_args = {
+            'data': data, 'width': DEFAULT_GRAPH_WIDTH, 'height': DEFAULT_GRAPH_HEIGHT,
+            'graph_height': y_max, 'x_markers': x_markers, 'group_names': m_rows
+        }
+        return JAVASCRIPT_SCATTERPLOT_GRAPH % graph_args
 
     else:
         raise AssertionError('Invalid view type specified (%s)' % view_type)

@@ -39,6 +39,21 @@ def createMatrixList(rows, row_name):
 
 
 
+def createScatterMatrix(rows):
+
+    x_values = set()
+    groups = set()
+    matrix = {}
+
+    for x_val, group, z_val, y_val in rows:
+        x_values.add(x_val)
+        groups.add(group)
+        matrix[group, x_val] = z_val, y_val
+
+    return matrix, sorted(x_values), sorted(groups)
+
+
+
 def linearizeBlanks(matrix, m_rows, m_columns):
     # set blank values to previous values in data series
     for mr in m_rows:
@@ -86,4 +101,20 @@ def createJSList(matrix, column_names, row):
     elements = ','.join( [ str(matrix[row,cn]) or '0' for cn in column_names ] )
     return elements
 
+
+def createScatterData(matrix, x_values, groups):
+
+    rows = []
+
+    for x_val in x_values:
+        group_rows = []
+        for group in groups:
+            res = matrix.get((group, x_val))
+            if res is not None:
+                group_rows.append( " { x:'%s', group:'%s', z:%s, y:%s }" % (x_val, group, res[0], res[1]) )
+        group_data = '  [' + ',\n   '.join( group_rows ) + ' ]'
+        rows.append(group_data)
+
+    data = ',\n'.join(rows)
+    return data
 

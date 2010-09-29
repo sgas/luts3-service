@@ -14,6 +14,7 @@ DEFAULT_TABLE_RENDER_LIMIT = 15
 def buildViewPage(view, rows):
     # note, just the body of the page is created, not the entire page
 
+    # this scheme needs to be changed sometime (should be encapsulated into the graph builder)
     if view.view_type == 'lines':
         matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
 
@@ -27,6 +28,9 @@ def buildViewPage(view, rows):
 
     elif view.view_type == 'grouped_columns':
         matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
+
+    elif view.view_type == 'scatterplot':
+        matrix, m_columns, m_rows = dataprocess.createScatterMatrix(rows)
 
     else:
         raise AssertionError('Invalid view type specified (%s)' % view.view_type)
