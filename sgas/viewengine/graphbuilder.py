@@ -405,7 +405,7 @@ def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
         }
         return JAVASCRIPT_GROUPED_COLUMN_GRAPH % graph_args
 
-    elif view_type == 'scatterplot':
+    elif view_type == 'discrete_scatterplot':
 
         data = dataprocess.createScatterData(matrix, m_columns, m_rows)
         x_markers = _createColumnNames(m_columns)

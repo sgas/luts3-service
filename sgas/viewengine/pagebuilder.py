@@ -29,7 +29,7 @@ def buildViewPage(view, rows):
     elif view.view_type == 'grouped_columns':
         matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
 
-    elif view.view_type == 'scatterplot':
+    elif view.view_type == 'discrete_scatterplot':
         matrix, m_columns, m_rows = dataprocess.createScatterMatrix(rows)
 
     else:
