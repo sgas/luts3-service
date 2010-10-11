@@ -8,7 +8,7 @@ from twisted.application import internet, service
 from twisted.web import resource, server
 
 from sgas import __version__
-from sgas.server import config, ssl, authz, hostcheck, topresource, insertresource, viewresource
+from sgas.server import config, ssl, authz, hostcheck, topresource, insertresource, viewresource, queryresource
 from sgas.viewengine import viewdefinition
 
 
@@ -46,10 +46,12 @@ def createSite(db, authorizer, views):
 
     rr = insertresource.InsertResource(db, authorizer)
     vr = viewresource.ViewTopResource(db, authorizer, views)
+    qr = queryresource.QueryResource(db, authorizer)
 
     tr = topresource.TopResource(authorizer)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
     tr.registerService(vr, 'view', (('View', 'view'),))
+    tr.registerService(qr, 'query', (('Query', 'query'),))
 
     root = resource.Resource()
     root.putChild('sgas', tr)

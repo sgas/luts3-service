@@ -11,6 +11,7 @@ from twisted.python import log
 INSERT    = 'insert'
 RETRIEVAL = 'retrieval'
 VIEW      = 'view'
+QUERY     = 'query'
 
 # regular expression for matching authz lines
 rx = re.compile("""\s*"(.*)"\s*(.*)""")
