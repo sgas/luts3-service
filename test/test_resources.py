@@ -6,7 +6,6 @@
 
 import os
 import json
-import urllib
 
 from twisted.trial import unittest
 from twisted.internet import defer, reactor
@@ -58,39 +57,6 @@ class ResourceTest:
         ids = json.loads(r)
         self.failUnlessEqual(len(ids), 1)
         self.failUnlessIn(ursampledata.UR1_ID, ids)
-
-
-    @defer.inlineCallbacks
-    def testQuery(self):
-
-        # insert some data, so there is something to query
-        insert_url = self.service_url + '/ur'
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
-        yield d
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR2)
-        yield d
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.CUR)
-        yield d
-
-        print
-
-        # query
-        query_url = self.service_url + '/query'
-
-        userdn = '/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User'
-        encoded_userdn = urllib.quote(userdn)
-
-        query_params = '?user_identity=%s&user_identityfirst%%20last&machine_name=benedict.grid.aau.dk&start_time=2010-08-01' % encoded_userdn
-
-        d, f = rclient.httpRequest(query_url + query_params, method='GET')
-        r = yield d
-        #print "R", r
-        usagedata = json.loads(r)
-        import pprint
-        pprint.pprint(usagedata)
-        self.failUnlessEqual(f.status, '200')
-
-
 
 
     @defer.inlineCallbacks

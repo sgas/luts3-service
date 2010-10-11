@@ -16,18 +16,15 @@ SELECT
     insert_time::DATE                                                AS s_insert_time,
     machine_name                                                     AS s_machine_name,
     COALESCE(global_user_name, machine_name || ':' || local_user_id) AS s_user_identity,
-    CASE WHEN vo_issuer LIKE 'file:///%' THEN NULL
-         WHEN vo_issuer LIKE 'http://%'  THEN NULL
-         WHEN vo_issuer LIKE 'https://%' THEN NULL
+    CASE WHEN vo_issuer LIKE 'file:///%%'
+        THEN NULL
         ELSE vo_issuer
     END                                                              AS s_vo_issuer,
     CASE WHEN vo_name is NULL
         THEN COALESCE(machine_name || ':' || project_name)
         ELSE
-            CASE WHEN vo_name LIKE '/%%' THEN NULL
-                 WHEN vo_issuer LIKE 'file:///%' THEN NULL
-                 WHEN vo_issuer LIKE 'http://%'  THEN NULL
-                 WHEN vo_issuer LIKE 'https://%' THEN NULL
+            CASE WHEN vo_name LIKE '/%%'
+                THEN NULL
                 ELSE vo_name
             END
     END                                                              AS s_vo_name,
