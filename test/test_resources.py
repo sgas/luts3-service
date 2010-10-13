@@ -6,7 +6,6 @@
 
 import os
 import json
-import urllib
 
 from twisted.trial import unittest
 from twisted.internet import defer, reactor
@@ -61,41 +60,6 @@ class ResourceTest:
 
 
     @defer.inlineCallbacks
-    def testQuery(self):
-
-        # insert some data, so there is something to query
-        insert_url = self.service_url + '/ur'
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
-        yield d
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR2)
-        yield d
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.CUR)
-        yield d
-
-        yield self.triggerAggregateUpdate()
-
-        print
-
-        # query
-        query_url = self.service_url + '/query'
-
-        userdn = '/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User'
-        encoded_userdn = urllib.quote(userdn)
-
-        query_params = '?user_identity=%s&user_identityfirst%%20last&machine_name=benedict.grid.aau.dk&start_date=2009-01-01' % encoded_userdn
-        query_params += '&time_resolution=day'
-
-        d, f = rclient.httpRequest(query_url + query_params, method='GET')
-        r = yield d
-        usagedata = json.loads(r)
-        import pprint
-        pprint.pprint(usagedata)
-        self.failUnlessEqual(f.status, '200')
-
-
-
-
-    @defer.inlineCallbacks
     def testUnavailableDatabase(self):
 
         # first stop the "real" service
@@ -124,7 +88,7 @@ class ResourceTest:
         #except weberror.Error, e:
         #    self.failUnlessEqual(e.status, '503')
 
-        ## new view engine not ready
+        # new view engine not ready
         #view_url = self.service_url + '/view/testview'
         #d, f = rclient.httpRequest(view_url, method='GET')
         #try:
@@ -158,19 +122,9 @@ class CouchDBResourceTest(ResourceTest, unittest.TestCase):
 
 
     @defer.inlineCallbacks
-    def triggerAggregateUpdate(self):
-        yield defer.succeed(None)
-        defer.returnValue(None)
-
-
-    @defer.inlineCallbacks
     def tearDown(self):
         yield ResourceTest.tearDown(self)
         yield self.couchdb.deleteDatabase(self.couch_database_name)
-
-    def testQuery(self):
-        pass
-    testQuery.skip = 'Query functionality not supported in CouchDB backend.'
 
 
 
@@ -213,9 +167,4 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         "TRUNCATE voinformation  CASCADE;"
         yield self.postgres_dbpool.runOperation(delete_stms)
         yield self.postgres_dbpool.close()
-
-
-    @defer.inlineCallbacks
-    def triggerAggregateUpdate(self):
-        yield self.db.updater.performUpdate()
 
