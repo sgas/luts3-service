@@ -56,7 +56,8 @@ setup(name='sgas-luts-service',
       author_email='htj@ndgf.org',
       url='http://www.sgas.se/',
       packages=['sgas', 'sgas/database', 'sgas/database/couchdb', 'sgas/database/postgresql',
-                'sgas/ext', 'sgas/ext/isodate', 'sgas/ext/python', 'sgas/server', 'sgas/usagerecord', 'sgas/viewengine'],
+                'sgas/ext', 'sgas/ext/isodate', 'sgas/ext/python', 'sgas/queryengine',
+                'sgas/server', 'sgas/usagerecord', 'sgas/viewengine'],
 
       cmdclass = cmdclasses,
 
