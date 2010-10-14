@@ -11,8 +11,6 @@ Copyright: Nordic Data Grid Facility (2010)
 
 def buildQuery(query_args):
 
-    print "QA", query_args
-
     user_identities = query_args.get('user_identity')
     machine_names   = query_args.get('machine_name')
     vo_name         = query_args.get('vo_name')
@@ -23,8 +21,6 @@ def buildQuery(query_args):
     assert time_resolution in ['day', 'month', 'collapse'], 'Invalid time resolution specified'
 
     date_extract, date_grouping = _getStartEndDatesAndGrouping(query_args)
-    print "DE", date_extract
-    print "DG", date_grouping
 
     query_args = [] # RENAME me!
 
@@ -65,10 +61,6 @@ def buildQuery(query_args):
     if query.endswith(','):
         query = query[:-1]
 
-#    query_args += [start_date, end_date, machine_names[0], user_identities[0] ]
-
-    print "Q", query
-    print "A", query_args
     return query, query_args
 
 
@@ -81,11 +73,11 @@ def _getStartEndDatesAndGrouping(query_args):
         dates = 'execution_time, execution_time, '
         group = 'execution_time,'
 
-# a bit tricky, and no uses cases
-#    elif time_resolution == 'week':
-#        dates = ''
-#        group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
-#        group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
+    # a bit tricky, and no uses cases
+    #elif time_resolution == 'week':
+    #    dates = ''
+    #    group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
+    #    group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
 
     elif time_resolution == 'month':
         dates = "date_part('year', execution_time) || '-' || date_part('month', execution_time) || '-' || '01', " + \
@@ -96,7 +88,6 @@ def _getStartEndDatesAndGrouping(query_args):
 
     elif time_resolution == 'collapse':
         dates = "'%s', '%s', " % (query_args.get('start_date'), query_args.get('end_date'))
-        print "DATES", dates
         group = ''
 
     return dates, group
