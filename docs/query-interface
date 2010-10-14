@@ -1,0 +1,91 @@
+
+As of version 3.4 SGAS LUTS features a view engine, which can be used to access
+the stored accounting data. Currently it is only possible to get aggregated
+data in rather specific, but quite generic format. This document describes the
+query interface in details.
+
+
+* Authorizing Query Access
+
+Before dispatching any queries, the user/host performing the query, must be
+allowed access. This is done in the sgas.authz file, the user/host performing
+the query, must be allowed access. This is done in the sgas.authz file. To
+allow a party to query everything the "query:admin" stanza is used, e.g.:
+
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     query:admin
+
+However this is usually not desirable, instead we only want to allow a party to
+query for a certain set of machines or user identities. Or perhaps a
+combination of it. The follow presents a range of examples showing different
+options for authorization.
+
+# Allow query for information regarding host1.example.org machine.
+"Certificate DN"    query:machine_name=host1.example.org
+
+# Allow query for information regarding machines host1.example.org and host2.example.org
+"Certificate DN"    query:machine_name=host1.example.org;host2.example.org
+
+# Allow query for information regarding VO ops
+"Certificate DN"    query:vo_name=ops
+
+# Allow query information on host1.example.org and all infomation regarding user1
+"Certificate DN"    query:machine_name=host1.example.org,query:user_identity=user1
+
+# Allow query for information for user1 on host1.example.org
+"Certificate DN"    query:machine_name=host1.example.org+user_identity=user1
+
+Note the difference on the last to examples.
+
+
+
+* Locating the query interface.
+
+Before executing the query, the query endpoint of the SGAS instance must be
+located. This is done by asking SGAS for a list of services. This is done by
+performing an HTTP GET operation on the base SGAS URL. A base SGAS URL will
+typically look like this: "https://sgas.example.org:6143/sgas". The result of
+the GET operation will be an XML document looking like this:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<services>
+    <service><name>Query</name><href>https://orval.grid.aau.dk:6143/sgas/query</href></service>
+    <service><name>View</name><href>https://orval.grid.aau.dk:6143/sgas/view</href></service>
+    <service><name>Registration</name><href>https://orval.grid.aau.dk:6143/sgas/ur</href></service>
+</services>
+
+From this document, extract the URL for the "Query" service, and you have the
+query endpoint url. You can also use the query URL directly, as is practically
+never changed.
+
+
+* Querying the interface
+
+machine_name
+user_identity
+vo_name
+
+Auxillary parameters:
+
+start_data (YYYY-MM-DD format)
+end_data   (YYYY-MM-DD format)
+
+time_resolution = must be one of "collapse", "month", or "day". If not specified, collapsed is used.
+
+
+
+
+* Interpreting the result
+
+Array of dictionaries.
+
+machine_name and user_identity is always provided.
+
+vo_name only provided if queried for.
+
+Time interval: start_date, end_date
+
+Metrics: n_jobs, cpu_time, wall_time
+
+count <integer>, hour <float>, hour <float>
+
+
