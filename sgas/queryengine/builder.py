@@ -7,7 +7,6 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-import psycopg2.extensions
 
 
 def buildQuery(query_args):

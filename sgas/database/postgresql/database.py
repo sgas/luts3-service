@@ -8,6 +8,7 @@ Copyright: Nordic Data Grid Facility (2010)
 import decimal
 
 import psycopg2
+import psycopg2.extensions # not used, but enables tuple adaption
 
 from zope.interface import implements
 
