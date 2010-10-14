@@ -20,7 +20,7 @@ def buildQuery(query_args):
     end_date        = query_args.get('end_date')
     time_resolution = query_args.get('time_resolution')
 
-    assert time_resolution in ['day', 'week', 'month', 'collapse'], 'Invalid time resolution specified'
+    assert time_resolution in ['day', 'month', 'collapse'], 'Invalid time resolution specified'
 
     date_extract, date_grouping = _getStartEndDatesAndGrouping(query_args)
     print "DE", date_extract
@@ -81,16 +81,22 @@ def _getStartEndDatesAndGrouping(query_args):
         dates = 'execution_time, execution_time, '
         group = 'execution_time,'
 
-    elif time_resolution == 'week':
-        dates = ''
-        group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
+# a bit tricky, and no uses cases
+#    elif time_resolution == 'week':
+#        dates = ''
+#        group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
+#        group = "date_part('year', current_date) || '-' || date_part('week', current_date),"
 
-    elif time_resolution == 'montly':
-        dates = ' .. '
-        group = "date_part('year', current_date) || '-' || date_part('month', current_date),"
+    elif time_resolution == 'month':
+        dates = "date_part('year', execution_time) || '-' || date_part('month', execution_time) || '-' || '01', " + \
+                "date_part('year', execution_time) || '-' || date_part('month', execution_time) || '-' || " + \
+                "date_part('day', (date_part('year', execution_time) || '-' || date_part('month', execution_time) || '-01') ::date  + '1 month'::interval - '1 day'::interval), "
+                # last line for getting the last day of the month
+        group = "date_part('year', execution_time) || '-' || date_part('month', execution_time),"
 
     elif time_resolution == 'collapse':
-        dates = '%s, %s, ' % (query_args.get('start_date'), query_args.get('end_date'))
+        dates = "'%s', '%s', " % (query_args.get('start_date'), query_args.get('end_date'))
+        print "DATES", dates
         group = ''
 
     return dates, group

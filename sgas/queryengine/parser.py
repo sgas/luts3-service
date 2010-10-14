@@ -22,7 +22,7 @@ DEFAULT_TIME_RESOLUTION = 'collapse'
 
 UNDERSTOOD_QUERY_PARAMS    = [ MACHINE_NAME, USER_IDENTITY, VO_NAME, START_DATE, END_DATE, TIME_RESOLUTION ]
 
-UNDERSTOOD_TIME_RESOLUTION = [ 'day', 'week', 'month', 'collapse' ] # collapse is default
+UNDERSTOOD_TIME_RESOLUTION = [ 'day', 'month', 'collapse' ] # collapse is default
 
 DEFAULT_START_DATE      = '2000-01-01' # used if no start time is specified
 DEFAULT_END_DATE_FORMAT = '%Y-%m-%d'
