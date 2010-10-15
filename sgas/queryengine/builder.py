@@ -35,12 +35,12 @@ def buildQuery(query_args):
     query_args.append(start_date)
     query_args.append(end_date)
 
-    if user_identities:
-        query += 'AND user_identity IN %s '
-        query_args.append(tuple(user_identities))
     if machine_names:
         query += 'AND machine_name IN %s '
         query_args.append(tuple(machine_names))
+    if user_identities:
+        query += 'AND user_identity IN %s '
+        query_args.append(tuple(user_identities))
     if vo_name:
         query += 'AND vo_name = %s '
         query_args.append(vo_name)
@@ -48,11 +48,7 @@ def buildQuery(query_args):
     if query.endswith(','):
         query = query[:-1]
 
-    query += "GROUP BY "
-    if user_identities:
-        query += 'user_identity,'
-    if machine_names:
-        query += 'machine_name,'
+    query += "GROUP BY machine_name, user_identity,"
     if vo_name:
         query += 'vo_name,'
 
