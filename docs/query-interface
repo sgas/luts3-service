@@ -28,7 +28,7 @@ options for authorization.
 # Allow query for information regarding VO ops
 "Certificate DN"    query:vo_name=ops
 
-# Allow query information on host1.example.org and all infomation regarding user1
+# Allow query information on host1.example.org and all information regarding user1
 "Certificate DN"    query:machine_name=host1.example.org,query:user_identity=user1
 
 # Allow query for information for user1 on host1.example.org
@@ -42,50 +42,113 @@ Note the difference on the last to examples.
 
 Before executing the query, the query endpoint of the SGAS instance must be
 located. This is done by asking SGAS for a list of services. This is done by
-performing an HTTP GET operation on the base SGAS URL. A base SGAS URL will
-typically look like this: "https://sgas.example.org:6143/sgas". The result of
-the GET operation will be an XML document looking like this:
+performing an HTTPS GET operation on the base SGAS URL. A base SGAS URL will
+typically look like this: "https://sgas.example.org:6143/sgas". Note that a
+client certificate must be presented to access the service list (though no
+other authorization is done for the list retrieval). The result of the GET
+operation will be an XML document looking like this:
 
 <?xml version="1.0" encoding="UTF-8"?>
 <services>
-    <service><name>Query</name><href>https://orval.grid.aau.dk:6143/sgas/query</href></service>
-    <service><name>View</name><href>https://orval.grid.aau.dk:6143/sgas/view</href></service>
-    <service><name>Registration</name><href>https://orval.grid.aau.dk:6143/sgas/ur</href></service>
+    <service><name>Query</name><href>https://sgas.example.org:6143/sgas/query</href></service>
+    <service><name>View</name><href>https://sgas.example.org:6143/sgas/view</href></service>
+    <service><name>Registration</name><href>https://sgas.example.org:6143/sgas/ur</href></service>
 </services>
 
 From this document, extract the URL for the "Query" service, and you have the
-query endpoint url. You can also use the query URL directly, as is practically
+query endpoint URL. You can also use the query URL directly, as is practically
 never changed.
 
 
 * Querying the interface
 
-machine_name
-user_identity
-vo_name
+Similarly to the retrieving the service list, the query itself is also with an
+HTTPS GET operation. To specify the query parameters, a URL with the query
+elements must be created. It is possible to query for the following elements:
 
-Auxillary parameters:
+ - machine_name
+ - user_identity
+ - vo_name
 
-start_data (YYYY-MM-DD format)
-end_data   (YYYY-MM-DD format)
+Using these parameters will limit the query to certain machines, user identities,
+or VOs. Furthermore it is possible to specify start time, end time, and time
+resolution for the query using the following elements:
 
-time_resolution = must be one of "collapse", "month", or "day". If not specified, collapsed is used.
+ - start_date
+ - end_date
+ - time_resolution
 
+Stand and end date must be specified in YYYY-MM-DD format, .e.g., 2010-10-15.
+Time resolution value must be one of "collapse", "month", or "day". If not
+specified "collapse" is used.
 
+To construct the URL for the query, use the above parameters and specify the
+needed ones as HTTP query parameters, E.g., to query for a certain machine, the
+URL would look like this:
+
+https://sgas.example.org:6143/sgas/query?machine_name=host1.example.org
+
+To query for a certain user like this:
+
+https://sgas.example.org:6143/sgas/query?machine_name=user_identity=user1
+
+To query for a certain user on a certain machine:
+
+https://sgas.example.org:6143/sgas/query?machine_name=host1.example.org&user_identity=user1
+
+To query for VO usage on a certain machine:
+
+https://sgas.example.org:6143/sgas/query?machine_name=host1.example.org&vo_name=vo1
+
+To query for user in a certain time period
+
+https://sgas.example.org:6143/sgas/query?user_identity=user1&start_date=2010-01-01&end_date=2010-06-30
+
+It is possible to specify multiple machines or users in a single query by comma
+separating them.
+
+Remember to URL encode the query parameters. This will turn special symbols such
+as space into the "correct" value for being transmitted in a URL. Most URL
+libraries have functionality for this.
 
 
 * Interpreting the result
 
-Array of dictionaries.
+The result from a successful query request is a JSON encoded document. The
+document is a list of dictionaries, with each dictionary representing a chunk
+of aggregated usage data. Per default the granularity will always be per-user
+and per-machine. VO information is currently only added if queried for (this
+might change in the future).
 
-machine_name and user_identity is always provided.
+Pretty much all languages have one or more JSON libraries for decoding the data
+into data structures.
 
-vo_name only provided if queried for.
+A response payload could look like this (formatted):
 
-Time interval: start_date, end_date
+[
+ { "cpu_time": 0.2,
+   "machine_name": "benedict.grid.aau.dk",
+   "end_date": "2010-10-15",
+   "user_identity": "benedict.grid.aau.dk:user1",
+   "wall_time": 0.35,
+   "n_jobs": 70,
+   "start_date": "2000-01-01"
+ },
+ { "cpu_time": 0.0,
+   "machine_name": "benedict.grid.aau.dk",
+   "end_date": "2010-10-15",
+   "user_identity": "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User",
+   "wall_time": 0.02,
+   "n_jobs": 1,
+   "start_date": "2000-01-01"}
+]
 
-Metrics: n_jobs, cpu_time, wall_time
+The dictionaries cannot be assumed to be in any order, just extract the data
+you need by field name. If you need some special aggregations you may have to
+perform some aggregation yourself.
 
-count <integer>, hour <float>, hour <float>
 
+
+If you have questions or suggestion for improvement wrt. this document, please
+email me at htj _at_ ndgf.org
 
