@@ -27,9 +27,8 @@ Packages: openssl-devel (for compiling pyopenssl)
 
 == Database ==
 
-See couchdb-setup for CouchDB setup or postgres-setup for PostgreSQL setup.
-You only need to install one of them. The CouchDB backend is more well tested
-than the PostgreSQL one, but PostgreSQL is probably the future for SGAS.
+See docs/postgres-setup for PostgreSQL setup.
+CouchDB is no longer supported.
 
 
 == NginX ==
@@ -57,8 +56,6 @@ See docs/nginx-setup for how to setup NginX.
 
 Edit /etc/sgas.conf, the main settings you should worry about is:
 
-# db.url - where to find the database. For CouchDB:
-db=http://localhost:5984/usagerecords
 For PostgreSQL:
 db=localhost::sgas-db:db-user:db-password:
 
