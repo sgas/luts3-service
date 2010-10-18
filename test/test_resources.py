@@ -147,45 +147,6 @@ class ResourceTest:
 
 
 
-class CouchDBResourceTest(ResourceTest, unittest.TestCase):
-
-
-    @defer.inlineCallbacks
-    def setUp(self):
-        from sgas.database.couchdb import database, couchdbclient
-
-        config = json.load(file(SGAS_TEST_FILE))
-        url = str(config['couchdb.url'])
-
-        base_url, self.couch_database_name = url.rsplit('/', 1)
-
-        self.couchdb = couchdbclient.CouchDB(base_url)
-        _ = yield self.couchdb.createDatabase(self.couch_database_name)
-
-        self.db = database.CouchDBDatabase(url, hostcheck.InsertionChecker(0))
-        # for unavailable test
-        self.bad_db = database.CouchDBDatabase('http://localhost:9999/nosuchdb', hostcheck.InsertionChecker(0))
-
-        yield ResourceTest.setUp(self)
-
-
-    @defer.inlineCallbacks
-    def triggerAggregateUpdate(self):
-        yield defer.succeed(None)
-        defer.returnValue(None)
-
-
-    @defer.inlineCallbacks
-    def tearDown(self):
-        yield ResourceTest.tearDown(self)
-        yield self.couchdb.deleteDatabase(self.couch_database_name)
-
-    def testQuery(self):
-        pass
-    testQuery.skip = 'Query functionality not supported in CouchDB backend.'
-
-
-
 class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
 
 

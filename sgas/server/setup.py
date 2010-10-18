@@ -109,8 +109,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
 
     # database
     if db_url.startswith('http'):
-        from sgas.database.couchdb import database
-        db = database.CouchDBDatabase(db_url, checker)
+        raise ConfigurationError('CouchDB no longer supported. Please upgrade to PostgreSQL')
     else:
         from sgas.database.postgresql import database
         db = database.PostgreSQLDatabase(db_url, checker)

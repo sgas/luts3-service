@@ -119,55 +119,6 @@ class QueryDatabaseTest:
 
 
 
-class CouchDBTest(GenericDatabaseTest, unittest.TestCase):
-
-    couch_dbms = None
-    couch_database = None
-    couch_database_name = None
-
-
-    @defer.inlineCallbacks
-    def fetchUsageRecord(self, record_id):
-
-        from sgas.database.couchdb import urparser, couchdbclient
-
-        db_id = urparser.createID(record_id)
-        try:
-            ur_doc = yield self.couch_database.retrieveDocument(db_id)
-            defer.returnValue(ur_doc)
-        except couchdbclient.NoSuchDocumentError:
-            defer.returnValue(None)
-
-    @defer.inlineCallbacks
-    def triggerAggregateUpdate(self):
-        yield defer.succeed(None)
-        defer.returnValue(None)
-
-
-    @defer.inlineCallbacks
-    def setUp(self):
-
-        import json
-        from sgas.database.couchdb import database, couchdbclient
-
-        config = json.load(file(SGAS_TEST_FILE))
-        url = str(config['couchdb.url'])
-
-        base_url, self.couch_database_name = url.rsplit('/', 1)
-        self.couch_dbms = couchdbclient.CouchDB(base_url)
-        self.couch_database = yield self.couch_dbms.createDatabase(self.couch_database_name)
-
-        self.db = database.CouchDBDatabase(url, hostcheck.InsertionChecker(0))
-        yield self.db.startService()
-
-
-    @defer.inlineCallbacks
-    def tearDown(self):
-        yield self.db.stopService()
-        yield self.couch_dbms.deleteDatabase(self.couch_database_name)
-
-
-
 class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCase):
 
     @defer.inlineCallbacks
