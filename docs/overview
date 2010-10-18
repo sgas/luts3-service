@@ -81,39 +81,26 @@ Proxy certificates are not yet supported, but host certificates (for
 registration), and ordinary grid user certificates (for accessing view in in
 the browser), works fine.
 
-SGAS currently supports two backend databases: CouchDB and PostgreSQL.
+SGAS currently support PostgreSQL as backend database.
+Webpage: http://www.postgresql.org/.
 
-CouchDB is a a document-oriented JSON database. Web page:
-http://couchdb.apache.org/. The CouchDB backend is deployed several places and
-very stable. CouchDB however has problems when performing queries for large
-amounts of data. It is also somewhat space hungry.
+PostgreSQL handles large amounts of data much better than the previously used
+CouchDB, though this does not come for free.
 
-PostgreSQL is relational database. Webpage: http://www.postgresql.org/ The
-PostgreSQL backend is never and not ye well tested. PostgreSQL handles large
-amounts of data much better than CouchDB, but is not particular flexible. It is
-probably the future database backend for SGAS.
-
-Note: A lot of the text in this document has not been updated since CouchDB was
-the only backend for SGAS.
+CouchDB is no longer supported.
 
 
 * Insertion
 
 Once the LUTS has received a batch of URs, the usage records are transformed
-into JSON documents before being inserted into the database (which is JSON
-based). Information about insert time, certificate used in authorization and
-from which host the usage record was inserted is added as "provenance"
-information the usage records.
-
-An _id field (the reference for the document in the database) is added to the
-JSON document. Currently this is a SHA224 hash of the global_job_id value. This
-may change in the future, as it is rather inefficient for view creation.
+into datastructures which are used to build statements for inserting the
+records into the database. Note that an embedded function is used for inserting
+the records (i.e., INSERT statements are NOT used). Information about insert
+time, certificate used in authorization and from which host the usage record
+was inserted is added as "provenance" information the usage records.
 
 
 * Views
-
-Note: The view engine in SGAS is not yet deemed ready for general usage, but it
-can still be very useful.
 
 Just inserting usage records in itself is rather useless. In order to provide
 high level information about the usage record data, SGAS provides access to
@@ -121,82 +108,17 @@ aggregated information in the form of views. It is also possible to access
 individual usage records, but this is typically rather meaningless (as studying
 a drop in an ocean).
 
-SGAS tries to push as much view functionality to CouchDB, as the database is
-closest to the data  Often SGAS will just pass the data directly though it, or
-do some basic data transformation.
+SGAS tries to push as much data transformatiion  into PostgreSQL, as the
+database is closest to the data  Often SGAS will just pass the data directly
+though it, or do some basic data transformation.
 
-Creating an SGAS view consists of two steps: Creating a view in CouchDB, and
-creating the view in SGAS. The first is the most tricky one. An introduction to
-CouchDB view can found here:
-http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views
+Creating an SGAS view is done by defining the view type and a select statement
+in the sgas.conf file. The data produced by the select statement must have a
+certain structure depending on the view type chosen. See docs/views for more
+details.
 
 In the future we intend to deliver "standard" views with SGAS, for the most
 common usage patterns. For now, they must be created manually.
-
-
-* Creating Views
-
-You will probably need an example UR to look at. One can be found in
-docs/ur.json. Note that not all URs have all information.
-
-1. Figure out what information should be extracted.
-
-First establish what information is wanted in the view.
-
-As an example we would like to know much accumulated walltime each host has
-been used each day.
-
-
-2. Write the map-reduce query.
-
-CouchDB view are based on the map-reduce model. First each document in the
-database is mapped to a set of key-value entries. The number of produced
-entries can be 0 or multiple, but is typically one. The mapping function would
-look like this:
-
-function(doc) {
-    emit([doc.machine_name, doc.end_time.substring(0,10)], doc.wall_duration);
-}
-
-This produces entries with (host, date) as key, and wall time (in seconds) as
-the value. To add the seconds together, we define the reduce function as this:
-
-function (key, values) {
-    return sum(values);
-}
-
-This wall add the values for all identical keys together in order to produce a
-single value for the host+date combination. The easiest way to create the view
-in CouchDB is to create a temporary view and the save it as a permanent view.
-
-
-3. Configure SGAS
-
-Having created the view in CouchDB, SGAS needs to be aware of it. This is done
-by creating an entry in sgas.conf, like this:
-
-[view:hostwalltime]
-design=host
-view=walltime
-description=Accumulated walltime per host / day
-
-The first line creates a configuration entry, and names the view. With the
-given name, the view would be accessed at:
-https://sgas.examples.org:6143/sgas/view/hostwalltime
-
-The design and view options define the location of the view in CouchDB. The
-description adds a humanly readable description to the view. More options are
-available for data filtering or post processing.
-
-
-4. Authorize Users
-
-Finally users must be allowed access to the view. This is done be adding a line
-to sgas.authz, like this:
-
-"/O=Grid/O=NorduGrid/OU=Organization/CN=Grid User"     view:hostwalltime
-
-This line allows the user in question access to the view.
 
 
 * More Information

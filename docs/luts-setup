@@ -9,7 +9,7 @@ a mechanism for retrieving aggregated information from these.
 * Python 2.5 or later
 * Twisted Core and Web (http://twistedmatrix.com/)
 * PyOpenSSL (https://launchpad.net/pyopenssl)
-* CouchDB or PostgreSQL as backend database.
+* PostgreSQL 8.4 as backend database (8.3 should work as well)
 
 Debian/Ubuntu:
 
