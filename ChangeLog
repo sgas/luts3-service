@@ -1,5 +1,29 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.4.0
+
+Support for CouchDB has been removed.
+
+New query interface for extracting information from SGAS.
+
+New authorization engine for significantly more flexible authorization.
+
+Better detection of fake VO information when creating aggregated information.
+
+New discrete_scatterplot and line graph types.
+
+Support relocation using --home in installation.
+
+Add hash index to to schema for significantly faster aggregation updates.
+
+Use embedded database function for aggregation update to avoid ping-pong with
+database during updating.
+
+Write friendly greeting with version number to log when starting up.
+
+Various clean-ups.
+
+
 3.3.2:
 
 Avoid update race condition by running updater in serialized transaction mode.
