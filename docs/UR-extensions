@@ -152,3 +152,59 @@ Description     :  A string describing the identity of the logger who produced
 Example         :  <logger:LoggerName>ARC0-URLogger</logger:LoggerName>
                    <logger:LoggerName logger:version="0.8.2.2">ARC0-URLogger</logger:LoggerName>
 
+
+
+* Transfer Information
+
+Information about which files was staged/transferred (e.g., downloaded and
+uploaded) as part of the job. This describes a usage consumption which is
+otherwise not covered by the usage record format.
+
+Namespace       : http://www.sgas.se/namespaces/2010/10/filetransfer
+Preferred abr.  : tr
+
+Element name    : FileTransfer
+Parent element  : ur:JobUsageRecord
+Description     : Top container element for all job file transfer information.
+Example         : <tr:FileTransfer> ... </tr:FileTransfer>
+
+Element         : FileDownload
+Parent element  : tr:FileTransfer
+Descripition    : Top container element for description of a file download.
+Example         : <tr:FileDownload> ... </tr:FileUpload>
+
+Element         : FileUpload
+Parent element  : tr:FileTransfer
+Descripition    : Top container element for description of a file upload.
+Example         : <tr:FileUpload> ... </tr:FileUpload>
+
+Element         : URL
+Parent element  : tr:FileDownload or tr:FileUpload
+Description     : The (logical) URL of the file uploaded or downloaded.
+Example         : <tr:URL>srm://srm.example.org/project/group/testfile</tr:URL>
+
+Element         : Size
+Parent element  : tr:FileDownload or tr:FileUpload
+Description     : Size of the file in bytes.
+Example         : <tr:Size>12345</tr:Size>
+
+Element         : StartTime
+Parent element  : tr:FileDownload or tr:FileUpload
+Description     : ISO Timestamp for when a transfer was started. UTC time is strongly preferred.
+Example         : <tr:StartTime>2009-07-07T09:06:37Z</tr:StartTime>
+
+Element         : EndTime
+Parent element  : tr:FileDownload or tr:FileUpload
+Description     : ISO Timestamp for when a transfer was finished. UTC time is strongly preferred.
+Example         : <tr:EndTime>2009-07-07T09:06:37Z</tr:EndTime>
+
+Element         : BypassCache
+Parent element  : tr:FileDownload
+Description     : Boolean value indicating if a download should bypass the local cache for file retrieval.
+Example         : <tr:BypassCache>true</tr:BypassCache>
+
+Element         : RetrievedFromCache
+Parent element  : tr:FileDownload
+Description     : Boolean value indicating if a file was retrieved from the local cache.
+Example         : <tr:RetrievedFromCache>true</tr:RetrievedFromCache>
+
