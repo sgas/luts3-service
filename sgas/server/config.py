@@ -40,7 +40,7 @@ REVERSE_PROXY        = 'reverse_proxy'
 
 # view options
 VIEW_PREFIX      = 'view:'
-VIEW_GROUP       = 'viewgroups'
+VIEW_GROUP       = 'viewgroup'
 VIEW_TYPE        = 'type'
 VIEW_QUERY       = 'query'
 VIEW_DESCRIPTION = 'description'
