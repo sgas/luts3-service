@@ -34,7 +34,7 @@ class InsertionChecker:
         """
         fqdn = extractFQDNfromX509Identity(x509_identity)
 
-        if self.authorizer.isAllowed(authz.INSERT, context={'machine_name': ur_machine_name}):
+        if self.authorizer.isAllowed(x509_identity, authz.INSERT, context={'machine_name': ur_machine_name}):
             return True # authorizer says ok
 
         # check if x509 identity is close enough to machine name to allow insertion on default
