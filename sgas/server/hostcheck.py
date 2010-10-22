@@ -9,13 +9,15 @@ Copyright: Nordic Data Grid Facility (2009, 2010)
 """
 
 
+from sgas.server import authz
+
 
 class InsertionChecker:
 
-    def __init__(self, check_depth, whitelist=None):
+    def __init__(self, check_depth, authorizer):
 
         self.check_depth = check_depth
-        self.whitelist = whitelist or []
+        self.authorizer = authorizer
 
 
     def isInsertAllowed(self, x509_identity, ur_machine_name):
@@ -27,14 +29,16 @@ class InsertionChecker:
         certain domin of a certain depth, e.g., ce01.titan.uio.no should be
         allowed to register records as titan.uio.no.
 
-        Furthermore, there is a whitelist option, which allows certain hosts
-        to insert usage records with arbitrary machine names.
+        Additionally it is possible for a subject to be allowed to insert on behalf
+        of all machines or a specific set of machines.
         """
-
         fqdn = extractFQDNfromX509Identity(x509_identity)
 
-        if fqdn in self.whitelist:
-            return True # insert allowed
+        if self.authorizer.isAllowed(authz.INSERT, context={'machine_name': ur_machine_name}):
+            return True # authorizer says ok
+
+        # check if x509 identity is close enough to machine name to allow insertion on default
+        # insert premise
 
         # depth checking
         id_parts = [ e for e in fqdn.split('.') if e != '' ]
