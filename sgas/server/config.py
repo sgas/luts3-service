@@ -35,11 +35,12 @@ CERTDIR              = 'certdir'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
 HOSTNAME_CHECK_DEPTH = 'check_depth'
-HOSTNAME_CHECK_WHITELIST = 'check_whitelist'
+HOSTNAME_CHECK_WHITELIST = 'check_whitelist' # deprecated, still used to issue warnings
 REVERSE_PROXY        = 'reverse_proxy'
 
 # view options
 VIEW_PREFIX      = 'view:'
+VIEW_GROUP       = 'viewgroups'
 VIEW_TYPE        = 'type'
 VIEW_QUERY       = 'query'
 VIEW_DESCRIPTION = 'description'
