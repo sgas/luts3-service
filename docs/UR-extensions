@@ -163,10 +163,10 @@ otherwise not covered by the usage record format.
 Namespace       : http://www.sgas.se/namespaces/2010/10/filetransfer
 Preferred abr.  : tr
 
-Element name    : FileTransfer
+Element name    : FileTransfers
 Parent element  : ur:JobUsageRecord
 Description     : Top container element for all job file transfer information.
-Example         : <tr:FileTransfer> ... </tr:FileTransfer>
+Example         : <tr:FileTransfers> ... </tr:FileTransfers>
 
 Element         : FileDownload
 Parent element  : tr:FileTransfer
