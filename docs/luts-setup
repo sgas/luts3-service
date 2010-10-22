@@ -70,11 +70,6 @@ authzfile=/etc/sgas.authz
 # checking.
 check_depth=2
 
-# it is also possible to specify a whitelist certain inserters which are able
-# to bypass the check, while keeping the check for all other hosts.
-check_whitelist=host1.example.org,host2.example.org
-
-
 Hereafter edit /etc/sgas.authz to set which identities can perform which
 actions. Subject names must in "", so a line would look like this:
 
@@ -82,5 +77,10 @@ actions. Subject names must in "", so a line would look like this:
 
 which will allow insertion of usage records, and access to all views for the
 identity. Initially, you will at least want to set who can insert usage
-records.
+records. It is also possible to allow an identity to insert for all machine
+names or just a a specific machine name:
+
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     insert,view
+
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     insert:machine_name=host.example.org
 

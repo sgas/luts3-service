@@ -18,16 +18,19 @@ are defined in sgas.conf.
 A basic view example follows:
 
 [view:insert_total]
+viewgroup=vg1,vg2
 type=columns
 description=Total Inserts, Last 150 days
 query=SELECT insert_time, sum(n_jobs) FROM uraggregated \
       WHERE insert_time > current_date - interval '150 days' GROUP BY insert_time ORDER BY insert_time;
 
-Here the view name is "insert_total", and is a standard column chart. A
-description is made, and query to the database is specified (note that it is
-possible to have long entries split across several lines by using \). They
-query is stock SQL, and is send to the database as is. This provides great
-freedom for information retrieval.
+Here the view name is "insert_total", and are in the view groups vg1 and vg2
+(comma seperated list). The viewgroup is used for authorization, will be
+explained later. The view is a standard column chart, with a description, and
+query to the database is specified (note that it is possible to have long
+entries split across several lines by using \). They query is stock SQL, and is
+send to the database as is. This provides great freedom for information
+retrieval.
 
 By default SGAS will display both an HTML table with the results and a
 visualize the data in graph using javascript. Note that a faily new browser is
@@ -64,16 +67,19 @@ Query example:
 Authorization can specified per view or an all-access pass can be granted. To
 grant access to a specific view, make an in sgas.authz similar to this:
 
-    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:inserts
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:view=inserts
 
-It is also possible to specify multiple views by comma seperating them, e.g.,:
+To specify access rights to a view group:
 
-    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:inserts,view:vo_walltime
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:viewgroup=vg1
+
+It is also possible to specify multiple views/groups by comma seperating the entries:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view:view:inserts,view:group=vg1
 
 To grant a person access to all views, just specify view, e.g.:
 
     "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               view
-
 
 Note that SGAS must be restarted in order for any configuration or
 authorization changes to take place.

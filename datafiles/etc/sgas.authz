@@ -2,6 +2,6 @@
 # loggers - for inserting into the database
 #"/O=Grid/O=NorduGrid/CN=host/benedict.grid.aau.dk"              insert
 # retrieval / views - accessing the database
-#"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     retrieval,view
-#"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               view
-#"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Anders Rhod Gregersen"      view:wdmn
+#"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     view
+#"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               view:viewgroup=vg1
+#"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Anders Rhod Gregersen"      view:view=aliceinserts
