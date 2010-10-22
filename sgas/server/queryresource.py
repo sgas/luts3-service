@@ -7,15 +7,12 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-import time
 import json
 
 from twisted.python import log
 from twisted.web import resource, server
 
-from sgas.ext import isodate
 from sgas.server import authz
-from sgas.database import error as dberror
 from sgas.queryengine import parser as queryparser, builder as querybuilder, rowrp as queryrowrp
 
 

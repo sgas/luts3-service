@@ -176,7 +176,7 @@ class Authorizer:
                     if allowed:
                         break
 
-        except KeyError, e:
+        except KeyError:
             pass
 
         #print "Authz check: Subject %s, Action %s, Context: %s. Access allowed: %s" % (subject, action, context, allowed)
