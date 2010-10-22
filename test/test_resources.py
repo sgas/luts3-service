@@ -122,7 +122,7 @@ class ResourceTest:
         insert_url = self.service_url + '/ur'
         d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
         try:
-            r = yield d
+            yield d
             self.fail('Request should have failed with 503')
         except weberror.Error, e:
             self.failUnlessEqual(e.status, '503')

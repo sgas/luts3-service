@@ -182,7 +182,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def testUpdateAfterSingleInsert(self):
 
-        doc_ids = yield self.db.insert(ursampledata.UR1)
+        yield self.db.insert(ursampledata.UR1)
 
         rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
 
@@ -200,7 +200,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def testUpdateAfterTrigger(self):
 
-        doc_ids = yield self.db.insert(ursampledata.CUR)
+        yield self.db.insert(ursampledata.CUR)
         yield self.triggerAggregateUpdate()
 
         rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
