@@ -9,6 +9,7 @@ from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.server import config, ssl, authz, hostcheck, topresource, insertresource, viewresource, queryresource
+from sgas.database.postgresql import database as pgdatabase
 from sgas.viewengine import viewdefinition
 
 
@@ -25,20 +26,6 @@ class ConfigurationError(Exception):
     """
     Raised when the server is configured wrong.
     """
-
-
-def buildViewList(cfg):
-
-    views = []
-
-    for block in cfg.sections():
-        if block.startswith(config.VIEW_PREFIX):
-            view_name = block.split(':',1)[-1]
-            view_args = dict(cfg.items(block))
-            view = viewdefinition.createViewDefinition(view_name, view_args)
-            views.append(view)
-
-    return views
 
 
 
@@ -101,22 +88,25 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
         check_depth = int(cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_DEPTH))
     except ValueError: # in case casting goes wrong
         raise ConfigurationError('Configured check depth is invalid')
-    # read whitelist, but filter out '' values
-    cfg_whitelist = cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_WHITELIST)
-    check_whitelist = [ x.strip() for x in cfg_whitelist.split(',') if x.strip() ]
 
-    checker = hostcheck.InsertionChecker(check_depth, whitelist=check_whitelist)
+    # check for whitelist and fail if it is there
+    # a bit harsh, but the config needs to be updated for the system to work
+    cfg_whitelist = cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_WHITELIST)
+    if cfg_whitelist:
+        raise ConfigurationError('Whitelist no longer supported, use "insert:all" in sgas.authz')
+
+    # authz
+    authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
+    checker = hostcheck.InsertionChecker(check_depth, authorizer)
 
     # database
     if db_url.startswith('http'):
         raise ConfigurationError('CouchDB no longer supported. Please upgrade to PostgreSQL')
-    else:
-        from sgas.database.postgresql import database
-        db = database.PostgreSQLDatabase(db_url, checker)
+
+    db = pgdatabase.PostgreSQLDatabase(db_url, checker)
 
     # http site
-    authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
-    views = buildViewList(cfg)
+    views = viewdefinition.buildViewList(cfg)
     site = createSite(db, authorizer, views)
 
     # application
