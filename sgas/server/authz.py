@@ -45,7 +45,7 @@ def getSubject(request):
             return subject
 
     # identity forwarded by reverse proxy
-    if request.getClientIP() == '127.0.0.1' and 'x-ssl-subject' in request.received_headers:
+    if request.getClientIP() in ('127.0.0.1', '::1') and 'x-ssl-subject' in request.received_headers:
         return request.received_headers.get('x-ssl-subject')
 
     # request wasn't secure or no certificate was presented
