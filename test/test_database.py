@@ -20,6 +20,13 @@ SGAS_TEST_FILE = os.path.join(os.path.expanduser('~'), '.sgas-test')
 
 
 
+class FakeAuthorizer:
+
+    def isAllowed(self, subject, action, context=None):
+        return True
+
+
+
 class GenericDatabaseTest:
 
     def fetchUsageRecord(self, record_id):
@@ -159,7 +166,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0))
+        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0, FakeAuthorizer()))
         return self.db.startService()
 
 

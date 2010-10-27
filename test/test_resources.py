@@ -164,10 +164,10 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0))
+        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0, FakeAuthorizer()))
         yield self.db.startService()
         # for unavalable test
-        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:", hostcheck.InsertionChecker(0))
+        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:", hostcheck.InsertionChecker(0, FakeAuthorizer()))
 
         yield ResourceTest.setUp(self)
 
