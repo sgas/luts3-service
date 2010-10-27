@@ -7,7 +7,12 @@ Copyright: Nordic Data Grid Facility (2009, 2010)
 
 import ConfigParser
 
-from sgas.ext.python.collections import OrderedDict
+# OrderedDict depends on the _abcall module, which is only
+# available as of Python 2.6
+try:
+    from sgas.ext.python.collections import OrderedDict
+except ImportError:
+    OrderedDict = dict
 
 
 # log isn't loaded yet, so make a fake log
@@ -56,7 +61,11 @@ class ConfigurationError(Exception):
 
 def readConfig(filename):
 
-    cfg = ConfigParser.SafeConfigParser(dict_type=OrderedDict)
+    # the dict_type option isn't supported until 2.5
+    try:
+        cfg = ConfigParser.SafeConfigParser(dict_type=OrderedDict)
+    except TypeError:
+        cfg = ConfigParser.SafeConfigParser()
 
     # add defaults
     cfg.add_section(SERVER_BLOCK)

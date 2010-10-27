@@ -6,6 +6,9 @@
 # which was contributed by Raymond Hettinger <python at rcn.com>
 #
 # Copied to SGAS by Henrik Thostrup Jensen <htj@ndgf.org> on 6 Sep. 2010.
+#
+# This module depends on the _abcoll module which was added in Python 2.6
+# Trying to import the module on an older module will cause an ImportError
 
 
 
