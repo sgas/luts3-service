@@ -34,9 +34,6 @@ class InsertionChecker:
         """
         fqdn = extractFQDNfromX509Identity(x509_identity)
 
-        if self.authorizer.isAllowed(x509_identity, authz.INSERT, context={'machine_name': ur_machine_name}):
-            return True # authorizer says ok
-
         # check if x509 identity is close enough to machine name to allow insertion on default
         # insert premise
 
@@ -46,11 +43,16 @@ class InsertionChecker:
 
         for d in range( - self.check_depth, 0):
             if mn_parts[d] != id_parts[d]:
-                return False
+                break
+        # for loop terminated without breaking, check depth ok
+        else:
+            return True
 
-        # for loop terminated, check depth ok
-        return True
+        if self.authorizer.isAllowed(x509_identity, authz.INSERT, context={'machine_name': ur_machine_name}):
+            return True # authorizer says ok
 
+        # no allowed method for inserting
+        return False
 
 
 def extractFQDNfromX509Identity(identity):
