@@ -177,7 +177,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         delete_stms = \
         "TRUNCATE uraggregated;"            + \
         "TRUNCATE uraggregated_update;"     + \
-        "TRUNCATE usagedata;"               + \
+        "TRUNCATE usagedata      CASCADE;"  + \
         "TRUNCATE globalusername CASCADE;"  + \
         "TRUNCATE insertidentity CASCADE;"  + \
         "TRUNCATE machinename    CASCADE;"  + \
