@@ -38,6 +38,7 @@ class ResourceTest:
         site = setup.createSite(self.db, FakeAuthorizer(), [])
         self.iport = reactor.listenTCP(self.port, site)
         self.service_url = 'http://localhost:%i/sgas' % self.port
+        self.insert_url = self.service_url + '/ur'
         yield defer.succeed(None)
 
 
@@ -48,9 +49,7 @@ class ResourceTest:
 
     @defer.inlineCallbacks
     def testInsert(self):
-        insert_url = self.service_url + '/ur'
-
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR1)
         r = yield d
         self.failUnlessEqual(f.status, '200')
 
@@ -61,15 +60,26 @@ class ResourceTest:
 
 
     @defer.inlineCallbacks
+    def testURTransferInsert(self):
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.URT)
+        r = yield d
+        self.failUnlessEqual(f.status, '200')
+
+        # check that we got proper result with internal db representation
+        ids = json.loads(r)
+        self.failUnlessEqual(len(ids), 1)
+        self.failUnlessIn(ursampledata.URT_ID, ids)
+
+
+    @defer.inlineCallbacks
     def testQuery(self):
 
         # insert some data, so there is something to query
-        insert_url = self.service_url + '/ur'
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR1)
         yield d
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR2)
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR2)
         yield d
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.CUR)
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.CUR)
         yield d
 
         yield self.triggerAggregateUpdate()
@@ -119,8 +129,7 @@ class ResourceTest:
 
         # the actual test
 
-        insert_url = self.service_url + '/ur'
-        d, f = rclient.httpRequest(insert_url, method='POST', payload=ursampledata.UR1)
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR1)
         try:
             yield d
             self.fail('Request should have failed with 503')
@@ -179,13 +188,15 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         yield self.db.stopService()
         # delete all ur rows in the database
         delete_stms = \
-        "TRUNCATE uraggregated;"            + \
-        "TRUNCATE uraggregated_update;"     + \
-        "TRUNCATE usagedata      CASCADE;"  + \
-        "TRUNCATE globalusername CASCADE;"  + \
-        "TRUNCATE insertidentity CASCADE;"  + \
-        "TRUNCATE machinename    CASCADE;"  + \
-        "TRUNCATE voinformation  CASCADE;"
+        "TRUNCATE uraggregated;"             + \
+        "TRUNCATE uraggregated_update;"      + \
+        "TRUNCATE jobtransferdata CASCADE;"  + \
+        "TRUNCATE jobtransferurl  CASCADE;"  + \
+        "TRUNCATE globalusername  CASCADE;"  + \
+        "TRUNCATE insertidentity  CASCADE;"  + \
+        "TRUNCATE machinename     CASCADE;"  + \
+        "TRUNCATE voinformation   CASCADE;"  + \
+        "TRUNCATE usagedata       CASCADE;"
         yield self.postgres_dbpool.runOperation(delete_stms)
         yield self.postgres_dbpool.close()
 

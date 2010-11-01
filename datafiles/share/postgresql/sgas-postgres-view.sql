@@ -47,3 +47,21 @@ LEFT OUTER JOIN machinename     ON (usagedata.machine_name_id     = machinename.
 LEFT OUTER JOIN insertidentity  ON (usagedata.insert_identity_id  = insertidentity.id)
 ;
 
+
+CREATE OR REPLACE VIEW transfers AS
+SELECT
+    usagedata.global_job_id                 AS global_job_id,
+    jobtransferurl.url                      AS url,
+    jobtransferdata.transfer_type           AS transfer_type,
+    jobtransferdata.size                    AS size,
+    jobtransferdata.start_time              AS start_time,
+    jobtransferdata.end_time                AS end_time,
+    jobtransferdata.bypass_cache            AS bypass_cache,
+    jobtransferdata.retrieved_from_cache    AS retrieved_from_cache
+FROM
+    jobtransferdata
+LEFT OUTER JOIN usagedata       ON (jobtransferdata.usage_data_id       = usagedata.id)
+LEFT OUTER JOIN  jobtransferurl ON (jobtransferdata.job_transfer_url_id = jobtransferurl.id)
+;
+
+

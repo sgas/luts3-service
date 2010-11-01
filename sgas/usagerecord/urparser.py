@@ -20,12 +20,23 @@ JSON_DATETIME_FORMAT = "%Y %m %d %H:%M:%S"
 
 
 
+def parseBoolean(value):
+    if value == '1' or value.lower() == 'true':
+        return True
+    elif value == '0' or value.lower() == 'false':
+        return False
+    else:
+        log.msg('Failed to parse value %s into boolean' % value, system='sgas.usagerecord')
+        return None
+
+
 def parseInt(value):
     try:
         return int(value)
     except ValueError:
         log.msg("Failed to parse float: %s" % value, system='sgas.usagerecord')
         return None
+
 
 def parseFloat(value):
     try:
@@ -138,6 +149,43 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
 
         elif element.tag == ur.LOGGER_NAME:
             pass # in the future this can be used to implement special handling for broken loggers, etc
+
+        # transfer parse block
+        elif element.tag == ur.FILE_TRANSFERS:
+            for subele in element:
+                if subele.tag == ur.FILE_DOWNLOAD:
+                    download = {}
+                    for dlele in subele:
+                        if   dlele.tag == ur.TRANSFER_URL:
+                            download['url'] = dlele.text
+                        elif dlele.tag == ur.TRANSFER_SIZE:
+                            download['size'] = parseInt(dlele.text)
+                        elif dlele.tag == ur.TRANSFER_START_TIME:
+                            download['start_time'] = parseISODateTime(dlele.text)
+                        elif dlele.tag == ur.TRANSFER_END_TIME:
+                            download['end_time'] = parseISODateTime(dlele.text)
+                        elif dlele.tag == ur.TRANSFER_BYPASS_CACHE:
+                            download['bypass_cache'] = parseBoolean(dlele.text)
+                        elif dlele.tag == ur.TRANSFER_RETRIEVED_FROM_CACHE:
+                            download['from_cache'] = parseBoolean(dlele.text)
+                    r.setdefault('downloads', []).append(download)
+
+                elif subele.tag == ur.FILE_UPLOAD:
+                    upload = {}
+                    for ulele in subele:
+                        if   ulele.tag == ur.TRANSFER_URL:
+                            upload['url'] = ulele.text
+                        elif ulele.tag == ur.TRANSFER_SIZE:
+                            upload['size'] = parseInt(ulele.text)
+                        elif ulele.tag == ur.TRANSFER_START_TIME:
+                            upload['start_time'] = parseISODateTime(ulele.text)
+                        elif ulele.tag == ur.TRANSFER_END_TIME:
+                            upload['end_time'] = parseISODateTime(ulele.text)
+                        elif ulele.tag == ur.TRANSFER_BYPASS_CACHE:
+                            upload['bypass_cache'] = parseBoolean(ulele.text)
+                        elif ulele.tag == ur.TRANSFER_RETRIEVED_FROM_CACHE:
+                            upload['from_cache'] = parseBoolean(ulele.text)
+                    r.setdefault('uploads', []).append(upload)
 
         else:
             log.msg("Unhandled UR element: %s" % element.tag, system='sgas.usagerecord')

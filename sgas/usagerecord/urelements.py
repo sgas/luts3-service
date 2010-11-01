@@ -15,6 +15,7 @@ DEISA_NAMESPACE     = "http://rmis.deisa.org/acct"
 SGAS_VO_NAMESPACE   = "http://www.sgas.se/namespaces/2009/05/ur/vo"
 SGAS_UR_NAMESPACE   = "http://www.sgas.se/namespaces/2009/07/ur"
 LOGGER_NAMESPACE    = "http://www.sgas.se/namespaces/2010/08/logger"
+TRANSFER_NAMESPACE  = "http://www.sgas.se/namespaces/2010/10/filetransfer"
 
 # usage record tag names
 USAGE_RECORDS       = QName("{%s}UsageRecords"   % OGF_UR_NAMESPACE)
@@ -72,4 +73,15 @@ RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % SGAS_UR_NAMESPACE)
 # logger elements and attributes
 LOGGER_NAME         = QName("{%s}LoggerName"         % LOGGER_NAMESPACE)
 LOGGER_VERSION      = QName("{%s}version"            % LOGGER_NAMESPACE)
+
+# elements for transfer stats
+FILE_TRANSFERS                  = QName("{%s}FileTransfers"      % TRANSFER_NAMESPACE)
+FILE_DOWNLOAD                   = QName("{%s}FileDownload"       % TRANSFER_NAMESPACE)
+FILE_UPLOAD                     = QName("{%s}FileUpload"         % TRANSFER_NAMESPACE)
+TRANSFER_URL                    = QName("{%s}URL"                % TRANSFER_NAMESPACE)
+TRANSFER_SIZE                   = QName("{%s}Size"               % TRANSFER_NAMESPACE)
+TRANSFER_START_TIME             = QName("{%s}StartTime"          % TRANSFER_NAMESPACE)
+TRANSFER_END_TIME               = QName("{%s}EndTime"            % TRANSFER_NAMESPACE)
+TRANSFER_BYPASS_CACHE           = QName("{%s}BypassCache"        % TRANSFER_NAMESPACE)
+TRANSFER_RETRIEVED_FROM_CACHE   = QName("{%s}RetrievedFromCache" % TRANSFER_NAMESPACE)
 

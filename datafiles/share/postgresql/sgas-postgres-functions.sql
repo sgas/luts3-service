@@ -34,6 +34,8 @@ CREATE OR REPLACE FUNCTION urcreate (
     in_major_page_faults       integer,
     in_runtime_environments    varchar[],
     in_exit_code               integer,
+    in_downloads               varchar[],
+    in_uploads                 varchar[],
     in_insert_hostname         varchar,
     in_insert_identity         varchar,
     in_insert_time             timestamp
@@ -45,6 +47,7 @@ DECLARE
     voinformation_id        integer;
     machinename_id          integer;
     insertidentity_id       integer;
+    jobtransferurl_id       integer;
 
     ur_id                   integer;
     ur_global_job_id        varchar;
@@ -204,6 +207,37 @@ BEGIN
                         in_insert_time
                     )
             RETURNING id into ur_id;
+
+    -- create rows for file transfers
+    IF in_downloads IS NOT NULL THEN
+        FOR i IN array_lower(in_downloads, 1) .. array_upper(in_downloads, 1) LOOP
+            -- check if url exists, insert if it does not
+            SELECT INTO jobtransferurl_id id FROM jobtransferurl WHERE url = in_downloads[i][1];
+            IF NOT FOUND THEN
+                INSERT INTO jobtransferurl (url) VALUES (in_downloads[i][1]) RETURNING id INTO jobtransferurl_id;
+            END IF;
+            -- insert download
+            INSERT INTO jobtransferdata (usage_data_id, job_transfer_url_id, transfer_type,
+                                         size, start_time, end_time, bypass_cache, retrieved_from_cache)
+                   VALUES (ur_id, jobtransferurl_id, 'download',
+                           in_downloads[i][2]::integer, in_downloads[i][3]::timestamp, in_downloads[i][4]::timestamp,
+                           in_downloads[i][5]::boolean, in_downloads[i][6]::boolean);
+        END LOOP;
+    END IF;
+
+    IF in_uploads IS NOT NULL THEN
+        FOR i IN array_lower(in_uploads, 1) .. array_upper(in_uploads, 1) LOOP
+            -- check if url exists, insert if it does not
+            SELECT INTO jobtransferurl_id id FROM jobtransferurl WHERE url = in_uploads[i][1];
+            IF NOT FOUND THEN
+                INSERT INTO jobtransferurl (url) VALUES (in_uploads[i][1]) RETURNING id INTO jobtransferurl_id;
+            END IF;
+            -- insert upload
+            INSERT INTO jobtransferdata (usage_data_id, job_transfer_url_id, transfer_type, size, start_time, end_time)
+                   VALUES (ur_id, jobtransferurl_id, 'upload',
+                           in_uploads[i][2]::integer, in_uploads[i][3]::timestamp, in_uploads[i][4]::timestamp);
+        END LOOP;
+    END IF;
 
     -- finally we update the table describing what aggregated information should be updated
     PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND machine_name = in_machine_name;

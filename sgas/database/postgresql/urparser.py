@@ -44,6 +44,8 @@ ARG_LIST = [
     'major_page_faults',
     'runtime_environments',
     'exit_code',
+    'downloads',
+    'uploads',
     'insert_hostname',
     'insert_identity',
     'insert_time'
@@ -52,6 +54,8 @@ ARG_LIST = [
 
 
 def buildArgList(usagerecord_data, insert_identity=None, insert_hostname=None):
+
+    stringify = lambda f : str(f) if f is not None else None
 
     args = []
 
@@ -63,11 +67,25 @@ def buildArgList(usagerecord_data, insert_identity=None, insert_hostname=None):
                                     insert_hostname=insert_hostname,
                                     insert_time=insert_time)
 
-        # convert vo attributes into postgresql arrays
+        # convert vo attributes into arrays (adaption is done by psycopg2)
         if 'vo_attrs' in ur_doc:
             vo_attrs = [ [ e.get('group'), e.get('role') ] for e in ur_doc['vo_attrs'] ]
-            #print vo_attrs
-            ur_doc['vo_attributes'] ='{' + ','.join([ '{' + ','.join( [ '"' + f + '"' if f else 'null' for f in e  ] ) + '}' for e in vo_attrs ]) + '}'
+            #ur_doc['vo_attributes'] = [ [ str(f) if f else None for f in e ] for e in vo_attrs ]
+            ur_doc['vo_attributes'] = [ [ stringify(f) for f in e ] for e in vo_attrs ]
+
+        if 'downloads' in ur_doc:
+            dls = []
+            for dl in ur_doc['downloads']:
+                dla = dl.get('url'), dl.get('size'), dl.get('start_time'), dl.get('end_time'), dl.get('bypass_cache'), dl.get('from_cache')
+                dls.append(dla)
+            ur_doc['downloads'] = [ [ stringify(f) for f in e  ] for e in dls ]
+
+        if 'uploads' in ur_doc:
+            uls = []
+            for ul in ur_doc['uploads']:
+                ula = ul.get('url'), dl.get('size'), dl.get('start_time'), dl.get('end_time')
+                uls.append(ula)
+            ur_doc['uploads'] = [ [ stringify(f) for f in e  ] for e in uls ]
 
         arg = [ ur_doc.get(a, None) for a in ARG_LIST ]
         args.append(arg)
