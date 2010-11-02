@@ -49,6 +49,13 @@ class AuthzTest(unittest.TestCase):
         # "host2"     insert:all
         # "host3"     insert:machine_name=host2
 
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host1', authz.INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host2', authz.INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host3', authz.INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user1', authz.INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  authz.INSERT) )
+
+
         self.failUnlessFalse( self.authz.isAllowed('host_unknown', authz.INSERT))
 
         self.failUnlessTrue(  self.authz.isAllowed('host1', authz.INSERT))
@@ -76,6 +83,19 @@ class AuthzTest(unittest.TestCase):
         # "user4"     view:group=vg1, view:group=vg2
         # "user5"     view:group=vg1;vg2
         # "user6"     view:all
+
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user1', authz.VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user2', authz.VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user3', authz.VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user4', authz.VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user5', authz.VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user6', authz.VIEW) )
+
+        self.failUnlessFalse( self.authz.hasRelevantRight('host1', authz.VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host3', authz.VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  authz.VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot4',  authz.VIEW) )
+
 
         self.failUnlessTrue  ( self.authz.isAllowed('user1', authz.VIEW, context={'view': 'viewname' }) )
         self.failUnlessTrue  ( self.authz.isAllowed('user1', authz.VIEW, context={'group': 'vg1' }) )
@@ -113,6 +133,20 @@ class AuthzTest(unittest.TestCase):
         # "bot5"      query:machine_name=host2+user_identity=user2
         # "bot6"      query:machine_name=host2+user_identity=user2;user4
         # "bot7"      query:vo_name=vo1
+
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot1', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot2', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot3', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot4', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot5', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot6', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot7', authz.QUERY) )
+
+        self.failUnlessFalse( self.authz.hasRelevantRight('host2', authz.QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host4', authz.QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user1', authz.QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user5', authz.QUERY) )
+
 
         self.failUnlessTrue  ( self.authz.isAllowed('bot1', authz.QUERY, context={ 'machine_name': 'host1' } ) )
         self.failUnlessTrue  ( self.authz.isAllowed('bot1', authz.QUERY, context={ 'user_identity': 'user1' } ) )

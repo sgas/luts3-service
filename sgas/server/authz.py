@@ -140,6 +140,27 @@ class Authorizer:
             log.warning('Invalid authz group: "%s", skipping entry.' % action_desc)
 
 
+    def hasRelevantRight(self, subject, action):
+        """
+        Checks if a subject has any rights regarding a certain action.
+
+        This is usefull for checking very early in a process if a subject
+        could be allowed to perform an action, before the details of the
+        action is known.
+
+        Most important usage of this is insertion, where it can be checked
+        if a subject is in any way allowed to insert something before the
+        actual records are parsed and the insert identity - machine name
+        check is performed.
+
+        Returns True if the subject has a relevant right, otherwise False.
+        """
+        if subject in self.authz_rights and action in self.authz_rights[subject]:
+            return True
+        else:
+            return False
+
+
     def isAllowed(self, subject, action, context=None):
 
         if action in [ VIEW, QUERY ]:

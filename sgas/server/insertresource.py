@@ -51,7 +51,7 @@ class InsertResource(resource.Resource):
         # FIXME check for postpath, and if any reject request
 
         subject = authz.getSubject(request)
-        if not self.authorizer.isAllowed(subject, authz.INSERT):
+        if not self.authorizer.hasRelevantRight(subject, authz.INSERT):
             request.setResponseCode(403) # forbidden
             return "Insertion not allowed for identity %s" % subject
 
