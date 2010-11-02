@@ -14,17 +14,10 @@ from twisted.web import error as weberror
 
 from sgas.server import setup, hostcheck
 
-from . import rclient, ursampledata
+from . import rclient, utils, ursampledata
 
 
 SGAS_TEST_FILE = os.path.join(os.path.expanduser('~'), '.sgas-test')
-
-
-
-class FakeAuthorizer:
-
-    def isAllowed(self, subject, action, context=None):
-        return True
 
 
 
@@ -35,7 +28,7 @@ class ResourceTest:
     @defer.inlineCallbacks
     def setUp(self):
         # self.db should be created by subclass
-        site = setup.createSite(self.db, FakeAuthorizer(), [])
+        site = setup.createSite(self.db, utils.FakeAuthorizer(), [])
         self.iport = reactor.listenTCP(self.port, site)
         self.service_url = 'http://localhost:%i/sgas' % self.port
         self.insert_url = self.service_url + '/ur'
@@ -124,7 +117,7 @@ class ResourceTest:
         yield self.iport.stopListening()
 
         # setup a new service with the "bad" database
-        site = setup.createSite(self.bad_db, FakeAuthorizer(), [])
+        site = setup.createSite(self.bad_db, utils.FakeAuthorizer(), [])
         self.iport = reactor.listenTCP(self.port, site)
 
         # the actual test
@@ -173,10 +166,10 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0, FakeAuthorizer()))
+        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0, utils.FakeAuthorizer()))
         yield self.db.startService()
         # for unavalable test
-        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:", hostcheck.InsertionChecker(0, FakeAuthorizer()))
+        self.bad_db = database.PostgreSQLDatabase("localhost:9999:nosuchdb:BADUSER:BADPWD:", hostcheck.InsertionChecker(0, utils.FakeAuthorizer()))
 
         yield ResourceTest.setUp(self)
 
