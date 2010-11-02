@@ -48,7 +48,7 @@ class QueryResource(resource.Resource):
 
         # need to add context sometime
         subject = authz.getSubject(request)
-        if not self.authorizer.isAllowed(subject, authz.QUERY, context=authz_params):
+        if not self.authorizer.isAllowed(subject, authz.QUERY, context=authz_params.items()):
             request.setResponseCode(403) # forbidden
             return "Query not allowed for given context for identity %s" % subject
         # request allowed, continue

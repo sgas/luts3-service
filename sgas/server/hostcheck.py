@@ -48,7 +48,7 @@ class InsertionChecker:
         else:
             return True
 
-        if self.authorizer.isAllowed(x509_identity, authz.INSERT, context={'machine_name': ur_machine_name}):
+        if self.authorizer.isAllowed(x509_identity, authz.INSERT, context=[('machine_name', ur_machine_name)] ):
             return True # authorizer says ok
 
         # no allowed method for inserting

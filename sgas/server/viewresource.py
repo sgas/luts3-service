@@ -140,11 +140,11 @@ class GraphRenderResource(resource.Resource):
     def render_GET(self, request):
         subject = authz.getSubject(request)
         # first check view name
-        if self.authorizer.isAllowed(subject, authz.VIEW, context={'view': self.view.view_name}):
+        if self.authorizer.isAllowed(subject, authz.VIEW, context=[('view', self.view.view_name)]):
             return self.renderView(request)
         # we can only check for one group at a time
         for view_group in self.view.view_groups:
-            if self.authorizer.isAllowed(subject, authz.VIEW, context={'viewgroup': view_group}):
+            if self.authorizer.isAllowed(subject, authz.VIEW, context=[('viewgroup', view_group)]):
                 return self.renderView(request)
 
         # access not allowed

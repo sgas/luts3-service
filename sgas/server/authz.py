@@ -162,6 +162,12 @@ class Authorizer:
 
 
     def isAllowed(self, subject, action, context=None):
+        """
+        Checks if a subject is allowed to perform a certain action, within a given
+        context.
+
+        Returns True if the subject is allowed, otherwise False.
+        """
 
         if action in [ VIEW, QUERY ]:
             assert context is not None, 'Actions view or query requires context'
@@ -188,9 +194,16 @@ class Authorizer:
                     ctx_allow = []
                     for cak, cav in ctx.items():
                         #print "CAK", cak, cav, context
-                        if context.get(cak) in cav:
-                            ctx_allow.append(True)
-                        else:
+                        found_match = False
+                        for cik, civ in context:
+                            if cak == cik:
+                                found_match = True
+                                if civ in cav:
+                                    ctx_allow.append(True)
+                                else:
+                                    ctx_allow.append(False)
+
+                        if not found_match:
                             ctx_allow.append(False)
 
                     allowed = all(ctx_allow or [False])
