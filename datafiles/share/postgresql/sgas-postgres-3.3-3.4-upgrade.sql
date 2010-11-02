@@ -28,5 +28,12 @@ CREATE TABLE jobtransferdata (
     retrieved_from_cache    boolean
 );
 
+-- drop old view and functions
+DROP VIEW usagerecords;
+
+-- FIXME missing arguments
+-- DROP FUNCTION urcreate ( );
+
+SELECT 'View and functions dropped, you should reload them' AS Message;
 
 

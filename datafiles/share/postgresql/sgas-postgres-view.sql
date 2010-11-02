@@ -50,7 +50,11 @@ LEFT OUTER JOIN insertidentity  ON (usagedata.insert_identity_id  = insertidenti
 
 CREATE OR REPLACE VIEW transfers AS
 SELECT
-    usagedata.global_job_id                 AS global_job_id,
+    machinename.machine_name                AS machine_name,
+    voinformation.vo_name                   AS vo_name,
+    voinformation.vo_attributes[1][1]       AS vo_group,
+    voinformation.vo_attributes[1][2]       AS vo_role,
+    globalusername.global_user_name         AS global_user_name,
     jobtransferurl.url                      AS url,
     jobtransferdata.transfer_type           AS transfer_type,
     jobtransferdata.size                    AS size,
@@ -60,8 +64,11 @@ SELECT
     jobtransferdata.retrieved_from_cache    AS retrieved_from_cache
 FROM
     jobtransferdata
+LEFT OUTER JOIN jobtransferurl  ON (jobtransferdata.job_transfer_url_id = jobtransferurl.id)
 LEFT OUTER JOIN usagedata       ON (jobtransferdata.usage_data_id       = usagedata.id)
-LEFT OUTER JOIN  jobtransferurl ON (jobtransferdata.job_transfer_url_id = jobtransferurl.id)
+LEFT OUTER JOIN machinename     ON (usagedata.machine_name_id           = machinename.id)
+LEFT OUTER JOIN voinformation   ON (usagedata.vo_information_id         = voinformation.id)
+LEFT OUTER JOIN globalusername  ON (usagedata.global_user_name_id       = globalusername.id)
 ;
 
 
