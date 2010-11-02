@@ -2,7 +2,7 @@
 -- the purpose of the view is to make data easily accessable so users do not
 -- have to do the joins between the tables them selves.
 
-CREATE OR REPLACE VIEW usagerecords AS
+CREATE VIEW usagerecords AS
 SELECT
     record_id,
     create_time,
@@ -48,7 +48,7 @@ LEFT OUTER JOIN insertidentity  ON (usagedata.insert_identity_id  = insertidenti
 ;
 
 
-CREATE OR REPLACE VIEW transfers AS
+CREATE VIEW transfers AS
 SELECT
     machinename.machine_name                AS machine_name,
     voinformation.vo_name                   AS vo_name,
