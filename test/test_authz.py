@@ -18,9 +18,9 @@ TEST_AUTHZ_DATA = """
 # comment
 "user1"     view
 "user2"     view:view=viewname
-"user3"     view:group=vg1
-"user4"     view:group=vg1, view:group=vg2
-"user5"     view:group=vg1;vg2
+"user3"     view:viewgroup=vg1
+"user4"     view:viewgroup=vg1, view:viewgroup=vg2
+"user5"     view:viewgroup=vg1;vg2
 "user6"     view:all
 
 "bot1"      query:all

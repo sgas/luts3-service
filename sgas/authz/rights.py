@@ -22,7 +22,7 @@ OPTIONS = {
 # contexts
 CTX_MACHINE_NAME  = 'machine_name'
 CTX_VIEW          = 'view'
-CTX_VIEWGROUP     = 'group'
+CTX_VIEWGROUP     = 'viewgroup'
 CTX_USER_IDENTITY = 'user_identity'
 CTX_VO_NAME       = 'vo_name'
 
