@@ -6,9 +6,6 @@ Author: Henrik Thostrup Jensen
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-import time
-
-from sgas.usagerecord import ursplitter, urparser
 
 
 ARG_LIST = [
@@ -53,19 +50,13 @@ ARG_LIST = [
 
 
 
-def buildArgList(usagerecord_data, insert_identity=None, insert_hostname=None):
+def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostname=None):
 
     stringify = lambda f : str(f) if f is not None else None
 
     args = []
 
-    insert_time = time.gmtime()
-
-    for ur_element in ursplitter.splitURDocument(usagerecord_data):
-        ur_doc = urparser.xmlToDict(ur_element,
-                                    insert_identity=insert_identity,
-                                    insert_hostname=insert_hostname,
-                                    insert_time=insert_time)
+    for ur_doc in usagerecord_docs:
 
         # convert vo attributes into arrays (adaption is done by psycopg2)
         if 'vo_attrs' in ur_doc:

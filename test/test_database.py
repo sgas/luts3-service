@@ -10,7 +10,7 @@ import time
 from twisted.trial import unittest
 from twisted.internet import defer
 
-from . import ursampledata
+from . import ursampledata, utils
 
 
 
@@ -140,13 +140,14 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def triggerAggregateUpdate(self):
         # should update the uraggregate table here
-        yield self.db.updater.performUpdate()
+        yield self.real_db.updater.performUpdate()
 
 
     def setUp(self):
 
         import json
         from twisted.enterprise import adbapi
+        from sgas.database import inserter
         from sgas.database.postgresql import database
 
         config = json.load(file(SGAS_TEST_FILE))
@@ -158,13 +159,25 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url)
-        return self.db.startService()
+        self.real_db = database.PostgreSQLDatabase(db_url)
+
+        class FakeDB:
+            def __init__(self, db):
+                self.db = db
+                self.authorizer = utils.FakeAuthorizer()
+            def insert(self, ur_data):
+                return inserter.insertRecords(ur_data, self.db, self.authorizer)
+            def query(self, *args):
+                return self.db.query(*args)
+
+        self.db = FakeDB(self.real_db)
+
+        return self.real_db.startService()
 
 
     @defer.inlineCallbacks
     def tearDown(self):
-        yield self.db.stopService()
+        yield self.real_db.stopService()
         # delete all ur rows in the database
         delete_stms = \
         "TRUNCATE uraggregated;"            + \

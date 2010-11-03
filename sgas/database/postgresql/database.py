@@ -18,7 +18,7 @@ from twisted.enterprise import adbapi
 from twisted.application import service
 
 from sgas.database import ISGASDatabase, error
-from sgas.database.postgresql import urparser, updater
+from sgas.database.postgresql import urconverter, updater
 
 
 
@@ -78,9 +78,10 @@ class PostgreSQLDatabase(service.Service):
 
 
     @defer.inlineCallbacks
-    def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None, retry=False):
+    def insert(self, usagerecord_docs, retry=False):
         # inserts usage record
-        arg_list = urparser.buildArgList(usagerecord_data, insert_identity=insert_identity, insert_hostname=insert_hostname)
+
+        arg_list = urconverter.createInsertArguments(usagerecord_docs)
 
         try:
             id_dict = {}
@@ -118,8 +119,7 @@ class PostgreSQLDatabase(service.Service):
                 log.msg('Got interface error while attempting insert: %s.' % str(e))
                 log.msg('Attempting to reconnect.')
                 self.pool_proxy.reconnect()
-                yield self.insert(usagerecord_data, insert_identity=insert_identity,
-                                  insert_hostname=insert_hostname, retry=True)
+                yield self.insert(usagerecord_docs, retry=True)
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.')
                 raise error.DatabaseUnavailableError(str(e))
