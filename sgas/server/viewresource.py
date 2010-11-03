@@ -141,8 +141,8 @@ class GraphRenderResource(resource.Resource):
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
         # authZ check
-        ctx = [ (rights.CTX_VIEW, self.view.view_name) ] + [ (rights.CTX_VIEWGROUP, vg) for vg in self.view_groups ]
-        if self.authorizer.isAllowed(subject, rights.VIEW, context=ctx):
+        ctx = [ (rights.CTX_VIEW, self.view.view_name) ] + [ (rights.CTX_VIEWGROUP, vg) for vg in self.view.view_groups ]
+        if self.authorizer.isAllowed(subject, rights.ACTION_VIEW, context=ctx):
             return self.renderView(request)
 
         # access not allowed
