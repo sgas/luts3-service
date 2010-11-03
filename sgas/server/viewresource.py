@@ -5,11 +5,10 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-import json
-
 from twisted.python import log
 from twisted.web import resource, server
 
+from sgas.ext.python import json
 from sgas.database import error as dberror
 from sgas.authz import rights
 from sgas.server import resourceutil

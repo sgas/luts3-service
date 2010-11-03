@@ -145,8 +145,8 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
 
     def setUp(self):
 
-        import json
         from twisted.enterprise import adbapi
+        from sgas.ext.python import json
         from sgas.database import inserter
         from sgas.database.postgresql import database
 

@@ -7,12 +7,7 @@ Copyright: Nordic Data Grid Facility (2009, 2010)
 
 import ConfigParser
 
-# OrderedDict depends on the _abcall module, which is only
-# available as of Python 2.6
-try:
-    from sgas.ext.python.collections import OrderedDict
-except ImportError:
-    OrderedDict = dict
+from sgas.ext.python import ConfigDict
 
 
 # log isn't loaded yet, so make a fake log
@@ -63,7 +58,7 @@ def readConfig(filename):
 
     # the dict_type option isn't supported until 2.5
     try:
-        cfg = ConfigParser.SafeConfigParser(dict_type=OrderedDict)
+        cfg = ConfigParser.SafeConfigParser(dict_type=ConfigDict)
     except TypeError:
         cfg = ConfigParser.SafeConfigParser()
 

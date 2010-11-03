@@ -6,7 +6,7 @@ a mechanism for retrieving aggregated information from these.
 
 == Requirements ==
 
-* Python 2.6 (2.5 might work, but is not really supported / tested )
+* Python 2.6 (2.5 will probably work, but is not really supported / tested )
 * Twisted Core and Web (http://twistedmatrix.com/)
 * PyOpenSSL (https://launchpad.net/pyopenssl)
 * NginX 0.7.66 / 0.8.51 or later (http://nginx.org/)
@@ -14,6 +14,8 @@ a mechanism for retrieving aggregated information from these.
 
 If your setup is using the NginX reverse proxy (highly recommended), pyOpenSSL
 is not required (and vice versa).
+
+For Python 2.5 you will need the simplejson module.
 
 Debian/Ubuntu:
 

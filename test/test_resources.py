@@ -5,13 +5,13 @@
 # Copyright: Nordic Data Grid Facility (2009)
 
 import os
-import json
 import urllib
 
 from twisted.trial import unittest
 from twisted.internet import defer, reactor
 from twisted.web import error as weberror
 
+from sgas.ext.python import json
 from sgas.server import setup
 
 from . import rclient, utils, ursampledata
