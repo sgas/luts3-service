@@ -123,7 +123,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def fetchUsageRecord(self, record_id):
 
-        import sgas.database.postgresql.urparser as pgurparser
+        from sgas.database.postgresql import urconverter
 
         stm = "SELECT * from usagerecords where record_id = %s"
         res = yield self.postgres_dbpool.runQuery(stm, (record_id,))
@@ -131,7 +131,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         if res == []:
             defer.returnValue(None)
         elif len(res) == 1:
-            ur_doc = dict( zip(pgurparser.ARG_LIST, res[0]) )
+            ur_doc = dict( zip(urconverter.ARG_LIST, res[0]) )
             defer.returnValue(ur_doc)
         else:
             self.fail('Multiple results returned for a single usage record')
