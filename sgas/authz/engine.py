@@ -6,27 +6,9 @@ import re
 
 from twisted.python import log
 
+from sgas.authz import rights, ctxinsertchecker, ctxsetchecker
 
-# various actions
-INSERT    = 'insert'
-VIEW      = 'view'
-QUERY     = 'query'
 
-ACTIONS = [ INSERT, VIEW, QUERY ]
-
-ALL_OPTION = 'all'
-
-OPTIONS = {
-    INSERT : [ ALL_OPTION ],
-    VIEW   : [ ALL_OPTION ],
-    QUERY  : [ ALL_OPTION ]
-}
-
-CONTEXTS = {
-    INSERT : [ 'machine_name' ],
-    VIEW   : [ 'view', 'viewgroup' ],
-    QUERY  : [ 'machine_name', 'user_identity', 'vo_name' ]
-}
 
 
 # regular expression for matching authz lines
@@ -71,13 +53,19 @@ class AuthzRights:
 
 
 
-class Authorizer:
+class AuthorizationEngine:
 
-    def __init__(self, authz_file=None):
+    def __init__(self, insert_check_depth, authz_file=None):
         self.authz_rights = {}  # subject -> [action : AuthzRights ]
         if authz_file is not None:
             authz_data = open(authz_file).read()
             self.parseAuthzData(authz_data)
+
+        self.context_checkers = {
+            rights.ACTION_INSERT : ctxinsertchecker.InsertChecker(insert_check_depth),
+            rights.ACTION_VIEW   : ctxsetchecker.AnySetChecker,
+            rights.ACTION_QUERY  : ctxsetchecker.AllSetChecker
+        }
 
 
     def parseAuthzData(self, authz_data):
@@ -105,14 +93,14 @@ class Authorizer:
 
         if len(action_authzgroup) == 1:
             action = action_authzgroup[0]
-            if not action in ACTIONS:
+            if not action in rights.ACTIONS:
                 log.msg('Invalid authz action: "%s", skipping entry.' % action_desc)
                 return
             user_authz_rights.setdefault(action, AuthzRights())
             # some backwards compat
-            if action == VIEW:
+            if action == rights.ACTION_VIEW:
                 # log.msg ...
-                user_authz_rights[action].options.append(ALL_OPTION)
+                user_authz_rights[action].options.append(rights.OPTION_ALL)
 
         elif len(action_authzgroup) == 2:
             action, authzgroup = action_authzgroup
@@ -130,7 +118,7 @@ class Authorizer:
                             log.msg('Invalid authz context: %s, skipping entry.' % action_desc)
                 else: # option
                     for option in authz.split('+'):
-                        if not option in OPTIONS.get(action, []):
+                        if not option in rights.OPTIONS.get(action, []):
                             log.msg('Invalid authz option: %s, skipping entry.' % action_desc)
                             continue
                         action_rights = user_authz_rights.setdefault(action, AuthzRights())
@@ -161,7 +149,7 @@ class Authorizer:
             return False
 
 
-    def isAllowed(self, subject, action, context=None):
+    def isAllowed(self, subject, action, context):
         """
         Checks if a subject is allowed to perform a certain action, within a given
         context.
@@ -169,51 +157,27 @@ class Authorizer:
         Returns True if the subject is allowed, otherwise False.
         """
 
-        if action in [ VIEW, QUERY ]:
-            assert context is not None, 'Actions view or query requires context'
-
         allowed = False
 
         try:
             user_authz_rights = self.authz_rights[subject]
             # subject is not found -> keyerror -> denied
 
-            action_rights = user_authz_rights[action]
+            user_action_rights = user_authz_rights[action]
             # action is not found -> keyerror -> denied
 
-            if ALL_OPTION in action_rights.options:
+            if rights.OPTION_ALL in user_action_rights.options:
             # special all option is set for the subject -> granted
                 allowed = True
 
-            elif context is None and action == INSERT:
-            # no context, means allowed for insert, otherwise not (do nothing)
+            # perform context check
+            ctx_checker = self.context_checkers[action]
+            if ctx_checker.contextCheck(subject, user_action_rights.contexts, context):
                 allowed = True
-
-            else: # there is a context
-                for ctx in action_rights.contexts:
-                    ctx_allow = []
-                    for cak, cav in ctx.items():
-                        #print "CAK", cak, cav, context
-                        found_match = False
-                        for cik, civ in context:
-                            if cak == cik:
-                                found_match = True
-                                if civ in cav:
-                                    ctx_allow.append(True)
-                                else:
-                                    ctx_allow.append(False)
-
-                        if not found_match:
-                            ctx_allow.append(False)
-
-                    allowed = all(ctx_allow or [False])
-                    if allowed:
-                        break
 
         except KeyError:
             pass
 
-        #print "Authz check: Subject %s, Action %s, Context: %s. Access allowed: %s" % (subject, action, context, allowed)
         log.msg("Authz check: Subject %s, Action %s, Context: %s. Access allowed: %s" % \
                  (subject, action, context, allowed), system='sgas.Authorizer')
 

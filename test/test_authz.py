@@ -6,14 +6,15 @@
 
 from twisted.trial import unittest
 
-from sgas.server import authz
+from sgas.authz import engine, rights
 
 # includes all basic authz types and some basic combinations
 # there will probably be more later
-SAMPLE_AUTHZ_DATA = """
+TEST_AUTHZ_DATA = """
 "host1"     insert
 "host2"     insert:all
 "host3"     insert:machine_name=host2
+"host4.ex.org" insert:machine_name=host2
 # comment
 "user1"     view
 "user2"     view:view=viewname
@@ -36,8 +37,8 @@ class AuthzTest(unittest.TestCase):
 
 
     def setUp(self):
-        self.authz = authz.Authorizer()
-        self.authz.parseAuthzData(SAMPLE_AUTHZ_DATA)
+        self.authz = engine.AuthorizationEngine(insert_check_depth=2)
+        self.authz.parseAuthzData(TEST_AUTHZ_DATA)
 
 
     def tearDown(self):
@@ -48,32 +49,38 @@ class AuthzTest(unittest.TestCase):
         # "host1"     insert
         # "host2"     insert:all
         # "host3"     insert:machine_name=host2
+        # "host4.ex.org" insert:machine_name=host2
 
-        self.failUnlessTrue(  self.authz.hasRelevantRight('host1', authz.INSERT) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('host2', authz.INSERT) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('host3', authz.INSERT) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('user1', authz.INSERT) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  authz.INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host1', rights.ACTION_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host2', rights.ACTION_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host3', rights.ACTION_INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user1', rights.ACTION_INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  rights.ACTION_INSERT) )
 
 
-        self.failUnlessFalse( self.authz.isAllowed('host_unknown', authz.INSERT))
+        self.failUnlessFalse( self.authz.isAllowed('host_unknown', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host_unknown')] ))
 
-        self.failUnlessTrue(  self.authz.isAllowed('host1', authz.INSERT))
-        self.failUnlessFalse( self.authz.isAllowed('host1', authz.INSERT, context=[('machine_name', 'host2')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host1', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ))
+        self.failUnlessFalse( self.authz.isAllowed('host1', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
 
-        self.failUnlessTrue(  self.authz.isAllowed('host2', authz.INSERT) )
-        self.failUnlessTrue(  self.authz.isAllowed('host2', authz.INSERT, context=[('machine_name', 'host1')] ) )
-        self.failUnlessTrue(  self.authz.isAllowed('host2', authz.INSERT, context=[('machine_name', 'host3')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')] ) )
         # can a host insert a usage record with a certain user - yes it can
         # doesn't make a that much of sense, but it can
-        self.failUnlessTrue(  self.authz.isAllowed('host2', authz.INSERT, context=[('user_identity', 'user1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_USER_IDENTITY, 'user1')] ) )
 
-        self.failUnlessTrue(  self.authz.isAllowed('host3', authz.INSERT) )
-        self.failUnlessTrue(  self.authz.isAllowed('host3', authz.INSERT, context=[('machine_name', 'host2')] ) )
-        self.failUnlessFalse( self.authz.isAllowed('host3', authz.INSERT, context=[('machine_name', 'host1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host3', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')]) )
+        self.failUnlessTrue(  self.authz.isAllowed('host3', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
+        self.failUnlessFalse( self.authz.isAllowed('host3', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
 
-        self.failUnlessFalse( self.authz.isAllowed('user1', authz.INSERT) )
-        self.failUnlessFalse( self.authz.isAllowed('bot1',  authz.INSERT) )
+        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2.ex.org')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host4.ex.org')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
+        self.failUnlessFalse( self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
+
+        self.failUnlessFalse( self.authz.isAllowed('user1', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')]) )
+        self.failUnlessFalse( self.authz.isAllowed('bot1',  rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')]) )
 
 
     def testViewAuthz(self):
@@ -84,45 +91,46 @@ class AuthzTest(unittest.TestCase):
         # "user5"     view:group=vg1;vg2
         # "user6"     view:all
 
-        self.failUnlessTrue(  self.authz.hasRelevantRight('user1', authz.VIEW) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('user2', authz.VIEW) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('user3', authz.VIEW) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('user4', authz.VIEW) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('user5', authz.VIEW) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('user6', authz.VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user1', rights.ACTION_VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user2', rights.ACTION_VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user3', rights.ACTION_VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user4', rights.ACTION_VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user5', rights.ACTION_VIEW) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('user6', rights.ACTION_VIEW) )
 
-        self.failUnlessFalse( self.authz.hasRelevantRight('host1', authz.VIEW) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('host3', authz.VIEW) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  authz.VIEW) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('bot4',  authz.VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host1', rights.ACTION_VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host3', rights.ACTION_VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  rights.ACTION_VIEW) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot4',  rights.ACTION_VIEW) )
 
 
-        self.failUnlessTrue  ( self.authz.isAllowed('user1', authz.VIEW, context=[('view', 'viewname' )] ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user1', authz.VIEW, context=[('group', 'vg1' )] ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user1', rights.ACTION_VIEW, [(rights.CTX_VIEW, 'viewname' )] ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user1', rights.ACTION_VIEW, [(rights.CTX_VIEWGROUP, 'vg1' )] ) )
 
-        self.failUnlessTrue  ( self.authz.isAllowed('user2', authz.VIEW, context=[('view', 'viewname' )] ) )
-        self.failUnlessFalse ( self.authz.isAllowed('user2', authz.VIEW, context=[('view', 'otherview')] ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user2', rights.ACTION_VIEW, [(rights.CTX_VIEW, 'viewname' )] ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user2', rights.ACTION_VIEW, [(rights.CTX_VIEW, 'otherview')] ) )
 
-        self.failUnlessTrue  ( self.authz.isAllowed('user3', authz.VIEW, context=[('group', 'vg1')] ) )
-        self.failUnlessFalse ( self.authz.isAllowed('user3', authz.VIEW, context=[('group', 'vg2')] ) )
-        self.failUnlessFalse ( self.authz.isAllowed('user3', authz.VIEW, context=[('view', 'viewname')] ) )
-        self.failUnlessFalse ( self.authz.isAllowed('user3', authz.VIEW, context=[('view', 'otherview')] ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user3', authz.VIEW, context=[('view', 'otherview'), ('group', 'vg1')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user3', rights.ACTION_VIEW, [(rights.CTX_VIEWGROUP, 'vg1')] ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user3', rights.ACTION_VIEW, [(rights.CTX_VIEWGROUP, 'vg2')] ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user3', rights.ACTION_VIEW, [(rights.CTX_VIEW, 'viewname')] ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user3', rights.ACTION_VIEW, [(rights.CTX_VIEW, 'otherview')] ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user3', rights.ACTION_VIEW, [(rights.CTX_VIEW, 'otherview'), (rights.CTX_VIEWGROUP, 'vg1')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user3', rights.ACTION_VIEW, [(rights.CTX_VIEWGROUP, 'vg1'), (rights.CTX_VIEWGROUP, 'vg2')]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('user4', authz.VIEW, context=[( 'group', 'vg3')]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('user4', authz.VIEW, context=[( 'view', 'viewname')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user4', authz.VIEW, context=[( 'group', 'vg1')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user4', authz.VIEW, context=[( 'view', 'otherview'), ('group', 'vg2')]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user4', rights.ACTION_VIEW, [( rights.CTX_VIEWGROUP, 'vg3')]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user4', rights.ACTION_VIEW, [( rights.CTX_VIEW, 'viewname')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user4', rights.ACTION_VIEW, [( rights.CTX_VIEWGROUP, 'vg1')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user4', rights.ACTION_VIEW, [( rights.CTX_VIEW, 'otherview'), (rights.CTX_VIEWGROUP, 'vg2')]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('user5', authz.VIEW, context=[( 'group', 'vg3')]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('user5', authz.VIEW, context=[( 'view', 'viewname')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user5', authz.VIEW, context=[( 'group', 'vg1')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user5', authz.VIEW, context=[( 'view', 'otherview'), ('group', 'vg2')]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user5', rights.ACTION_VIEW, [( rights.CTX_VIEWGROUP, 'vg3')]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('user5', rights.ACTION_VIEW, [( rights.CTX_VIEW, 'viewname')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user5', rights.ACTION_VIEW, [( rights.CTX_VIEWGROUP, 'vg1')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user5', rights.ACTION_VIEW, [( rights.CTX_VIEW, 'otherview'), (rights.CTX_VIEWGROUP, 'vg2')]  ) )
 
-        self.failUnlessTrue  ( self.authz.isAllowed('user6', authz.VIEW, context=[( 'group', 'vg3')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user6', authz.VIEW, context=[( 'view', 'viewname')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user6', authz.VIEW, context=[( 'group', 'vg1')]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('user5', authz.VIEW, context=[( 'view', 'otherview'), ('group', 'vg2')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user6', rights.ACTION_VIEW, [( rights.CTX_VIEWGROUP, 'vg3')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user6', rights.ACTION_VIEW, [( rights.CTX_VIEW, 'viewname')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user6', rights.ACTION_VIEW, [( rights.CTX_VIEWGROUP, 'vg1')]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('user5', rights.ACTION_VIEW, [( rights.CTX_VIEW, 'otherview'), (rights.CTX_VIEWGROUP, 'vg2')]  ) )
 
 
     def testQueryAuthz(self):
@@ -134,59 +142,59 @@ class AuthzTest(unittest.TestCase):
         # "bot6"      query:machine_name=host2+user_identity=user2;user4
         # "bot7"      query:vo_name=vo1
 
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot1', authz.QUERY) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot2', authz.QUERY) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot3', authz.QUERY) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot4', authz.QUERY) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot5', authz.QUERY) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot6', authz.QUERY) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('bot7', authz.QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot1', rights.ACTION_QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot2', rights.ACTION_QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot3', rights.ACTION_QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot4', rights.ACTION_QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot5', rights.ACTION_QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot6', rights.ACTION_QUERY) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('bot7', rights.ACTION_QUERY) )
 
-        self.failUnlessFalse( self.authz.hasRelevantRight('host2', authz.QUERY) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('host4', authz.QUERY) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('user1', authz.QUERY) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('user5', authz.QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host2', rights.ACTION_QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host4', rights.ACTION_QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user1', rights.ACTION_QUERY) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user5', rights.ACTION_QUERY) )
 
 
-        self.failUnlessTrue  ( self.authz.isAllowed('bot1', authz.QUERY, context=[( 'machine_name', 'host1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot1', authz.QUERY, context=[( 'user_identity', 'user1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot1', authz.QUERY, context=[( 'machine_name', 'host1', 'user_identity', 'user2' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot1', authz.QUERY, context=[( 'vo_name', 'vo1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot1', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot1', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot1', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1', rights.CTX_USER_IDENTITY, 'user2' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot1', rights.ACTION_QUERY, [( rights.CTX_VO_NAME, 'vo1' )]  ) )
 
-        self.failUnlessTrue  ( self.authz.isAllowed('bot2', authz.QUERY, context=[( 'machine_name', 'host1' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot2', authz.QUERY, context=[( 'machine_name', 'host2' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot2', authz.QUERY, context=[( 'user_identity', 'user1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot2', authz.QUERY, context=[( 'machine_name', 'host1'), ('user_identity', 'user1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot2', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot2', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot2', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot2', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1'), (rights.CTX_USER_IDENTITY, 'user1' )]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('bot3', authz.QUERY, context=[( 'machine_name', 'host1' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot3', authz.QUERY, context=[( 'machine_name', 'host2' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot3', authz.QUERY, context=[( 'user_identity', 'user1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot3', authz.QUERY, context=[( 'machine_name', 'host1'), ('user_identity', 'user1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot3', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot3', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot3', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot3', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1'), (rights.CTX_USER_IDENTITY, 'user1' )]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'machine_name', 'host1' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'machine_name', 'host2' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'user_identity', 'user1' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'user_identity', 'user2' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'user_identity', 'user3' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'machine_name', 'host1'), ('user_identity', 'user1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user3' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot4', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user2' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user3' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1'), (rights.CTX_USER_IDENTITY, 'user1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user3' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot4', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user2' )]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('bot5', authz.QUERY, context=[( 'machine_name', 'host2' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot5', authz.QUERY, context=[( 'user_identity', 'user2' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot5', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user2' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot5', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot5', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot5', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user2' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot5', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot5', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user1' )]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('bot6', authz.QUERY, context=[( 'machine_name', 'host1' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot6', authz.QUERY, context=[( 'machine_name', 'host2' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot6', authz.QUERY, context=[( 'user_identity', 'user2' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot6', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user2' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot6', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user3' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot6', authz.QUERY, context=[( 'machine_name', 'host2'), ('user_identity', 'user4' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot6', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot6', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot6', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user2' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot6', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot6', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user3' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot6', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_USER_IDENTITY, 'user4' )]  ) )
 
-        self.failUnlessFalse ( self.authz.isAllowed('bot7', authz.QUERY, context=[( 'machine_name', 'host2' )]  ) )
-        self.failUnlessFalse ( self.authz.isAllowed('bot7', authz.QUERY, context=[( 'user_identity', 'user1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot7', authz.QUERY, context=[( 'vo_name', 'vo1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot7', authz.QUERY, context=[( 'machine_name', 'host2'), ('vo_name', 'vo1' )]  ) )
-        self.failUnlessTrue  ( self.authz.isAllowed('bot7', authz.QUERY, context=[( 'user_identity', 'user1'), ('vo_name', 'vo1' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2' )]  ) )
+        self.failUnlessFalse ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_VO_NAME, 'vo1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_VO_NAME, 'vo1' )]  ) )
+        self.failUnlessTrue  ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1'), (rights.CTX_VO_NAME, 'vo1' )]  ) )
 
