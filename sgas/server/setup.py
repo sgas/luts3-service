@@ -8,7 +8,8 @@ from twisted.application import internet, service
 from twisted.web import resource, server
 
 from sgas import __version__
-from sgas.server import config, ssl, authz, hostcheck, topresource, insertresource, viewresource, queryresource
+from sgas.authz import engine
+from sgas.server import config, ssl, topresource, insertresource, viewresource, queryresource
 from sgas.database.postgresql import database as pgdatabase
 from sgas.viewengine import viewdefinition
 
@@ -96,14 +97,13 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, use_ssl=None, port=None):
         raise ConfigurationError('Whitelist no longer supported, use "insert:all" in sgas.authz')
 
     # authz
-    authorizer = authz.Authorizer(cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
-    checker = hostcheck.InsertionChecker(check_depth, authorizer)
+    authorizer = engine.AuthorizationEngine(check_depth, cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
 
     # database
     if db_url.startswith('http'):
         raise ConfigurationError('CouchDB no longer supported. Please upgrade to PostgreSQL')
 
-    db = pgdatabase.PostgreSQLDatabase(db_url, checker)
+    db = pgdatabase.PostgreSQLDatabase(db_url)
 
     # http site
     views = viewdefinition.buildViewList(cfg)

@@ -12,8 +12,9 @@ import json
 from twisted.python import log
 from twisted.web import resource, server
 
-from sgas.server import authz
-from sgas.database import error as dberror
+from sgas.authz import rights
+from sgas.server import resourceutil
+from sgas.database import inserter, error as dberror
 
 
 
@@ -50,8 +51,8 @@ class InsertResource(resource.Resource):
 
         # FIXME check for postpath, and if any reject request
 
-        subject = authz.getSubject(request)
-        if not self.authorizer.hasRelevantRight(subject, authz.INSERT):
+        subject = resourceutil.getSubject(request)
+        if not self.authorizer.hasRelevantRight(subject, rights.ACTION_INSERT):
             request.setResponseCode(403) # forbidden
             return "Insertion not allowed for identity %s" % subject
 
@@ -64,7 +65,7 @@ class InsertResource(resource.Resource):
 
         request.content.seek(0)
         ur_data = request.content.read()
-        d = self.db.insert(ur_data, insert_identity=subject, insert_hostname=hostname)
+        d = inserter.insertRecords(ur_data, self.db, self.authorizer, subject, hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
 

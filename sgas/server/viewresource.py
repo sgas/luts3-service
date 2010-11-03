@@ -11,7 +11,8 @@ from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.database import error as dberror
-from sgas.server import authz
+from sgas.authz import rights
+from sgas.server import resourceutil
 from sgas.viewengine import pagebuilder
 
 
@@ -100,7 +101,7 @@ class ViewTopResource(resource.Resource):
 
 
     def render_GET(self, request):
-        subject = authz.getSubject(request)
+        subject = resourceutil.getSubject(request)
         return self.renderStartPage(request, subject)
 
 
@@ -138,13 +139,13 @@ class GraphRenderResource(resource.Resource):
 
 
     def render_GET(self, request):
-        subject = authz.getSubject(request)
+        subject = resourceutil.getSubject(request)
         # first check view name
-        if self.authorizer.isAllowed(subject, authz.VIEW, context=[('view', self.view.view_name)]):
+        if self.authorizer.isAllowed(subject, rights.VIEW, context=[('view', self.view.view_name)]):
             return self.renderView(request)
         # we can only check for one group at a time
         for view_group in self.view.view_groups:
-            if self.authorizer.isAllowed(subject, authz.VIEW, context=[('viewgroup', view_group)]):
+            if self.authorizer.isAllowed(subject, rights.VIEW, context=[('viewgroup', view_group)]):
                 return self.renderView(request)
 
         # access not allowed
