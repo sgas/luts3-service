@@ -61,11 +61,10 @@ class PostgreSQLDatabase(service.Service):
 
     implements(ISGASDatabase)
 
-    def __init__(self, connect_info, checker):
+    def __init__(self, connect_info):
         self.pool_proxy = _DatabasePoolProxy(connect_info)
         #self.dbpool = self._setupPool(self.connect_info)
         self.updater = updater.AggregationUpdater(self.pool_proxy)
-        self.checker = checker
 
 
     def startService(self):
@@ -82,8 +81,6 @@ class PostgreSQLDatabase(service.Service):
     def insert(self, usagerecord_data, insert_identity=None, insert_hostname=None, retry=False):
         # inserts usage record
         arg_list = urparser.buildArgList(usagerecord_data, insert_identity=insert_identity, insert_hostname=insert_hostname)
-
-        self._checkIdentityConsistency(insert_identity, arg_list)
 
         try:
             id_dict = {}
@@ -161,16 +158,4 @@ class PostgreSQLDatabase(service.Service):
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.')
                 raise error.DatabaseUnavailableError(str(e))
-
-
-    def _checkIdentityConsistency(self, insert_identity, arg_list):
-        # check the consistency between machine_name in records and the identity of the inserter
-
-        docs = [ dict(zip(urparser.ARG_LIST, args)) for args in arg_list ]
-
-        for doc in docs:
-            machine_name = doc.get('machine_name')
-            if not self.checker.isInsertAllowed(insert_identity, machine_name):
-                MSG = 'Machine name (%s) does not match FQDN of identity (%s) to sufficient degree'
-                raise error.SecurityError(MSG % (machine_name, insert_identity))
 

@@ -10,9 +10,8 @@ import time
 from twisted.trial import unittest
 from twisted.internet import defer
 
-from sgas.server import hostcheck
+from . import ursampledata
 
-from . import ursampledata, utils
 
 
 
@@ -159,7 +158,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
 
         self.postgres_dbpool = adbapi.ConnectionPool('psycopg2', host=host, port=port, database=db, user=user, password=password)
 
-        self.db = database.PostgreSQLDatabase(db_url, hostcheck.InsertionChecker(0, utils.FakeAuthorizer()))
+        self.db = database.PostgreSQLDatabase(db_url)
         return self.db.startService()
 
 
