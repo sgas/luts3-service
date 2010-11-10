@@ -41,6 +41,6 @@ def insertRecords(usagerecord_data, db, authorizer, insert_identity=None, insert
         return db.insert(ur_docs)
     else:
         MSG = 'Subject %s is not allowed to perform insertion for machines: %s' % (insert_identity, ','.join(machine_names))
-        return defer.failure(error.SecurityError(MSG))
+        return defer.fail(error.SecurityError(MSG))
 
 
