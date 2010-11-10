@@ -31,8 +31,41 @@ CREATE TABLE jobtransferdata (
 -- drop old view and functions
 DROP VIEW usagerecords;
 
--- FIXME missing arguments
--- DROP FUNCTION urcreate ( );
+DROP FUNCTION urcreate (character varying,
+                        timestamp without time zone,
+                        character varying,
+                        character varying,
+                        character varying,
+                        character varying,
+                        character varying,
+                        character varying,
+                        character varying,
+                        character varying[],
+                        character varying,
+                        character varying,
+                        numeric,
+                        character varying,
+                        character varying,
+                        character varying,
+                        integer,
+                        integer,
+                        character varying,
+                        character varying,
+                        timestamp without time zone,
+                        timestamp without time zone,
+                        timestamp without time zone,
+                        numeric,
+                        numeric,
+                        numeric,
+                        numeric,
+                        integer,
+                        integer,
+                        integer,
+                        character varying[],
+                        integer,
+                        character varying,
+                        character varying,
+                        timestamp without time zone);
 
 SELECT 'View and functions dropped, you should reload them' AS Message;
 
