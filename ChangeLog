@@ -8,6 +8,12 @@ New query interface for extracting information from SGAS.
 
 New authorization engine for significantly more flexible authorization.
 
+SGAS can now log job transfer statistics from ARC (Note that ARC does not yet
+report this in the current release).
+
+The configuration option check_whitelist is no longer supported, use
+insert:machine_name=FQDN in sgas.authz instead.
+
 Better detection of fake VO information when creating aggregated information.
 
 New discrete_scatterplot and line graph types.
@@ -20,6 +26,12 @@ Use embedded database function for aggregation update to avoid ping-pong with
 database during updating.
 
 Write friendly greeting with version number to log when starting up.
+
+NginX sample config file is now automatically installed.
+
+Updated view documentation with configuration overview.
+
+Better Python 2.5 compatability.
 
 Various clean-ups.
 
