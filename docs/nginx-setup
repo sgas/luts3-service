@@ -18,19 +18,23 @@ installing a newer version of NginX.
 
 == Installing & Configuration ==
 
-Basically copy sgas.nginx to the nginx sites-enabled directory. The
-sites-enabled directory is typically located at /etc/nginx/sites-enabled. Just
-call the file sgas, the .nginx suffix is just to make it clear what it is.
+The installation will have installed an NginX configuration file into
+/etc/nginx/sites-available. To enable this configuration symlink it into the
+NginX sites-enabled directory, typically located at /etc/nginx/sites-enabled.
 
-Hereafter go through the values in the config file. Typically only the
-server_name value has to be changed, which you should be the FQDN of the
-machine. Furthermore you may need to set port (note that the port number if
-both set in the listen directive, as well as in a header), and directory for
-the SGAS web files, if you relocated SGAS.
+You should to through the values in the installed configuration to see if they
+are correct. You will need to set the server_name option, which should be the
+FQDN of the machine. This is typically the only value that needs to be set.
+
+If you run a special setup, you may need to set other options. If you have
+relocated SGAS you will need to set the directory for the SGAS web files (under
+the static location). Note that, if you change the external port number, you
+must set the port number in both the listen directive as well as in the header
+setting section.
 
 For certificates the default grid locations are specified in the file. Note
 that only one file client CAs can be set. By default it is set to 1f0e8352.0,
 which is the NorduGrid CA. You may need to change this. It is possible to have
 multiple client CAs by catting several CA files together into one file (the CA
-typically end with .0).
+files typically end with .0).
 
