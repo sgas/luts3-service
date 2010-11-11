@@ -9,13 +9,26 @@ capable of.
 Note: If you want view, you will have to setup a reverse proxy in front of
 SGAS. See docs/nginx-setup.
 
-
 The SGAS view frontpage is found at the URL path /sgas/view, e.g.,:
 https://host.example.org:6443/sgas/view. Here there are links to view, which
 are defined in sgas.conf.
 
 
-A basic view example follows:
+* Short overview of all configuration options:
+
+Option              Descrpition
+
+viewgroup       Comma-seperated list of groups which can access the view.
+type            The type of graph. Valid options:
+                lines, columns, staced_columns, grouped_columsn, discrete_scatterplot
+drawtable       Explicetely render or disable table. Valid values: "true" or "false".
+drawgraph       Explicitely render/disable table. Valid values: "true" or "false".
+description     Free form string describing the view.
+query           The query send to the database for data retrieval. Note that the data must
+                follow the specific format of the view type in order to make sense.
+
+
+* Explanatory, In-depth View Configuratio
 
 [view:insert_total]
 viewgroup=vg1,vg2
