@@ -24,7 +24,7 @@ $ \i /usr/local/share/sgas/postgres/sgas-postgres-3.2-3.3-upgrade.sql
 $ \i /usr/local/share/sgas/postgres/sgas-postgres-functions.sql
 (and logout of postgres)
 
-4. Start SGAS
+5. Start SGAS
 
 $ sudo /etc/init.d/sgas start
 
@@ -57,7 +57,23 @@ $ \i /usr/local/share/sgas/postgres/sgas-postgres-view.sql
 $ \i /usr/local/share/sgas/postgres/sgas-postgres-functions.sql
 (and logout of postgres)
 
-4. Start SGAS
+5. Authorization Updates
+
+The "check_whitelist" option in sgas.conf is no longer supported. Instead
+create an entry in sgas.authz with the following structure:
+"/CERT/NAME"        insert:machine_name=FQDN_IN_USAGERECORD
+Alternatively, the "insert:all" declaration can be used to provide the subject
+with insert rights for all machine names.
+
+The syntax for allowing per-view access has also been changed. Change entries
+from:
+"/SUBJECT"      view:view_name
+to:
+"/SUBJECT"      view:view=view_name
+Or better yet, switch to using viewgroups (see docs/views)
+
+
+6. Start SGAS
 
 $ sudo /etc/init.d/sgas start
 
