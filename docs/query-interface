@@ -10,9 +10,9 @@ query interface in details.
 Before dispatching any queries, the user/host performing the query, must be
 allowed access. This is done in the sgas.authz file, the user/host performing
 the query, must be allowed access. This is done in the sgas.authz file. To
-allow a party to query everything the "query:admin" stanza is used, e.g.:
+allow a party to query everything the "query:all" stanza is used, e.g.:
 
-"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     query:admin
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     query:all
 
 However this is usually not desirable, instead we only want to allow a party to
 query for a certain set of machines or user identities. Or perhaps a
