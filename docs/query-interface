@@ -116,9 +116,8 @@ libraries have functionality for this.
 
 The result from a successful query request is a JSON encoded document. The
 document is a list of dictionaries, with each dictionary representing a chunk
-of aggregated usage data. Per default the granularity will always be per-user
-and per-machine. VO information is currently only added if queried for (this
-might change in the future).
+of aggregated usage data. The granularity is per machine, user and vo. It might
+be possible to collapse these in the future.
 
 Pretty much all languages have one or more JSON libraries for decoding the data
 into data structures.
@@ -143,7 +142,18 @@ A response payload could look like this (formatted):
    "start_date": "2000-01-01"}
 ]
 
-The dictionaries cannot be assumed to be in any order, just extract the data
+I.e., a list of records with usage data. The fields are:
+
+machine_name    : The name of the machine
+user_identity   : The name of the user
+vo_name         : The vo/project name
+start_date      : Date for when the record is valid
+end_date        : Date for when the record is no longer valid
+n_jobs          : Number of jobs executed
+cpu_time        : Aggregated CPU time (in hours)
+wall_time       : Aggreaged Wall time (adjusted for multi-core jobs) (in hours)
+
+The records cannot be assumed to be in any order, just extract the data
 you need by field name. If you need some special aggregations you may have to
 perform some aggregation yourself.
 
