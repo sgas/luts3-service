@@ -24,9 +24,7 @@ def buildQuery(query_args):
 
     query_args = [] # RENAME me!
 
-    query = "SELECT machine_name, user_identity, "
-    if vo_name:
-        query += "vo_name, "
+    query = "SELECT machine_name, user_identity, vo_name, "
     query += date_extract
 
     query += "sum(n_jobs), sum(cputime), sum(walltime) "
@@ -48,9 +46,7 @@ def buildQuery(query_args):
     if query.endswith(','):
         query = query[:-1]
 
-    query += "GROUP BY machine_name, user_identity,"
-    if vo_name:
-        query += 'vo_name,'
+    query += "GROUP BY machine_name, user_identity, vo_name,"
 
     query += date_grouping
 
