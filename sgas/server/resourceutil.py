@@ -23,3 +23,16 @@ def getSubject(request):
     return None
 
 
+def getHostname(request):
+    """
+    Utility method for getting hostname of client.
+    """
+    if request.getClientIP() in ('127.0.0.1', '::1') and 'X-Forwarded-For' in request.received_headers:
+        return request.received_headers.get('x-forwarded-for')
+
+    else:
+        hostname = request.getClient()
+        if hostname is None:
+            hostname = request.getClientIP()
+        return hostname
+

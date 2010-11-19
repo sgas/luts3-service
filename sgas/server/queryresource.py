@@ -53,12 +53,8 @@ class QueryResource(resource.Resource):
             return "Query not allowed for given context for identity %s" % subject
         # request allowed, continue
 
-        # hostname is used for logging / provenance in the usage records
-        hostname = request.getClient()
-        if hostname is None:
-            hostname = request.getClientIP()
+        hostname = resourceutil.getHostname(request)
         log.msg('Accepted query request from %s' % hostname, system='sgas.queryresource')
-
 
         def gotDatabaseResult(rows):
             records = queryrowrp.buildDictRecords(rows, query_args)
