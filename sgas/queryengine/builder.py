@@ -79,7 +79,7 @@ def _getStartEndDatesAndGrouping(query_args):
         group = "date_part('year', execution_time) || '-' || date_part('month', execution_time),"
 
     elif time_resolution == 'collapse':
-        dates = "'%s', '%s', " % (query_args.get('start_date'), query_args.get('end_date'))
+        dates = "min(execution_time), max(execution_time), "
         group = ''
 
     return dates, group
