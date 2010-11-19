@@ -90,7 +90,7 @@ https://sgas.example.org:6143/sgas/query?machine_name=host1.example.org
 
 To query for a certain user like this:
 
-https://sgas.example.org:6143/sgas/query?machine_name=user_identity=user1
+https://sgas.example.org:6143/sgas/query?user_identity=user1
 
 To query for a certain user on a certain machine:
 
