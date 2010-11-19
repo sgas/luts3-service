@@ -67,7 +67,7 @@ See docs/nginx-setup for how to setup NginX.
 Edit /etc/sgas.conf, the main settings you should worry about is:
 
 For PostgreSQL:
-db=localhost::sgas-db:db-user:db-password:
+db=localhost::sgas-db:db-user:db-password
 
 # authorization file
 authzfile=/etc/sgas.authz
