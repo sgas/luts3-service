@@ -3,6 +3,9 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 3.4.1
 
+Make OrderedDict implementation not rely on _zip_longest, as it was broken
+(using len instead to provide equality check).
+
 Updates to query documentation (fixes and updates in 3.4.1)
 
 Make the query result return min and max dates in the resulting records, and
