@@ -139,8 +139,8 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
 
         elif element.tag == ur.SUBMIT_TIME:         r['submit_time']    = parseISODateTime(element.text)
 
-        elif element.tag == ur.KSI2K_WALL_DURATION: r['ksi2k_wall_duration'] = parseISODuration(element.text)
-        elif element.tag == ur.KSI2K_CPU_DURATION:  r['ksi2k_cpu_duration']  = parseISODuration(element.text)
+        elif element.tag == ur.KSI2K_WALL_DURATION: log.msg('Got ksi2k wall duration element, ignoring (deprecated)')
+        elif element.tag == ur.KSI2K_CPU_DURATION:  log.msg('Got ksi2k cpu duration element, ignoring (deprecated)')
         elif element.tag == ur.USER_TIME:           r['user_time']           = parseISODuration(element.text)
         elif element.tag == ur.KERNEL_TIME:         r['kernel_time']         = parseISODuration(element.text)
         elif element.tag == ur.EXIT_CODE:           r['exit_code']           = parseInt(element.text)

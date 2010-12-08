@@ -29,8 +29,6 @@ SELECT
     submit_time,
     cpu_duration,
     wall_duration,
-    ksi2k_cpu_duration,
-    ksi2k_wall_duration,
     user_time,
     kernel_time,
     major_page_faults,

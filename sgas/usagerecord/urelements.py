@@ -62,13 +62,14 @@ SUBMIT_TIME         = QName("{%s}SubmitTime"     % DEISA_NAMESPACE)
 
 # sgas auxillary extensions
 INSERT_TIME         = QName("{%s}insertTime"         % SGAS_UR_NAMESPACE)
-KSI2K_WALL_DURATION = QName("{%s}KSI2KWallDuration"  % SGAS_UR_NAMESPACE)
-KSI2K_CPU_DURATION  = QName("{%s}KSI2KCpuDuration"   % SGAS_UR_NAMESPACE)
 USER_TIME           = QName("{%s}UserTime"           % SGAS_UR_NAMESPACE)
 KERNEL_TIME         = QName("{%s}KernelTime"         % SGAS_UR_NAMESPACE)
 EXIT_CODE           = QName("{%s}ExitCode"           % SGAS_UR_NAMESPACE)
 MAJOR_PAGE_FAULTS   = QName("{%s}MajorPageFaults"    % SGAS_UR_NAMESPACE)
 RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % SGAS_UR_NAMESPACE)
+# ksi2k* are now deprecated, but we have them here so we can recognize them and log about it
+KSI2K_WALL_DURATION = QName("{%s}KSI2KWallDuration"  % SGAS_UR_NAMESPACE)
+KSI2K_CPU_DURATION  = QName("{%s}KSI2KCpuDuration"   % SGAS_UR_NAMESPACE)
 
 # logger elements and attributes
 LOGGER_NAME         = QName("{%s}LoggerName"         % LOGGER_NAMESPACE)

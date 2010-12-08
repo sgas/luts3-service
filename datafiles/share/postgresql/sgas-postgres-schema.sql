@@ -52,8 +52,6 @@ CREATE TABLE usagedata (
     submit_time             timestamp,
     cpu_duration            numeric(12,2),
     wall_duration           numeric(12,2),
-    ksi2k_cpu_duration      numeric(12,2),
-    ksi2k_wall_duration     numeric(12,2),
     user_time               numeric(12,2),
     kernel_time             numeric(12,2),
     major_page_faults       integer,
