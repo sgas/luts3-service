@@ -48,6 +48,10 @@ DROP FUNCTION urcreate (character varying,
 ALTER table usagedata DROP COLUMN ksi2k_cpu_duration;
 ALTER table usagedata DROP COLUMN ksi2k_wall_duration;
 
+ALTER TABLE usagedata ALTER COLUMN exit_code TYPE smallint;
+ALTER TABLE usagedata ALTER COLUMN node_count TYPE smallint;
+ALTER TABLE usagedata ALTER COLUMN processors TYPE smallint;
+
 
 
 SELECT 'View and functions dropped, you should reload them' AS Message;
