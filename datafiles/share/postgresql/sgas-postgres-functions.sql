@@ -1,5 +1,4 @@
 -- SGAS PostgreSQL functions
--- Currently just functionality for record insertion
 
 CREATE OR REPLACE FUNCTION urcreate (
     in_record_id               varchar,
