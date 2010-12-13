@@ -23,6 +23,11 @@ CREATE TABLE machinename (
     machine_name            varchar(200)    NOT NULL UNIQUE
 );
 
+CREATE TABLE jobstatus (
+    id                      serial          NOT NULL PRIMARY KEY,
+    status                  varchar(100)    NOT NULL UNIQUE
+);
+
 CREATE TABLE insertidentity (
     id                      serial          NOT NULL PRIMARY KEY,
     insert_identity         varchar(1024)   NOT NULL UNIQUE
@@ -45,7 +50,7 @@ CREATE TABLE usagedata (
     local_user_id           varchar(100),
     job_name                varchar(1000),
     charge                  numeric(12,2),
-    status                  varchar(100),
+    status_id               integer         REFERENCES jobstatus(id)
     queue                   varchar(200),
     host                    varchar(1500),
     node_count              smallint,

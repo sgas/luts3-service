@@ -85,7 +85,7 @@ CREATE TABLE inserthost (
 );
 
 INSERT INTO inserthost (insert_host)
-    SELECT DISTINCT insert_hostname FROM usagedata;
+    SELECT DISTINCT insert_hostname FROM usagedata IS NOT NULL;
 
 ALTER TABLE usagedata RENAME COLUMN insert_hostname TO insert_host_id;
 
@@ -96,6 +96,22 @@ ALTER TABLE usagedata ALTER COLUMN insert_host_id TYPE integer USING CAST(insert
 ALTER TABLE usagedata ADD CONSTRAINT usagedata_insert_host_id_fkey FOREIGN KEY (insert_host_id) REFERENCES inserthost (id);
 
 
+-- normalize job status
+CREATE TABLE jobstatus (
+    id                      serial          NOT NULL PRIMARY KEY,
+    status                  varchar(100)    NOT NULL UNIQUE
+);
+
+INSERT INTO jobstatus (status)
+    SELECT DISTINCT status FROM usagedata WHERE status IS NOT NULL;
+
+ALTER TABLE usagedata RENAME COLUMN status TO status_id;
+
+UPDATE usagadata SET status_id = (SELECT id FROM jobstatus WHERE jobstatus.status = usagedata.status_id);
+
+ALTER TABLE usagedata ALTER COLUMN status_id TYPE integer USING CAST(status_id AS integer);
+
+ALTER TABLE usagedata ADD CONSTRAINT usagedata_status_ud_fkey FOREIGN KEY (status_id) REFERENCES jobstatus (id);
 
 
 SELECT 'View and functions dropped, you should reload them' AS Message;

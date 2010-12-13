@@ -43,6 +43,7 @@ DECLARE
     globalusername_id       integer;
     voinformation_id        integer;
     machinename_id          integer;
+    status_id               integer;
     inserthost_id           integer;
     insertidentity_id       integer;
     runtime_environment_id  integer;
@@ -127,6 +128,17 @@ BEGIN
         END IF;
     END IF;
 
+    -- status
+    IF in_status IS NULL THEN
+        status_id = NULL;
+    ELSE
+        SELECT INTO status_id id FROM jobstatus WHERE status = in_status;
+        IF NOT FOUND THEN
+            INSERT INTO jobstatus (status)
+                   VALUES (in_status) RETURNING id INTO status_id;
+        END IF;
+    END IF;
+
     -- insert host
     IF in_insert_host IS NULL THEN
         inserthost_id = NULL;
@@ -163,7 +175,7 @@ BEGIN
                         local_user_id,
                         job_name,
                         charge,
-                        status,
+                        status_id,
                         queue,
                         host,
                         node_count,
@@ -194,7 +206,7 @@ BEGIN
                         in_local_user_id,
                         in_job_name,
                         in_charge,
-                        in_status,
+                        status_id,
                         in_queue,
                         in_host,
                         in_node_count,
