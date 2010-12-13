@@ -33,7 +33,7 @@ CREATE OR REPLACE FUNCTION urcreate (
     in_exit_code               smallint,
     in_downloads               varchar[],
     in_uploads                 varchar[],
-    in_insert_hostname         varchar,
+    in_insert_host             varchar,
     in_insert_identity         varchar,
     in_insert_time             timestamp
 )
@@ -43,6 +43,7 @@ DECLARE
     globalusername_id       integer;
     voinformation_id        integer;
     machinename_id          integer;
+    inserthost_id           integer;
     insertidentity_id       integer;
     runtime_environment_id  integer;
     jobtransferurl_id       integer;
@@ -126,6 +127,18 @@ BEGIN
         END IF;
     END IF;
 
+    -- insert host
+    IF in_insert_host IS NULL THEN
+        inserthost_id = NULL;
+    ELSE
+        SELECT INTO inserthost_id id
+               FROM inserthost
+               WHERE insert_identity = in_insert_host;
+        IF NOT FOUND THEN
+            INSERT INTO inserthost (insert_host) VALUES (in_insert_host) RETURNING id INTO inserthost_id;
+        END IF;
+    END IF;
+
     -- insert identity
     IF in_insert_identity IS NULL THEN
         insertidentity_id = NULL;
@@ -166,7 +179,7 @@ BEGIN
                         kernel_time,
                         major_page_faults,
                         exit_code,
-                        insert_hostname,
+                        insert_host_id,
                         insert_identity_id,
                         insert_time
                     )
@@ -197,7 +210,7 @@ BEGIN
                         in_kernel_time,
                         in_major_page_faults,
                         in_exit_code,
-                        in_insert_hostname,
+                        inserthost_id,
                         insertidentity_id,
                         in_insert_time
                     )

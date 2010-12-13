@@ -78,6 +78,26 @@ SELECT idre.id, runtimeenvironment.id FROM
 ALTER TABLE usagedata DROP COLUMN runtime_environments;
 
 
+-- normalize insert_hostname column
+CREATE TABLE inserthost (
+    id                      serial          NOT NULL PRIMARY KEY,
+    insert_host             varchar(1024)   NOT NULL UNIQUE
+);
+
+INSERT INTO inserthost (insert_host)
+    SELECT DISTINCT insert_hostname FROM usagedata;
+
+ALTER TABLE usagedata RENAME COLUMN insert_hostname TO insert_host_id;
+
+UPDATE usagedata SET insert_host_id = (SELECT id FROM inserthost WHERE insert_host = insert_host_id);
+
+ALTER TABLE usagedata ALTER COLUMN insert_host_id TYPE integer USING CAST(insert_host_id AS integer);
+
+ALTER TABLE usagedata ADD CONSTRAINT usagedata_insert_host_id_fkey FOREIGN KEY (insert_host_id) REFERENCES inserthost (id);
+
+
+
+
 SELECT 'View and functions dropped, you should reload them' AS Message;
 
 

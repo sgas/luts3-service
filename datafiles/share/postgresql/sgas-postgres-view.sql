@@ -38,7 +38,7 @@ SELECT
                 runtimeenvironment_usagedata.runtimeenvironments_id = runtimeenvironment.id)
     AS runtime_environments,
     exit_code,
-    insert_hostname,
+    inserthost.insert_host,
     insertidentity.insert_identity,
     insert_time
 FROM
@@ -46,6 +46,7 @@ FROM
 LEFT OUTER JOIN globalusername  ON (usagedata.global_user_name_id = globalusername.id)
 LEFT OUTER JOIN voinformation   ON (usagedata.vo_information_id   = voinformation.id)
 LEFT OUTER JOIN machinename     ON (usagedata.machine_name_id     = machinename.id)
+LEFT OUTER JOIN inserthost      ON (usagedata.insert_host_id      = inserthost.id)
 LEFT OUTER JOIN insertidentity  ON (usagedata.insert_identity_id  = insertidentity.id)
 ;
 

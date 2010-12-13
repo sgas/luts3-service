@@ -28,6 +28,11 @@ CREATE TABLE insertidentity (
     insert_identity         varchar(1024)   NOT NULL UNIQUE
 );
 
+CREATE TABLE inserthost (
+    id                      serial          NOT NULL PRIMARY KEY,
+    insert_host             varchar(1024)   NOT NULL UNIQUE
+);
+
 CREATE TABLE usagedata (
     id                      serial          NOT NULL PRIMARY KEY,
     record_id               varchar(1000)   NOT NULL UNIQUE,
@@ -56,7 +61,7 @@ CREATE TABLE usagedata (
     kernel_time             numeric(12,2),
     major_page_faults       integer,
     exit_code               smallint,
-    insert_hostname         varchar(1024),
+    insert_host_id          integer         REFERENCES inserthost (id),
     insert_identity_id      integer         REFERENCES insertidentity (id),
     insert_time             timestamp
 );
