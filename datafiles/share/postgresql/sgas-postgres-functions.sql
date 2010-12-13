@@ -76,7 +76,10 @@ BEGIN
         ELSE
             -- delete record, mark update, and continue as normal
             DELETE from usagedata WHERE record_id = in_record_id;
-            INSERT INTO uraggregated_update (insert_time, machine_name) VALUES (ur_insert_time, ur_machine_name);
+            PERFORM * FROM uraggregated_update WHERE insert_time = ur_insert_time::date AND machine_name = ur_machine_name;
+            IF NOT FOUND THEN
+                INSERT INTO uraggregated_update (insert_time, machine_name) VALUES (ur_insert_time, ur_machine_name);
+            END IF;
         END IF;
     END IF;
 
