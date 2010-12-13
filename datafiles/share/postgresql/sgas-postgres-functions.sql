@@ -124,8 +124,7 @@ BEGIN
                FROM machinename
                WHERE machine_name = in_machine_name;
         IF NOT FOUND THEN
-            INSERT INTO machinename (machine_name)
-                   VALUES (in_machine_name) RETURNING id INTO machinename_id;
+            INSERT INTO machinename (machine_name) VALUES (in_machine_name) RETURNING id INTO machinename_id;
         END IF;
     END IF;
 
@@ -135,8 +134,7 @@ BEGIN
     ELSE
         SELECT INTO status_id id FROM jobstatus WHERE status = in_status;
         IF NOT FOUND THEN
-            INSERT INTO jobstatus (status)
-                   VALUES (in_status) RETURNING id INTO status_id;
+            INSERT INTO jobstatus (status) VALUES (in_status) RETURNING id INTO status_id;
         END IF;
     END IF;
 
@@ -170,8 +168,7 @@ BEGIN
                FROM insertidentity
                WHERE insert_identity = in_insert_identity;
         IF NOT FOUND THEN
-            INSERT INTO insertidentity (insert_identity)
-                   VALUES (in_insert_identity) RETURNING id INTO insertidentity_id;
+            INSERT INTO insertidentity (insert_identity) VALUES (in_insert_identity) RETURNING id INTO insertidentity_id;
         END IF;
     END IF;
 

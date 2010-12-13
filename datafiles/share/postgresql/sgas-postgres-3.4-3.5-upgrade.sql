@@ -84,15 +84,10 @@ CREATE TABLE inserthost (
     insert_host             varchar(1024)   NOT NULL UNIQUE
 );
 
-INSERT INTO inserthost (insert_host)
-    SELECT DISTINCT insert_hostname FROM usagedata IS NOT NULL;
-
+INSERT INTO inserthost (insert_host) SELECT DISTINCT insert_hostname FROM usagedata IS NOT NULL;
 ALTER TABLE usagedata RENAME COLUMN insert_hostname TO insert_host_id;
-
 UPDATE usagedata SET insert_host_id = (SELECT id FROM inserthost WHERE insert_host = insert_host_id);
-
 ALTER TABLE usagedata ALTER COLUMN insert_host_id TYPE integer USING CAST(insert_host_id AS integer);
-
 ALTER TABLE usagedata ADD CONSTRAINT usagedata_insert_host_id_fkey FOREIGN KEY (insert_host_id) REFERENCES inserthost (id);
 
 
@@ -102,15 +97,10 @@ CREATE TABLE jobstatus (
     status                  varchar(100)    NOT NULL UNIQUE
 );
 
-INSERT INTO jobstatus (status)
-    SELECT DISTINCT status FROM usagedata WHERE status IS NOT NULL;
-
+INSERT INTO jobstatus (status) SELECT DISTINCT status FROM usagedata WHERE status IS NOT NULL;
 ALTER TABLE usagedata RENAME COLUMN status TO status_id;
-
 UPDATE usagedata SET status_id = (SELECT id FROM jobstatus WHERE jobstatus.status = usagedata.status_id);
-
 ALTER TABLE usagedata ALTER COLUMN status_id TYPE integer USING CAST(status_id AS integer);
-
 ALTER TABLE usagedata ADD CONSTRAINT usagedata_status_id_fkey FOREIGN KEY (status_id) REFERENCES jobstatus (id);
 
 
@@ -120,18 +110,11 @@ CREATE TABLE jobqueue (
     queue                   varchar(200)    NOT NULL UNIQUE
 );
 
-INSERT INTO jobqueue (queue)
-    SELECT DISTINCT queue FROM usagedata WHERE queue IS NOT NULL;
-
+INSERT INTO jobqueue (queue) SELECT DISTINCT queue FROM usagedata WHERE queue IS NOT NULL;
 ALTER TABLE usagedata RENAME COLUMN queue TO queue_id;
-
 UPDATE usagedata SET queue_id = (SELECT id FROM jobqueue WHERE jobqueue.queue = usagedata.queue_id);
-
 ALTER TABLE usagedata ALTER COLUMN queue_id TYPE integer USING CAST(queue_id AS integer);
-
 ALTER TABLE usagedata ADD CONSTRAINT usagedata_queue_id_fkey FOREIGN KEY (queue_id) REFERENCES jobqueue (id);
-
-
 
 
 SELECT 'View and functions dropped, you should reload them' AS Message;
