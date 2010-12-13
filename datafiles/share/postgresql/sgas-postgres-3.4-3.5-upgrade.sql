@@ -53,6 +53,30 @@ ALTER TABLE usagedata ALTER COLUMN node_count TYPE smallint;
 ALTER TABLE usagedata ALTER COLUMN processors TYPE smallint;
 
 
+CREATE TABLE runtimeenvironment (
+    id                      serial          NOT NULL PRIMARY KEY,
+    runtime_environment     varchar(512)    NOT NULL UNIQUE
+);
+
+CREATE TABLE runtimeenvironment_usagedata (
+    usagedata_id            integer         NOT NULL REFERENCES usagedata (id),
+    runtimeenvironments_id  integer         NOT NULL REFERENCES runtimeenvironment(id),
+    PRIMARY KEY (usagedata_id, runtimeenvironments_id)
+);
+
+-- populate runtime environments table
+INSERT INTO runtimeenvironment (runtime_environment)
+    SELECT DISTINCT unnest(runtime_environments) FROM usagedata;
+
+-- populate runtimeenvironment_usagedata table
+INSERT INTO runtimeenvironment_usagedata (usagedata_id, runtimeenvironments_id)
+SELECT idre.id, runtimeenvironment.id FROM
+    (SELECT usagedata.id, unnest(usagedata.runtime_environments) AS re FROM usagedata) AS idre
+    LEFT OUTER JOIN runtimeenvironment ON (idre.re = runtimeenvironment.runtime_environment) ORDER BY idre.id;
+
+-- drop column with runtime environments
+ALTER TABLE usagedata DROP COLUMN runtime_environments;
+
 
 SELECT 'View and functions dropped, you should reload them' AS Message;
 

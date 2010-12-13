@@ -55,11 +55,21 @@ CREATE TABLE usagedata (
     user_time               numeric(12,2),
     kernel_time             numeric(12,2),
     major_page_faults       integer,
-    runtime_environments    varchar(512)[],
     exit_code               smallint,
     insert_hostname         varchar(1024),
     insert_identity_id      integer         REFERENCES insertidentity (id),
     insert_time             timestamp
+);
+
+CREATE TABLE runtimeenvironment (
+    id                      serial          NOT NULL PRIMARY KEY,
+    runtime_environment     varchar(512)    NOT NULL UNIQUE
+);
+
+CREATE TABLE runtimeenvironment_usagedata (
+    usagedata_id            integer         NOT NULL REFERENCES usagedata (id),
+    runtimeenvironments_id  integer         NOT NULL REFERENCES runtimeenvironment(id),
+    PRIMARY KEY (usagedata_id, runtimeenvironments_id)
 );
 
 

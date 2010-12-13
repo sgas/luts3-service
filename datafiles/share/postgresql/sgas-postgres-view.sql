@@ -32,7 +32,11 @@ SELECT
     user_time,
     kernel_time,
     major_page_faults,
-    runtime_environments,
+    ARRAY(SELECT runtimeenvironment.runtime_environment
+          FROM runtimeenvironment, runtimeenvironment_usagedata
+          WHERE usagedata.id = runtimeenvironment_usagedata.usagedata_id AND
+                runtimeenvironment_usagedata.runtimeenvironments_id = runtimeenvironment.id)
+    AS runtime_environments,
     exit_code,
     insert_hostname,
     insertidentity.insert_identity,

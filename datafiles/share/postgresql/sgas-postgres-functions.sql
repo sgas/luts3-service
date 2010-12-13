@@ -44,6 +44,7 @@ DECLARE
     voinformation_id        integer;
     machinename_id          integer;
     insertidentity_id       integer;
+    runtime_environment_id  integer;
     jobtransferurl_id       integer;
 
     ur_id                   integer;
@@ -164,7 +165,6 @@ BEGIN
                         user_time,
                         kernel_time,
                         major_page_faults,
-                        runtime_environments,
                         exit_code,
                         insert_hostname,
                         insert_identity_id,
@@ -196,13 +196,28 @@ BEGIN
                         in_user_time,
                         in_kernel_time,
                         in_major_page_faults,
-                        in_runtime_environments,
                         in_exit_code,
                         in_insert_hostname,
                         insertidentity_id,
                         in_insert_time
                     )
             RETURNING id into ur_id;
+
+    -- runtime environments
+    IF in_runtime_environments IS NOT NULL THEN
+        FOR i IN array_lower(in_runtime_environments, 1) .. array_upper(in_runtime_environments, 1) LOOP
+            -- check if re exists, isert if it does not
+            SELECT INTO runtime_environment_id id FROM runtimeenvironments WHERE runtime_environment = in_runtime_environments[i];
+            IF NOT FOUND THEN
+                INSERT INTO runtimeenvironments (runtime_environment) VALUES (in_runtime_environments[i]) RETURNING id INTO runtime_environment_id;
+            END IF;
+            -- insert record ur usage, perform duplicate check first though
+            PERFORM * FROM runtimeenvironment_usagedata WHERE usagedata_id = ur_id AND runtime_environment_id = runtimeenvironments_id;
+            IF NOT FOUND THEN
+                INSERT INTO runtimeenvironment_usagedata (usagedata_id, runtimeenvironments_id) VALUES (ur_id, runtime_environment_id);
+            END IF;
+        END LOOP;
+    END IF;
 
     -- create rows for file transfers
     IF in_downloads IS NOT NULL THEN
