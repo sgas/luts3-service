@@ -107,11 +107,31 @@ INSERT INTO jobstatus (status)
 
 ALTER TABLE usagedata RENAME COLUMN status TO status_id;
 
-UPDATE usagadata SET status_id = (SELECT id FROM jobstatus WHERE jobstatus.status = usagedata.status_id);
+UPDATE usagedata SET status_id = (SELECT id FROM jobstatus WHERE jobstatus.status = usagedata.status_id);
 
 ALTER TABLE usagedata ALTER COLUMN status_id TYPE integer USING CAST(status_id AS integer);
 
-ALTER TABLE usagedata ADD CONSTRAINT usagedata_status_ud_fkey FOREIGN KEY (status_id) REFERENCES jobstatus (id);
+ALTER TABLE usagedata ADD CONSTRAINT usagedata_status_id_fkey FOREIGN KEY (status_id) REFERENCES jobstatus (id);
+
+
+-- normalize queue
+CREATE TABLE jobqueue (
+    id                      serial          NOT NULL PRIMARY KEY,
+    queue                   varchar(200)    NOT NULL UNIQUE
+);
+
+INSERT INTO jobqueue (queue)
+    SELECT DISTINCT queue FROM usagedata WHERE queue IS NOT NULL;
+
+ALTER TABLE usagedata RENAME COLUMN queue TO queue_id;
+
+UPDATE usagedata SET queue_id = (SELECT id FROM jobqueue WHERE jobqueue.queue = usagedata.queue_id);
+
+ALTER TABLE usagedata ALTER COLUMN queue_id TYPE integer USING CAST(queue_id AS integer);
+
+ALTER TABLE usagedata ADD CONSTRAINT usagedata_queue_id_fkey FOREIGN KEY (queue_id) REFERENCES jobqueue (id);
+
+
 
 
 SELECT 'View and functions dropped, you should reload them' AS Message;

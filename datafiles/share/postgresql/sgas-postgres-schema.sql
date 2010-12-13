@@ -28,6 +28,11 @@ CREATE TABLE jobstatus (
     status                  varchar(100)    NOT NULL UNIQUE
 );
 
+CREATE TABLE jobqueue (
+    id                      serial          NOT NULL PRIMARY KEY,
+    queue                   varchar(200)    NOT NULL UNIQUE
+);
+
 CREATE TABLE insertidentity (
     id                      serial          NOT NULL PRIMARY KEY,
     insert_identity         varchar(1024)   NOT NULL UNIQUE
@@ -50,8 +55,8 @@ CREATE TABLE usagedata (
     local_user_id           varchar(100),
     job_name                varchar(1000),
     charge                  numeric(12,2),
-    status_id               integer         REFERENCES jobstatus(id)
-    queue                   varchar(200),
+    status_id               integer         REFERENCES jobstatus(id),
+    queue_id                integer         REFERENCES jobqueue(id),
     host                    varchar(1500),
     node_count              smallint,
     processors              smallint,

@@ -44,6 +44,7 @@ DECLARE
     voinformation_id        integer;
     machinename_id          integer;
     status_id               integer;
+    queue_id                integer;
     inserthost_id           integer;
     insertidentity_id       integer;
     runtime_environment_id  integer;
@@ -139,6 +140,16 @@ BEGIN
         END IF;
     END IF;
 
+    -- queue
+    IF in_queue IS NULL THEN
+        queue_id = NULL;
+    ELSE
+        SELECT INTO queue_id id FROM jobqueue WHERE queue = in_queue;
+        IF NOT FOUND THEN
+            INSERT INTO jobqueue (queue) VALUES (in_queue) RETURNING id INTO queue_id;
+        END IF;
+    END IF;
+
     -- insert host
     IF in_insert_host IS NULL THEN
         inserthost_id = NULL;
@@ -176,7 +187,7 @@ BEGIN
                         job_name,
                         charge,
                         status_id,
-                        queue,
+                        queue_id,
                         host,
                         node_count,
                         processors,
@@ -207,7 +218,7 @@ BEGIN
                         in_job_name,
                         in_charge,
                         status_id,
-                        in_queue,
+                        queue_id,
                         in_host,
                         in_node_count,
                         in_processors,
