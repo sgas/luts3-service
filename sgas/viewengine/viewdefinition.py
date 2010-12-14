@@ -70,7 +70,7 @@ def createViewDefinition(view_name, view_config):
             drawgraph = readBoolean(value)
 
         else:
-             log.msg("Unknown view definition key: %s" % key, system='sgas.view')
+             log.msg("Unknown view definition key: %s" % key, system='sgas.ViewDefinition')
 
     if view_name in (None, ''):
         raise config.ConfigurationError('Missing or empty view name for view definition')

@@ -57,13 +57,13 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
 
     # some friendly messages from your service configuration
     if cfg.get(config.SERVER_BLOCK, config.HOSTKEY):
-        log.msg('Option: hostkey can be removed from config file (no longer optional)')
+        log.msg('Option: hostkey can be removed from config file (no longer optional)', system='sgas.Setup')
     if cfg.get(config.SERVER_BLOCK, config.HOSTCERT):
-        log.msg('Option:hostcert can be removed from config file (no longer optional)')
+        log.msg('Option:hostcert can be removed from config file (no longer optional)', system='sgas.Setup')
     if cfg.get(config.SERVER_BLOCK, config.CERTDIR):
-        log.msg('Option: certdir can be removed from config file (no longer optional)')
+        log.msg('Option: certdir can be removed from config file (no longer optional)', system='sgas.Setup')
     if cfg.get(config.SERVER_BLOCK, config.REVERSE_PROXY):
-        log.msg('Option: reverse_proxy can be removed from config file (no longer optional)')
+        log.msg('Option: reverse_proxy can be removed from config file (no longer optional)', system='sgas.Setup')
 
     # check depth
     try:
@@ -86,7 +86,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
         try:
             scale_factors[hostname] = cfg.getfloat(config.SCALE_BLOCK, hostname)
         except ValueError:
-            log.msg('Invalid scale factor value for entry: %s' % hostname)
+            log.msg('Invalid scale factor value for entry: %s' % hostname, system='sgas.Setup')
 
     hs = hostscale.HostScaleFactorUpdater(db, scale_factors)
     hs.setServiceParent(db)
@@ -102,7 +102,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
 
     internet.TCPServer(port or DEFAULT_PORT, site, interface='localhost').setServiceParent(application)
 
-    log.msg('SGAS %s twistd application created, starting server.' % __version__)
+    log.msg('SGAS %s twistd application created, starting server.' % __version__, system='sgas.Setup')
 
     return application
 

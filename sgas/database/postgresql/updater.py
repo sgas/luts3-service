@@ -69,7 +69,7 @@ class AggregationUpdater(service.Service):
     def scheduleUpdate(self, delay=20):
         # only schedule call if no other call is planned
         if self.update_call is None:
-            log.msg('Scheduling update for aggregated table in %i seconds.' % delay)
+            log.msg('Scheduling update for aggregated table in %i seconds.' % delay, system='sgas.AggregationUpdater')
             self.update_call = reactor.callLater(delay, self.performUpdate, True)
 
 
@@ -113,17 +113,17 @@ class AggregationUpdater(service.Service):
                         break
                     else:
                         insert_date, machine_name = idmn[0][0]
-                        log.msg('Aggregation updated: %s / %s' % (insert_date, machine_name))
+                        log.msg('Aggregation updated: %s / %s' % (insert_date, machine_name), system='sgas.AggregationUpdater')
                     if self.stopping:
                         break
                 except psycopg2.InterfaceError, e:
                     # typically means we lost the connection due to a db restart
                     if self.has_reconnected:
-                        log.msg('Reconnect in update failed, bailing out.')
+                        log.msg('Reconnect in update failed, bailing out.', system='sgas.AggregationUpdater')
                         raise
                     else:
-                        log.msg('Got InterfaceError while attempting update: %s.' % str(e))
-                        log.msg('Attempting reconnect.')
+                        log.msg('Got InterfaceError while attempting update: %s.' % str(e), system='sgas.AggregationUpdater')
+                        log.msg('Attempting reconnect.', system='sgas.AggregationUpdater')
                         self.has_reconnected = True
                         self.pool_proxy.reconnect()
                 except:
@@ -131,7 +131,7 @@ class AggregationUpdater(service.Service):
                     raise
 
         except Exception, e:
-            log.err(e)
+            log.err(e, system='sgas.AggregationUpdater')
             raise
 
         finally:

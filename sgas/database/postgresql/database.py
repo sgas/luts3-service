@@ -48,8 +48,8 @@ class _DatabasePoolProxy:
     def reconnect(self):
         # close dbpool before creating an new (to stop the threadpool mainly)
         if self.dbpool is not None:
-            log.msg('Closing failed connection before reconnecting.')
-            log.msg('This will likely cause psycopg2.InterfaceError, as the connection is half-closed.')
+            log.msg('Closing failed connection before reconnecting.', system='sgas.PostgreSQLDatabase')
+            log.msg('This will likely cause psycopg2.InterfaceError, as the connection is half-closed.', system='sgas.PostgreSQLDatabase')
             self.dbpool.close()
 
         self.dbpool = self._setupPool(self.connect_info)
@@ -97,7 +97,7 @@ class PostgreSQLDatabase(service.Service):
 
                 trans.close()
                 conn.commit()
-                log.msg('Database: %i records inserted' % len(id_dict))
+                log.msg('Database: %i records inserted' % len(id_dict), system='sgas.PostgreSQLDatabase')
                 # NOTIFY does not appear to work under adbapi, so we just do the notification here
                 self.updater.updateNotification()
                 defer.returnValue(id_dict)
@@ -116,17 +116,17 @@ class PostgreSQLDatabase(service.Service):
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if not retry:
-                log.msg('Got interface error while attempting insert: %s.' % str(e))
-                log.msg('Attempting to reconnect.')
+                log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
+                log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
                 self.pool_proxy.reconnect()
                 yield self.insert(usagerecord_docs, retry=True)
             if retry:
-                log.msg('Got interface error after retrying to connect, bailing out.')
+                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
 
         except Exception, e:
-            log.msg('Unexpected database error')
-            log.err(e)
+            log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
+            log.err(e, system='sgas.PostgreSQLDatabase')
             raise
 
 
@@ -152,10 +152,10 @@ class PostgreSQLDatabase(service.Service):
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if not retry:
-                log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e))
+                log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e), system='sgas.PostgreSQLDatabase')
                 self.dbpool = self._setupPool(self.connect_info)
                 yield self.query(query, query_args, retry=True)
             if retry:
-                log.msg('Got interface error after retrying to connect, bailing out.')
+                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
 

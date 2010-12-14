@@ -74,11 +74,11 @@ def handleViewError(error, request, view_name):
     error_msg = error.getErrorMessage()
     if error.check(dberror.DatabaseUnavailableError):
         error.printTraceback()
-        log.err(error)
+        log.err(error, system='sgas.ViewResource')
         request.setResponseCode(503)
         error_msg = 'Database is currently unavailable, please try again later'
     else:
-        log.err(error)
+        log.err(error, system='sgas.ViewResource')
         request.setResponseCode(500)
 
     request.write(error_msg)

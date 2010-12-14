@@ -26,7 +26,7 @@ def parseBoolean(value):
     elif value == '0' or value.lower() == 'false':
         return False
     else:
-        log.msg('Failed to parse value %s into boolean' % value, system='sgas.usagerecord')
+        log.msg('Failed to parse value %s into boolean' % value, system='sgas.UsageRecord')
         return None
 
 
@@ -34,7 +34,7 @@ def parseInt(value):
     try:
         return int(value)
     except ValueError:
-        log.msg("Failed to parse float: %s" % value, system='sgas.usagerecord')
+        log.msg("Failed to parse float: %s" % value, system='sgas.UsageRecord')
         return None
 
 
@@ -42,7 +42,7 @@ def parseFloat(value):
     try:
         return float(value)
     except ValueError:
-        log.msg("Failed to parse float: %s" % value, system='sgas.usagerecord')
+        log.msg("Failed to parse float: %s" % value, system='sgas.UsageRecord')
         return None
 
 
@@ -51,7 +51,7 @@ def parseISODuration(value):
         td = isodate.parse_duration(value)
         return (td.days * 3600*24) + td.seconds # screw microseconds
     except ValueError:
-        log.msg("Failed to parse duration: %s" % value, system='sgas.usagerecord')
+        log.msg("Failed to parse duration: %s" % value, system='sgas.UsageRecord')
         return None
 
 
@@ -60,10 +60,10 @@ def parseISODateTime(value):
         dt = isodate.parse_datetime(value)
         return time.strftime(JSON_DATETIME_FORMAT, dt.utctimetuple())
     except ValueError, e:
-        log.msg("Failed to parse datetime value: %s (%s)" % (value, str(e)), system='sgas.usagerecord')
+        log.msg("Failed to parse datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
     except isodate.ISO8601Error, e:
-        log.msg("Failed to parse ISO datetime value: %s (%s)" % (value, str(e)), system='sgas.usagerecord')
+        log.msg("Failed to parse ISO datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
 
 
@@ -139,8 +139,8 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
 
         elif element.tag == ur.SUBMIT_TIME:         r['submit_time']    = parseISODateTime(element.text)
 
-        elif element.tag == ur.KSI2K_WALL_DURATION: log.msg('Got ksi2k wall duration element, ignoring (deprecated)')
-        elif element.tag == ur.KSI2K_CPU_DURATION:  log.msg('Got ksi2k cpu duration element, ignoring (deprecated)')
+        elif element.tag == ur.KSI2K_WALL_DURATION: log.msg('Got ksi2k wall duration element, ignoring (deprecated)', system='sgas.UsageRecord')
+        elif element.tag == ur.KSI2K_CPU_DURATION:  log.msg('Got ksi2k cpu duration element, ignoring (deprecated)', system='sgas.UsageRecord')
         elif element.tag == ur.USER_TIME:           r['user_time']           = parseISODuration(element.text)
         elif element.tag == ur.KERNEL_TIME:         r['kernel_time']         = parseISODuration(element.text)
         elif element.tag == ur.EXIT_CODE:           r['exit_code']           = parseInt(element.text)
@@ -188,7 +188,7 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
                     r.setdefault('uploads', []).append(upload)
 
         else:
-            log.msg("Unhandled UR element: %s" % element.tag, system='sgas.usagerecord')
+            log.msg("Unhandled UR element: %s" % element.tag, system='sgas.UsageRecord')
 
     # backwards logger compatability
     # alot of loggers set node_count when they should have used processors, therefore:

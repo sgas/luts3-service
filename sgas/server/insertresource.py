@@ -34,7 +34,7 @@ class InsertResource(resource.Resource):
             request.finish()
 
         def insertError(error):
-            log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.server.InsertResource')
+            log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
 
             error_msg = error.getErrorMessage()
             if error.check(dberror.DatabaseUnavailableError):

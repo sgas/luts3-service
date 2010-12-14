@@ -75,12 +75,12 @@ class AuthorizationEngine:
         if len(action_authzgroup) == 1:
             action = action_authzgroup[0]
             if not action in rights.ACTIONS:
-                log.msg('Invalid authz action: "%s", skipping entry.' % action_desc)
+                log.msg('Invalid authz action: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
                 return
             user_authz_rights.setdefault(action, AuthzRights())
             # some backwards compat
             if action == rights.ACTION_VIEW:
-                # log.msg ...
+                log.msg("Expanding 'view' stanza to 'view:all'. Please change to 'view:all'. This behaviour might change in the future", system='sgas.Authorizer')
                 user_authz_rights[action].options.append(rights.OPTION_ALL)
 
         elif len(action_authzgroup) == 2:
@@ -96,17 +96,17 @@ class AuthorizationEngine:
                             action_rights = user_authz_rights.setdefault(action, AuthzRights())
                             action_rights.addContext(ctx)
                         except ValueError:
-                            log.msg('Invalid authz context: %s, skipping entry.' % action_desc)
+                            log.msg('Invalid authz context: %s, skipping entry.' % action_desc, system='sgas.Authorizer')
                 else: # option
                     for option in authz.split('+'):
                         if not option in rights.OPTIONS.get(action, []):
-                            log.msg('Invalid authz option: %s, skipping entry.' % action_desc)
+                            log.msg('Invalid authz option: %s, skipping entry.' % action_desc, system='sgas.Authorizer')
                             continue
                         action_rights = user_authz_rights.setdefault(action, AuthzRights())
                         action_rights.addOption(option)
 
         else:
-            log.warning('Invalid authz group: "%s", skipping entry.' % action_desc)
+            log.warning('Invalid authz group: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
 
 
     def hasRelevantRight(self, subject, action):

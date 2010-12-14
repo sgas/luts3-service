@@ -42,7 +42,7 @@ class HostScaleFactorUpdater(service.Service):
             conn = adbapi.Connection(self.pool_proxy.dbpool)
             yield conn.runInteraction(self.issueUpdateStatements)
         except Exception, e:
-            log.msg('Error updating host scale factors. Message: %s' % str(e))
+            log.msg('Error updating host scale factors. Message: %s' % str(e), system='sgas.HostScaleFactorUpdate')
 
 
     def issueUpdateStatements(self, txn):

@@ -41,7 +41,7 @@ class QueryResource(resource.Resource):
             query_args = queryparser.parseURLArguments(request.args)
         except queryparser.QueryParseError, e:
             request.setResponseCode(400) # bad request
-            log.msg('Rejecting query request: %s' % str(e))
+            log.msg('Rejecting query request: %s' % str(e), system='sgas.QueryResource')
             return str(e)
 
         authz_params = queryparser.filterAuthzParams(query_args)
@@ -53,7 +53,7 @@ class QueryResource(resource.Resource):
         # request allowed, continue
 
         hostname = resourceutil.getHostname(request)
-        log.msg('Accepted query request from %s' % hostname, system='sgas.queryresource')
+        log.msg('Accepted query request from %s' % hostname, system='sgas.QueryResource')
 
         def gotDatabaseResult(rows):
             records = queryrowrp.buildDictRecords(rows, query_args)
@@ -62,17 +62,17 @@ class QueryResource(resource.Resource):
             request.finish()
 
         def queryError(error):
-            log.msg('Queryengine error: %s' % str(error))
-            log.msg('Queryengine error args' % str(query_args))
+            log.msg('Queryengine error: %s' % str(error), system='sgas.QueryResource')
+            log.msg('Queryengine error args' % str(query_args), system='sgas.QueryResource')
             request.setResponseCode(500)
-            request.write('Queryengine error (%s)' % str(error))
+            request.write('Queryengine error (%s)' % str(error), system='sgas.QueryResource')
             request.finish()
 
         def resultHandlingError(error):
-            log.msg('Query result error: %s' % str(error))
-            log.msg('Query result error args' % str(query_args))
+            log.msg('Query result error: %s' % str(error), system='sgas.QueryResource')
+            log.msg('Query result error args' % str(query_args), system='sgas.QueryResource')
             request.setResponseCode(500)
-            request.write('Query result error (%s)' % str(error))
+            request.write('Query result error (%s)' % str(error), system='sgas.QueryResource')
             request.finish()
 
         d = self.queryDatabase(query_args)
