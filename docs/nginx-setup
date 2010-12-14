@@ -1,11 +1,12 @@
 SGAS NginX setup instructions
 -----------------------------------------------------------------------------
 
-As of version 3.3, the preferred way to run SGAS is behind a reverse proxy,
-specifically NginX. The reason for this is that there way some rare /
-tricky-to-reproduce errors in pyOpenSSL. Secondly the view engine requires
-serving of static files, which is not a task suitable for Twisted (though it
-works fine, but it isn't the point).
+As of version 3.5, SGAS should be run behind a reverse proxy. This document
+explains how to setup NginX as the reverse proxy.
+
+The reason for requiring a reverse proxy are some rare / tricky-to-reproduce
+errors in pyOpenSSL. Secondly the view engine requires serving of static files,
+which is not a task suitable for Twisted (though it could be done).
 
 NginX exists in most distributions package systems and is a fairly small
 package to install.
@@ -19,7 +20,7 @@ installing a newer version of NginX.
 == Installing & Configuration ==
 
 The installation will have installed an NginX configuration file into
-/etc/nginx/sites-available. To enable this configuration symlink it into the
+/etc/nginx/sites-available. To enable this configuration symlink it from the
 NginX sites-enabled directory, typically located at /etc/nginx/sites-enabled.
 
 You should to through the values in the installed configuration to see if they

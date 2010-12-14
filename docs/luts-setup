@@ -6,54 +6,38 @@ a mechanism for retrieving aggregated information from these.
 
 == Requirements ==
 
-* Python 2.6 (2.5 will probably work, but is not really supported / tested )
+* Python 2.6 (2.5 will probably work, but is not well tested)
 * Twisted Core and Web (http://twistedmatrix.com/)
-* PyOpenSSL (https://launchpad.net/pyopenssl)
 * NginX 0.7.66 / 0.8.51 or later (http://nginx.org/)
 * PostgreSQL 8.4 as backend database (8.3 should work as well)
 
-If your setup is using the NginX reverse proxy (highly recommended), pyOpenSSL
-is not required (and vice versa).
-
 For Python 2.5 you will need the simplejson module.
 
-Debian/Ubuntu:
+Debian/Ubuntu packages: python-twisted python-twisted-web nginx
 
-Packages: python-twisted python-twisted-web nginx (python-openssl)
-
-RedHat / CentOS
-
-Packages: ?
+RedHat / CentOS packages: ?
 
 Old distributions:
 
 Typically the Python version is not new enough (Python 2.6 is recommended, 2.4
-will NOT work, 2.5 might work but is not supported), Python and will have to be
-installed manually with dependencies. See the old-distro-notes file for guides.
-
-If you are compiling pyOpenSSL you must install the OpenSSL headers.
-Packages: libssl-dev (Debian/Ubuntu) / openssl-devel  (RedHat/CentOS)
+will NOT work, 2.5 should work), Python and will have to be installed manually
+with dependencies. See the old-distro-notes file for guides.
 
 
 == Database ==
 
-See docs/postgres-setup for PostgreSQL setup.
+SGAS uses PostgreSQL for storing usage data. See docs/postgres-setup for
+PostgreSQL setup.
+
 CouchDB is no longer supported.
 
 
 == NginX ==
 
-As of version 3.3, it is recommended to use SGAS behind the NginX reverse
-proxy, and is required for rendering views.
-
-In order to keep backwards compatability, SGAS must be explicitely configured
-to run behind a reverse proxy. This is done by setting:
-
-reverse_proxy=true
-
-in the SGAS configuration file. Note that this will be included in the shipped
-config file as of 3.3, but existing installations moving to an NginX setup,
-will have to set it manually.
+As of version 3.5, SGAS requires a reverse proxy in front of it for TLS/SSL
+handling and serving static files. NginX is the supported reverse proxy, and
+SGAS comes with (almost) ready configuration files for this. It should be
+possible to use other reverse proxies, but then you are on your own.
 
 See docs/nginx-setup for how to setup NginX.
 
@@ -64,33 +48,40 @@ See docs/nginx-setup for how to setup NginX.
 2. Run: python setup.py build
 3. Run: sudo python setup.py install
 
-Edit /etc/sgas.conf, the main settings you should worry about is:
+Relocation can be done by using --home in the install step.
 
-For PostgreSQL:
-db=localhost::sgas-db:db-user:db-password
+Edit /etc/sgas.conf, the main settings you should worry about is
 
-# authorization file
-authzfile=/etc/sgas.authz
+db=..   (the database connection information)
+user=.. (the user which SGAS should run as)
 
-# level of depth to check hostname equivalence between ur machine name and insert identity
-# e.g., a check depth of 2 will okay host1.example.org host2.example.org, where a depth 3
-# will not. This mechanisms ensures that hosts do not register data for machines outside
-# their domain. A value of 2 is the default and pretty much always work. A value of 3 is
-# recommended, but does not always work. Setting the check_depth to 0 will disable the
-# checking.
-check_depth=2
+If you relocated SGAS, you may need to set
 
-Hereafter edit /etc/sgas.authz to set which identities can perform which
-actions. Subject names must in "", so a line would look like this:
+authzfile=..    (SGAS authorization file)
 
-"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     insert,view
+Hereafter edit sgas.authz to set which identities can perform which actions.
+Subject names must in "", so a line would look like this:
 
-which will allow insertion of usage records, and access to all views for the
-identity. Initially, you will at least want to set who can insert usage
-records. It is also possible to allow an identity to insert for all machine
-names or just a a specific machine name:
+"/O=Grid/O=NorduGrid/CN=host/host.example.org"      insert
 
-"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     insert,view
+Which will allow the host to insert usage records. You will probably need to
+define several of these.
 
-"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     insert:machine_name=host.example.org
+Per default the last two parts of the host name, has to match the last two
+parts of the machine name in the records registered. E.g., the above identity,
+can insert for cluster.example.org, but not "cluster.othersite.org" (the depth
+of the check can be controlled via the check_depth option). To allow a site to
+insert for a specific host name, the following can be used:
+
+"/O=Grid/O=NorduGrid/CN=host/host.example.org"      insert:machine_name=host.example.org
+
+Or just allow inserting for all hosts:
+
+"/O=Grid/O=NorduGrid/CN=host/host.example.org"      insert:all
+
+Typically having host identities and "insert" works just fine, but there are
+cases where the two previous are needed.
+
+Furthermore it is possible to define views (and access to these), as well as
+access to the SGAS query interface. See docs/views and docs/query-interface.
 

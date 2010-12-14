@@ -12,13 +12,6 @@ def getSubject(request):
     """
     Utility method for extracting the subject name from a twisted.web.http.Request
     """
-    if request.isSecure():
-        x509 = request.transport.getPeerCertificate()
-        if x509:
-            #print x509.get_subject().get_components()
-            subject = '/' + '/'.join([ '='.join(c) for c in x509.get_subject().get_components() ])
-            return subject
-
     # identity forwarded by reverse proxy
     if request.getClientIP() in LOOPBACK_ADDRESSES and X_SSL_SUBJECT in request.received_headers:
         return request.received_headers.get(X_SSL_SUBJECT)
