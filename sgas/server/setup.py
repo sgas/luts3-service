@@ -57,7 +57,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
 
     # check depth
     try:
-        check_depth = int(cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_DEPTH))
+        check_depth = cfg.getint(config.SERVER_BLOCK, config.HOSTNAME_CHECK_DEPTH)
     except ValueError: # in case casting goes wrong
         raise ConfigurationError('Configured check depth is invalid')
 
