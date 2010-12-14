@@ -87,6 +87,11 @@ CREATE TABLE runtimeenvironment_usagedata (
     PRIMARY KEY (usagedata_id, runtimeenvironments_id)
 );
 
+CREATE TABLE hostscalefactors (
+    machine_name            varchar(200)    NOT NULL UNIQUE PRIMARY KEY,
+    scale_factor            float           NOT NULL
+);
+
 
 CREATE INDEX insert_time_date_hash_idx ON usagedata USING HASH (date(insert_time));
 

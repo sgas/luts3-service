@@ -18,25 +18,25 @@ log = FakeLog()
 
 
 
-# configuration constants
-DEFAULT_HOSTKEY               = '/etc/grid-security/hostkey.pem'
-DEFAULT_HOSTCERT              = '/etc/grid-security/hostcert.pem'
-DEFAULT_CERTDIR               = '/etc/grid-security/certificates'
+# configuration defaults
 DEFAULT_AUTHZ_FILE            = '/etc/sgas.authz'
 DEFAULT_HOSTNAME_CHECK_DEPTH  = '2'
-DEFAULT_HOSTNAME_CHECK_WHITELIST = ''
-DEFAULT_REVERSE_PROXY         = 'false'
 
 # server options
 SERVER_BLOCK         = 'server'
-HOSTKEY              = 'hostkey'
-HOSTCERT             = 'hostcert'
-CERTDIR              = 'certdir'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
 HOSTNAME_CHECK_DEPTH = 'check_depth'
-HOSTNAME_CHECK_WHITELIST = 'check_whitelist' # deprecated, still used to issue warnings
+
+# the following are no longer used, but are used to issue warnings
+HOSTKEY              = 'hostkey'
+HOSTCERT             = 'hostcert'
+CERTDIR              = 'certdir'
 REVERSE_PROXY        = 'reverse_proxy'
+HOSTNAME_CHECK_WHITELIST = 'check_whitelist'
+
+# scale options
+SCALE_BLOCK      = 'hostscaling'
 
 # view options
 VIEW_PREFIX      = 'view:'
@@ -64,13 +64,10 @@ def readConfig(filename):
 
     # add defaults
     cfg.add_section(SERVER_BLOCK)
-    cfg.set(SERVER_BLOCK, HOSTKEY,              DEFAULT_HOSTKEY)
-    cfg.set(SERVER_BLOCK, HOSTCERT,             DEFAULT_HOSTCERT)
-    cfg.set(SERVER_BLOCK, CERTDIR,              DEFAULT_CERTDIR)
     cfg.set(SERVER_BLOCK, AUTHZ_FILE,           DEFAULT_AUTHZ_FILE)
     cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_DEPTH, DEFAULT_HOSTNAME_CHECK_DEPTH)
-    cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_WHITELIST, DEFAULT_HOSTNAME_CHECK_WHITELIST)
-    cfg.set(SERVER_BLOCK, REVERSE_PROXY,        DEFAULT_REVERSE_PROXY)
+
+    cfg.add_section(SCALE_BLOCK)
 
     fp = open(filename)
     proxy_fp = MultiLineFileReader(fp)

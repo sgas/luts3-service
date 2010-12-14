@@ -117,6 +117,13 @@ ALTER TABLE usagedata ALTER COLUMN queue_id TYPE integer USING CAST(queue_id AS 
 ALTER TABLE usagedata ADD CONSTRAINT usagedata_queue_id_fkey FOREIGN KEY (queue_id) REFERENCES jobqueue (id);
 
 
+-- host scaling table
+CREATE TABLE hostscalefactors (
+    machine_name            varchar(200)    NOT NULL UNIQUE PRIMARY KEY,
+    scale_factor            float           NOT NULL
+);
+
+
 SELECT 'View and functions dropped, you should reload them' AS Message;
 
 
