@@ -1,0 +1,35 @@
+=== Configuring Host Scale Factors ===
+
+From version 3.5, SGAS LUTS features a simple mechanisms for scaling cpu and
+walltime. This is usefull in views and similar for properly comparing clusters
+with their relative speed.
+
+Configuration is fairly easy, in sgas.conf add a section called 'hostscaling',
+and make an entry for each host, like this:
+
+[hostscaling]
+host.example.org=1.74
+cluster.example.com=2.31
+
+SGAS does not care about which benchmarks or other measuring charactaristica
+you use, but you should of course use the same for all cluster in order to get
+meaningfull data. Only one set of scale factors are supported.
+
+Under the hood a table in database is created and the values are inserted when
+SGAS starts. The table will be purged before inserting the values, so that only
+values that currently exists in the configuration exists in the database.
+
+The usagerecords and uraggregated views features columns which will scale the
+cpu and wall values for the records. The column names are:
+
+usagerecords: scaled_cpu_duration, scaled_wall_duration
+uraggregated: scaled_cputime, scaled_walltime
+
+
+If no value is defined for the machine, the value will be NULL. SGAS
+intentionally does not feature a default scale setting, as this would not lead
+to greater data quality or more information. If you want a default scale value,
+it can be added in the query, like this:
+
+SELECT sum(walltime), COALESCE(scaled_walltime, walltime*1.23) FROM uraggregated;
+
