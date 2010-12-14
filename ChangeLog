@@ -1,5 +1,13 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.5.0
+
+
+No more support for direct TLS/SSL. Reverse proxy setup is now required.
+
+A number of schema normalization upgrades. Saves a bit of space, and makes
+it possible to have a richer data model for aggregated data.
+
 
 3.4.1
 

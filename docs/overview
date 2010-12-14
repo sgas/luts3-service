@@ -3,8 +3,8 @@ This document provides an overview of the SGAS LUTS accounting system.
 For instructions on installation, see the luts-setup file.
 
 
-The SGAS LUTS system is intended for accounting infrastructure in grid and HPC
-systems.
+The SGAS LUTS is a system intended for accounting infrastructure in grid and
+HPC systems.
 
 
 
@@ -24,6 +24,8 @@ Usage Records is typically abbreviated to UR.
 
 * LUTS service:
 
+LUTS = Logging and Usage Tracking Service
+
 A service to which usage records can be registered to and stored at. Aggregated
 information can then be extracted from the LUTS service through views.
 
@@ -35,10 +37,11 @@ LUTS does not feature forwarding of usage records. Instead the registration
 client simply registers URs to multple places. This scheme is significantly
 simpler and less brittle than forwarding.
 
-Currently NDGF runs a single LUTS to which all ATLAS and ALICE production sites
-report to. In the future it is planned/hoped that the NGIs will run national
-LUTSes, and that only ATLAS, ALICE, CMS URs will get logged to the LUTS run by
-NDGF.
+Currently NDGF runs a single LUTS to which the Nordic WLCG usage is reported
+(i.e., ATLAS, ALICE, and CMS) along with a couple of other projects.
+Furthermore several countries run a national LUTS where to national usage is
+reported. As of writing this, there are five known instances of the LUTS
+running in production.
 
 
 * UR Logger:
@@ -63,6 +66,13 @@ differences). The current registrant supports registering URs to multiple
 LUTSes, per-VO registration and will retry registration if the LUTS is
 unavailable. This will also work with multiple LUTSes and so forth.
 
+* BART
+
+BART = Batch system Reporting Tool
+
+A small tool for extracting usage data from LRMS/Batch systems, and report them
+to SGAS. Currently Maui, Torque, and SLURM are supported (LoadLeveler support
+is underway). Can be downloaded from the SGAS homepage (www.sgas.se)
 
 
 2. LUTS Service
@@ -70,16 +80,17 @@ unavailable. This will also work with multiple LUTSes and so forth.
 
 * Description:
 
-The LUTS service is daemon listening on port 6143 by default. The
-interface/protocol is TLS+HTTP, and is used for registering URs and accessing
-views (can be done via browser or view data can be fetched using ordinary HTTP
-client libraries).
+The LUTS service is daemon listening on port 6180 on the localhost interface
+(by default at least). The interface/protocol is HTTP, and is used for
+registering URs and accessing views via the browser or extracing data via the
+query interface.
+
+In front of the service, a reverse proxy should be used to bridge the LUTS with
+the outside world. The reverse proxy handles TLS/SSL negotiating, and
 
 The LUTS service is essentially a thin wrapper over a database (the server code
-is only ~2500 lines). It performs mainly authorization and data transformation.
-Proxy certificates are not yet supported, but host certificates (for
-registration), and ordinary grid user certificates (for accessing view in in
-the browser), works fine.
+is only ~3000 lines). It performs mainly authorization and data transformation.
+Authorization is certificate based, using TLS/SSL.
 
 SGAS currently support PostgreSQL as backend database.
 Webpage: http://www.postgresql.org/.
@@ -98,6 +109,16 @@ records into the database. Note that an embedded function is used for inserting
 the records (i.e., INSERT statements are NOT used). Information about insert
 time, certificate used in authorization and from which host the usage record
 was inserted is added as "provenance" information the usage records.
+
+On the database side, the main table for data insertion is usagedata. Data in
+this table is normalized. The denormalized data can be access in the
+usagerecords view. After insertion, an aggregation is triggered, which will sum
+up the inserted records. The aggregated data is much smaller than the raw data,
+and much faster to query. The aggregated data is in the "uraggregated" relation.
+
+Most of the fields in the database is hopefully self-explanatory. Many of the
+names are taken from the Usage Record Specification (OGF-98), which can be
+consulted for an in-depth explanation of the fields.
 
 
 * Views
