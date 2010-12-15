@@ -154,19 +154,23 @@ var vis = new pv.Panel()
 /* bars */
 var bar = vis.add(pv.Panel)
     .data(data)
-  .add(pv.Bar)
-    .data(function(d) d)
-    .left(function() x(this.index))
+    .left(x)
+  .add(pv.Layout.Stack)
+    .layers(function(d) d)
+    .values([0])
+    .y(function(_, v) y(v)) // first argument iterates over values, second over layers
+  .layer.add(pv.Bar)
     .width(x.range().band)
-    .bottom(pv.Layout.stack())
-    .height(y);
 
-/* x-scale ticks */
-bar.anchor("bottom").add(pv.Label)
-    .visible(function() !this.parent.index)
-    .textMargin(8)
+*/ x-ticks */
+vis.add(pv.Label)
+    .data(%(columns)s)
+    .bottom(0)
+    .left(function(d) x(d) + x.range().band / 2)
+    .textMargin(5)
     .textBaseline("top")
-    .text(function() %(columns)s[this.index]);
+    .textAlign("center")
+    .text(function(d) d);
 
 /* y-scale and ticks */
 vis.add(pv.Rule)
@@ -379,7 +383,7 @@ def buildProtovisCode(view_type, matrix, m_columns, m_rows=None):
 
     elif view_type == 'stacked_columns':
 
-        data = dataprocess.createJSMatrix(matrix, m_columns, m_rows)
+        data = dataprocess.createJSTransposedMatrix(matrix, m_columns, m_rows)
         cols = _createColumnNames(m_columns)
         maximum = dataprocess.calculateStackedMaximum(matrix)
         column_height = int(maximum*1.02)
