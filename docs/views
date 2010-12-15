@@ -20,7 +20,7 @@ Option              Descrpition
 
 viewgroup       Comma-seperated list of groups which can access the view.
 type            The type of graph. Valid options:
-                lines, columns, staced_columns, grouped_columsn, discrete_scatterplot
+                lines, columns, stacked_columns, grouped_columns, discrete_scatterplot
 drawtable       Explicetely render or disable table. Valid values: "true" or "false".
 drawgraph       Explicitely render/disable table. Valid values: "true" or "false".
 description     Free form string describing the view.
