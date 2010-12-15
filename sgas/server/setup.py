@@ -42,6 +42,7 @@ def createSite(db, authorizer, views):
     root.putChild('sgas', tr)
 
     site = server.Site(root)
+    site.log = lambda *args : None
     return site
 
 
