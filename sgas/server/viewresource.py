@@ -42,7 +42,7 @@ HTML_VIEW_HEADER = """<!DOCTYPE html>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>%(title)s</title>
         <link rel="stylesheet" type="text/css" href="/static/css/view.table.css" />
-        <script type="text/javascript" src="/static/js/protovis-d3.1.js"></script>
+        <script type="text/javascript" src="/static/js/protovis-r3.2.js"></script>
     </head>
     <body>
 """
