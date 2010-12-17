@@ -50,12 +50,11 @@ vis.add(pv.Panel)
 
 /* y ticks */
 vis.add(pv.Rule)
-    .data(y.ticks())
+    .data(y.ticks(5))
     .bottom(y)
     .width(w-120)
     .strokeStyle(function(d) d ? "#ccc" : "#000")
   .anchor("left").add(pv.Label)
-    .textStyle(function() i > 0 ? "#000" : "#000")
     .text(y.tickFormat);
 
 /* the lines */
