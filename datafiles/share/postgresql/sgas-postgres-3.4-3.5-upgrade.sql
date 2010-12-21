@@ -124,6 +124,36 @@ CREATE TABLE hostscalefactors (
 );
 
 
+DROP FUNCTION update_uraggregate();
+
+DROP TABLE uraggregated;
+DROP TABLE uraggregated_update;
+
+CREATE TABLE uraggregated_data (
+    execution_time          date,
+    insert_time             date,
+    machine_name_id         integer,
+    queue_id                integer,
+    global_user_name_id     integer,
+    local_user_id           varchar(500),
+    vo_information_id       integer,
+    project_name            varchar(200),
+    runtime_environments_id integer[],
+    status_id               integer,
+    n_jobs                  integer,
+    cputime                 numeric(14,2),
+    walltime                numeric(14,2),
+    generate_time           timestamp
+);
+
+CREATE TABLE uraggregated_update (
+    insert_time         date,
+    machine_name_id     integer
+);
+
+INSERT INTO uraggregated_update SELECT DISTINCT insert_time::DATE, machine_name_id FROM usagedata;
+
+
 SELECT 'View and functions dropped, you should reload them' AS Message;
 
 

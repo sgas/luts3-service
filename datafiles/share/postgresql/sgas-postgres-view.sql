@@ -77,3 +77,46 @@ LEFT OUTER JOIN globalusername  ON (usagedata.global_user_name_id       = global
 ;
 
 
+CREATE VIEW uraggregated AS
+SELECT
+    execution_time                                                                  AS execution_time,
+    insert_time                                                                     AS insert_time,
+    machinename.machine_name                                                        AS machine_name,
+    jobqueue.queue                                                                  AS queue,
+    CASE WHEN global_user_name_id IS NOT NULL THEN globalusername.global_user_name
+        ELSE machine_name || ':' || local_user_id
+    END                                                                             AS user_identity,
+    CASE WHEN vo_information_id IS NOT NULL THEN
+        CASE WHEN voinformation.vo_issuer LIKE 'file:///%' THEN NULL
+             WHEN voinformation.vo_issuer LIKE 'http://%'  THEN NULL
+             WHEN voinformation.vo_issuer LIKE 'https://%' THEN NULL
+             ELSE voinformation.vo_issuer
+        END
+        ELSE NULL
+    END                                                                             AS s_vo_issuer,
+    CASE WHEN vo_information_id IS NOT NULL THEN
+        CASE WHEN voinformation.vo_name LIKE '/%' THEN NULL
+             ELSE voinformation.vo_name
+        END
+        ELSE machine_name || ':' || project_name
+    END                                                                             AS vo_name,
+    voinformation.vo_attributes[1][1]                                               AS vo_group,
+    voinformation.vo_attributes[1][2]                                               AS vo_role,
+    CASE WHEN runtime_environments_id IS NOT NULL
+        THEN ARRAY(SELECT runtime_environment FROM runtimeenvironment WHERE id IN (SELECT unnest(runtime_environments_id)))
+        ELSE NULL
+    END                                                                             AS runtime_environments,
+    jobstatus.status                                                                AS status,
+    n_jobs                                                                          AS n_jobs,
+    cputime                                                                         AS cputime,
+    walltime                                                                        AS walltime,
+    generate_time                                                                   AS generate_time
+FROM
+    uraggregated_data
+LEFT OUTER JOIN machinename         ON (uraggregated_data.machine_name_id     = machinename.id)
+LEFT OUTER JOIN jobqueue            ON (uraggregated_data.queue_id            = jobqueue.id)
+LEFT OUTER JOIN globalusername      ON (uraggregated_data.global_user_name_id = globalusername.id)
+LEFT OUTER JOIN voinformation       ON (uraggregated_data.vo_information_id   = voinformation.id)
+LEFT OUTER JOIN jobstatus           ON (uraggregated_data.status_id           = jobstatus.id)
+;
+

@@ -43,8 +43,8 @@ DECLARE
     globalusername_id       integer;
     voinformation_id        integer;
     machinename_id          integer;
-    status_id               integer;
-    queue_id                integer;
+    status_fid              integer;
+    queue_fid               integer;
     inserthost_id           integer;
     insertidentity_id       integer;
     runtime_environment_id  integer;
@@ -130,21 +130,21 @@ BEGIN
 
     -- status
     IF in_status IS NULL THEN
-        status_id = NULL;
+        status_fid = NULL;
     ELSE
-        SELECT INTO status_id id FROM jobstatus WHERE status = in_status;
+        SELECT INTO status_fid id FROM jobstatus WHERE status = in_status;
         IF NOT FOUND THEN
-            INSERT INTO jobstatus (status) VALUES (in_status) RETURNING id INTO status_id;
+            INSERT INTO jobstatus (status) VALUES (in_status) RETURNING id INTO status_fid;
         END IF;
     END IF;
 
     -- queue
     IF in_queue IS NULL THEN
-        queue_id = NULL;
+        queue_fid = NULL;
     ELSE
-        SELECT INTO queue_id id FROM jobqueue WHERE queue = in_queue;
+        SELECT INTO queue_fid id FROM jobqueue WHERE queue = in_queue;
         IF NOT FOUND THEN
-            INSERT INTO jobqueue (queue) VALUES (in_queue) RETURNING id INTO queue_id;
+            INSERT INTO jobqueue (queue) VALUES (in_queue) RETURNING id INTO queue_fid;
         END IF;
     END IF;
 
@@ -214,8 +214,8 @@ BEGIN
                         in_local_user_id,
                         in_job_name,
                         in_charge,
-                        status_id,
-                        queue_id,
+                        status_fid,
+                        queue_fid,
                         in_host,
                         in_node_count,
                         in_processors,
@@ -286,7 +286,7 @@ BEGIN
     -- finally we update the table describing what aggregated information should be updated
     PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND machine_name = in_machine_name;
     IF NOT FOUND THEN
-        INSERT INTO uraggregated_update (insert_time, machine_name) VALUES (in_insert_time, in_machine_name);
+        INSERT INTO uraggregated_update (insert_time, machine_name_id) VALUES (in_insert_time::date, machinename_id);
     END IF;
 
     result[0] = in_record_id;
@@ -303,9 +303,9 @@ CREATE OR REPLACE FUNCTION update_uraggregate ( )
 RETURNS varchar[] AS $insertdate_machinename$
 
 DECLARE
-    q_insert_date   date;
-    q_machine_name  varchar;
-    result          varchar[];
+    q_insert_date       date;
+    q_machine_name_id   integer;
+    result              varchar[];
 BEGIN
     -- the transaction isolation level for this function should be set to serializable
     -- unfortunately it is not possible to set in the function as a function always
@@ -313,7 +313,7 @@ BEGIN
     -- therefore we trust the caller of the function to set it for us
 
     -- get data for what to update
-    SELECT insert_time, machine_name INTO q_insert_date, q_machine_name
+    SELECT insert_time, machine_name_id INTO q_insert_date, q_machine_name_id
         FROM uraggregated_update ORDER BY insert_time LIMIT 1;
     IF NOT FOUND THEN
         -- nothing to update
@@ -321,44 +321,39 @@ BEGIN
     END IF;
 
     -- delete aggregation update row
-    DELETE FROM uraggregated_update WHERE insert_time = q_insert_date AND machine_name = q_machine_name;
+    DELETE FROM uraggregated_update WHERE insert_time = q_insert_date AND machine_name_id = q_machine_name_id;
     -- delete existing aggregated rows that will be updated
-    DELETE FROM uraggregated WHERE insert_time = q_insert_date AND machine_name = q_machine_name;
+    DELETE FROM uraggregated_data WHERE insert_time = q_insert_date AND machine_name_id = q_machine_name_id;
 
-    INSERT INTO uraggregated
+    INSERT INTO uraggregated_data
     SELECT
-        COALESCE(end_time::DATE, create_time::DATE)                      AS s_execute_time,
-        insert_time::DATE                                                AS s_insert_time,
-        machine_name                                                     AS s_machine_name,
-        COALESCE(global_user_name, machine_name || ':' || local_user_id) AS s_user_identity,
-        CASE WHEN vo_issuer LIKE 'file:///%' THEN NULL
-             WHEN vo_issuer LIKE 'http://%'  THEN NULL
-             WHEN vo_issuer LIKE 'https://%' THEN NULL
-            ELSE vo_issuer
-        END                                                              AS s_vo_issuer,
-        CASE WHEN vo_name is NULL
-            THEN COALESCE(machine_name || ':' || project_name)
-            ELSE
-                CASE WHEN vo_name LIKE '/%%'
-                    THEN NULL
-                    ELSE vo_name
-                END
-        END                                                              AS s_vo_name,
-        vo_attributes[1][1]                                              AS s_vo_group,
-        vo_attributes[1][2]                                              AS s_vo_role,
-        count(*)                                                         AS s_n_jobs,
-        SUM(COALESCE(cpu_duration,0))  / 3600.0                          AS s_cputime,
-        SUM(COALESCE(wall_duration,0) * COALESCE(processors,1)) / 3600.0 AS s_walltime,
-        now()                                                            AS s_generate_time
+        COALESCE(end_time::DATE, create_time::DATE)                             AS s_execute_time,
+        insert_time::DATE                                                       AS s_insert_time,
+        machine_name_id                                                         AS s_machine_name_id,
+        queue_id                                                                AS s_queue_id,
+        global_user_name_id                                                     AS s_global_user_name_id,
+        CASE WHEN global_user_name_id IS NULL THEN local_user_id ELSE NULL END  AS s_local_user_id,
+        vo_information_id                                                       AS s_vo_information_id,
+        CASE WHEN vo_information_id IS NULL THEN project_name ELSE NULL END     AS s_project_name,
+        ARRAY(SELECT runtimeenvironment_usagedata.runtimeenvironments_id
+              FROM runtimeenvironment_usagedata
+              WHERE usagedata.id = runtimeenvironment_usagedata.usagedata_id)   AS s_runtime_environments,
+        status_id                                                               AS s_status_id,
+        count(*)                                                                AS s_n_jobs,
+        SUM(COALESCE(cpu_duration,0))  / 3600.0                                 AS s_cputime,
+        SUM(COALESCE(wall_duration,0) * COALESCE(processors,1)) / 3600.0        AS s_walltime,
+        now()                                                                   AS s_generate_time
     FROM
-        usagerecords
+        usagedata
     WHERE
-        insert_time::date = q_insert_date AND machine_name = q_machine_name
+        insert_time::date = q_insert_date AND machine_name_id = q_machine_name_id
     GROUP BY
-        s_execute_time, s_insert_time, s_machine_name, s_user_identity, s_vo_issuer, s_vo_name, s_vo_group, s_vo_role;
+        s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
+        s_global_user_name_id, s_local_user_id, s_vo_information_id, s_project_name,
+        s_runtime_environments, s_status_id;
 
     result[0] = q_insert_date::varchar;
-    result[1] = q_machine_name;
+    result[1] = q_machine_name_id;
     RETURN result;
 
 END;

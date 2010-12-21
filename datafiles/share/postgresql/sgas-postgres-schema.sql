@@ -119,25 +119,27 @@ CREATE TABLE jobtransferdata (
 
 
 -- this is the table used for storing aggregated usage information in
-CREATE TABLE uraggregated (
-    execution_time      date,
-    insert_time         date,
-    machine_name        varchar,
-    user_identity       varchar,
-    vo_issuer           varchar,
-    vo_name             varchar,
-    vo_group            varchar,
-    vo_role             varchar,
-    n_jobs              integer,
-    cputime             numeric(14,2),
-    walltime            numeric(14,2),
-    generate_time       timestamp
+CREATE TABLE uraggregated_data (
+    execution_time          date,
+    insert_time             date,
+    machine_name_id         integer,
+    queue_id                integer,
+    global_user_name_id     integer,
+    local_user_id           varchar(500),
+    vo_information_id       integer,
+    project_name            varchar(200),
+    runtime_environments_id integer[],
+    status_id               integer,
+    n_jobs                  integer,
+    cputime                 numeric(14,2),
+    walltime                numeric(14,2),
+    generate_time           timestamp
 );
 
 -- this table is used for storing information about which parts
 -- of the aggregartion table that needs to be updated
 CREATE TABLE uraggregated_update (
     insert_time         date,
-    machine_name        varchar
+    machine_name_id     integer
 );
 
