@@ -17,8 +17,8 @@ CREATE OR REPLACE FUNCTION urcreate (
     in_status                  varchar,
     in_queue                   varchar,
     in_host                    varchar,
-    in_node_count              smallint,
-    in_processors              smallint,
+    in_node_count              integer,
+    in_processors              integer,
     in_project_name            varchar,
     in_submit_host             varchar,
     in_start_time              timestamp,
@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION urcreate (
     in_kernel_time             integer,
     in_major_page_faults       integer,
     in_runtime_environments    varchar[],
-    in_exit_code               smallint,
+    in_exit_code               integer,
     in_downloads               varchar[],
     in_uploads                 varchar[],
     in_insert_host             varchar,
@@ -52,16 +52,15 @@ DECLARE
 
     ur_id                   integer;
     ur_global_job_id        varchar;
-    ur_machine_name         varchar;
+    ur_machine_name_id      varchar;
     ur_insert_time          date;
 
     result                  varchar[];
 BEGIN
     -- first check that we do not have the record already
-    SELECT usagedata.id, global_job_id, machine_name, insert_time::date
-           INTO ur_id, ur_global_job_id, ur_machine_name, ur_insert_time
+    SELECT usagedata.id, global_job_id, machine_name_id, insert_time::date
+           INTO ur_id, ur_global_job_id, ur_machine_name_id, ur_insert_time
            FROM usagedata
-               LEFT OUTER JOIN machinename ON (usagedata.machine_name_id = machinename.id)
            WHERE record_id = in_record_id;
     IF FOUND THEN
         -- this will decide if a record should replace another:
@@ -80,9 +79,9 @@ BEGIN
         ELSE
             -- delete record, mark update, and continue as normal
             DELETE from usagedata WHERE record_id = in_record_id;
-            PERFORM * FROM uraggregated_update WHERE insert_time = ur_insert_time::date AND machine_name = ur_machine_name;
+            PERFORM * FROM uraggregated_update WHERE insert_time = ur_insert_time::date AND machine_name_id = ur_machine_name_id;
             IF NOT FOUND THEN
-                INSERT INTO uraggregated_update (insert_time, machine_name) VALUES (ur_insert_time, ur_machine_name);
+                INSERT INTO uraggregated_update (insert_time, machine_name_id) VALUES (ur_insert_time, ur_machine_name_id);
             END IF;
         END IF;
     END IF;
@@ -154,7 +153,7 @@ BEGIN
     ELSE
         SELECT INTO inserthost_id id
                FROM inserthost
-               WHERE insert_identity = in_insert_host;
+               WHERE insert_host = in_insert_host;
         IF NOT FOUND THEN
             INSERT INTO inserthost (insert_host) VALUES (in_insert_host) RETURNING id INTO inserthost_id;
         END IF;
@@ -217,8 +216,8 @@ BEGIN
                         status_fid,
                         queue_fid,
                         in_host,
-                        in_node_count,
-                        in_processors,
+                        in_node_count::smallint,
+                        in_processors::smallint,
                         in_project_name,
                         in_submit_host,
                         in_start_time,
@@ -229,7 +228,7 @@ BEGIN
                         in_user_time,
                         in_kernel_time,
                         in_major_page_faults,
-                        in_exit_code,
+                        in_exit_code::smallint,
                         inserthost_id,
                         insertidentity_id,
                         in_insert_time
@@ -284,7 +283,7 @@ BEGIN
     END IF;
 
     -- finally we update the table describing what aggregated information should be updated
-    PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND machine_name = in_machine_name;
+    PERFORM * FROM uraggregated_update WHERE insert_time = in_insert_time::date AND machine_name_id = machinename_id;
     IF NOT FOUND THEN
         INSERT INTO uraggregated_update (insert_time, machine_name_id) VALUES (in_insert_time::date, machinename_id);
     END IF;
