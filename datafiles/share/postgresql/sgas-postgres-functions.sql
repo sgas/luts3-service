@@ -264,7 +264,7 @@ BEGIN
             INSERT INTO jobtransferdata (usage_data_id, job_transfer_url_id, transfer_type,
                                          size, start_time, end_time, bypass_cache, retrieved_from_cache)
                    VALUES (ur_id, jobtransferurl_id, 'download',
-                           in_downloads[i][2]::integer, in_downloads[i][3]::timestamp, in_downloads[i][4]::timestamp,
+                           in_downloads[i][2]::bigint, in_downloads[i][3]::timestamp, in_downloads[i][4]::timestamp,
                            in_downloads[i][5]::boolean, in_downloads[i][6]::boolean);
         END LOOP;
     END IF;
@@ -279,7 +279,7 @@ BEGIN
             -- insert upload
             INSERT INTO jobtransferdata (usage_data_id, job_transfer_url_id, transfer_type, size, start_time, end_time)
                    VALUES (ur_id, jobtransferurl_id, 'upload',
-                           in_uploads[i][2]::integer, in_uploads[i][3]::timestamp, in_uploads[i][4]::timestamp);
+                           in_uploads[i][2]::bigint, in_uploads[i][3]::timestamp, in_uploads[i][4]::timestamp);
         END LOOP;
     END IF;
 

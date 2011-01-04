@@ -9,6 +9,15 @@ A number of schema normalization upgrades. Saves a bit of space, and makes
 it possible to have a richer data model for aggregated data.
 
 
+3.4.2:
+
+An incorrect variable was referenced when parsing upload information. This
+caused either an error or some download data to be used as upload data.
+
+Switch file size from 4-byte integer to 8-byte integer to avoid overflow
+errors in PostgreSQL for large files.
+
+
 3.4.1
 
 Make OrderedDict implementation not rely on _zip_longest, as it was broken
