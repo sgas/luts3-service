@@ -1,4 +1,4 @@
--- logic for upgrading the SGAS PostgreSQL schema from version 3.4.0 to 3.4.1
+-- logic for upgrading the SGAS PostgreSQL schema from version 3.4.0/3.4.1 to 3.4.2
 -- SGAS should be stopped when performing this upgrade
 
 
