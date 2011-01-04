@@ -1,6 +1,15 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 
+3.4.2:
+
+An incorrect variable was referenced when parsing upload information. This
+caused either an error or some download data to be used as upload data.
+
+Switch file size from 4-byte integer to 8-byte integer to avoid overflow
+errors in PostgreSQL for large files.
+
+
 3.4.1
 
 Make OrderedDict implementation not rely on _zip_longest, as it was broken
