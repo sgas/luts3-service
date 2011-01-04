@@ -180,7 +180,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         yield self.real_db.stopService()
         # delete all ur rows in the database
         delete_stms = \
-        "TRUNCATE uraggregated;"            + \
+        "TRUNCATE uraggregated_data;"       + \
         "TRUNCATE uraggregated_update;"     + \
         "TRUNCATE usagedata      CASCADE;"  + \
         "TRUNCATE globalusername CASCADE;"  + \
@@ -197,6 +197,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         yield self.db.insert(ursampledata.UR1)
 
         rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
+        mid_rows = yield self.postgres_dbpool.runQuery("SELECT id from machinename WHERE machine_name = %s", (ursampledata.UR1_MACHINE_NAME,))
 
         self.failUnlessEqual(len(rows), 1)
 
@@ -206,7 +207,8 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         mxd = rows[0][0]
         row_date = '%s-%s-%s' % (mxd.day, mxd.month, mxd.year)
 
-        self.failUnlessEqual( [ (row_date, rows[0][1]) ], [ (date, 'benedict.grid.aau.dk') ])
+        machine_name_id = mid_rows[0][0]
+        self.failUnlessEqual( [ (row_date, rows[0][1]) ], [ (date, machine_name_id) ])
 
 
     @defer.inlineCallbacks

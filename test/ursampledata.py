@@ -4,6 +4,7 @@ Some sample usage records.
 
 
 UR1_ID = 'gsiftp://example.org/jobs/1'
+UR1_MACHINE_NAME = 'benedict.grid.aau.dk'
 UR1 = """<?xml version="1.0" encoding="UTF-8" ?>
 <ur:JobUsageRecord xmlns:ur="http://schema.ogf.org/urf/2003/09/urf">
     <ur:RecordIdentity ur:createTime="2009-08-09T09:06:52Z" ur:recordId="gsiftp://example.org/jobs/1" />
@@ -23,6 +24,7 @@ UR1 = """<?xml version="1.0" encoding="UTF-8" ?>
 
 
 UR2_ID = 'gsiftp://example.org/jobs/2'
+UR2_MACHINE_NAME = 'benedict.grid.aau.dk'
 UR2 = """<?xml version="1.0" encoding="UTF-8" ?>
 <ur:JobUsageRecord xmlns:ur="http://schema.ogf.org/urf/2003/09/urf">
     <ur:RecordIdentity ur:createTime="2009-09-10T09:06:52Z" ur:recordId="gsiftp://example.org/jobs/2" />

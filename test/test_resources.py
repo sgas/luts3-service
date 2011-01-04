@@ -181,7 +181,7 @@ class PostgreSQLResourceTest(ResourceTest, unittest.TestCase):
         yield self.db.stopService()
         # delete all ur rows in the database
         delete_stms = \
-        "TRUNCATE uraggregated;"             + \
+        "TRUNCATE uraggregated_data;"        + \
         "TRUNCATE uraggregated_update;"      + \
         "TRUNCATE jobtransferdata CASCADE;"  + \
         "TRUNCATE jobtransferurl  CASCADE;"  + \
