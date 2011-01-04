@@ -6,6 +6,7 @@
 # which was contributed by Raymond Hettinger <python at rcn.com>
 #
 # Copied to SGAS by Henrik Thostrup Jensen <htj@ndgf.org> on 6 Sep. 2010.
+# Modified not to rely on _zip_longest
 #
 # This module depends on the _abcoll module which was added in Python 2.6
 # Trying to import the module on an older module will cause an ImportError
@@ -13,22 +14,6 @@
 
 
 from _abcoll import MutableMapping
-
-# zip longest implementataion - does not exists in Python 2.6
-# slightly modified to support 2.6 syntax (fillvalue paremeter removed)
-# From: http://docs.python.org/release/3.0.1/library/itertools.html
-def _zip_longest(*args):
-    fillvalue = None
-    # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-    def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
-        yield counter()         # yields the fillvalue, or raises IndexError
-    fillers = repeat(fillvalue)
-    iters = [chain(it, sentinel(), fillers) for it in args]
-    try:
-        for tup in zip(*iters):
-            yield tup
-    except IndexError:
-        pass
 
 
 
@@ -97,6 +82,6 @@ class OrderedDict(dict, MutableMapping):
 
     def __eq__(self, other):
         if isinstance(other, OrderedDict):
-            return all(p==q for p, q in  _zip_longest(self.items(), other.items()))
+            return len(self) == len(other) and all(p==q for p, q in  zip(self.items(), other.items()))
         return dict.__eq__(self, other)
 

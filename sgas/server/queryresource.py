@@ -46,19 +46,14 @@ class QueryResource(resource.Resource):
 
         authz_params = queryparser.filterAuthzParams(query_args)
 
-        # need to add context sometime
         subject = resourceutil.getSubject(request)
         if not self.authorizer.isAllowed(subject, rights.ACTION_QUERY, context=authz_params.items()):
             request.setResponseCode(403) # forbidden
             return "Query not allowed for given context for identity %s" % subject
         # request allowed, continue
 
-        # hostname is used for logging / provenance in the usage records
-        hostname = request.getClient()
-        if hostname is None:
-            hostname = request.getClientIP()
+        hostname = resourceutil.getHostname(request)
         log.msg('Accepted query request from %s' % hostname, system='sgas.queryresource')
-
 
         def gotDatabaseResult(rows):
             records = queryrowrp.buildDictRecords(rows, query_args)

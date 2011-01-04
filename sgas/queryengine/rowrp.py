@@ -16,10 +16,10 @@ def buildDictRecords(rows, query_args):
 
     i = 0
 
+    # this enables us to more flexible in the future (and vo_name was optional in earlier releases)
     mapping[i] = 'machine_name'   ; i += 1
     mapping[i] = 'user_identity'  ; i += 1
-    if 'vo_name' in query_args:
-        mapping[i] = 'vo_name'    ; i += 1
+    mapping[i] = 'vo_name'        ; i += 1
     mapping[i] = 'start_date'     ; i += 1
     mapping[i] = 'end_date'       ; i += 1
     mapping[i] = 'n_jobs'         ; i += 1

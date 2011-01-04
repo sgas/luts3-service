@@ -58,9 +58,7 @@ class InsertResource(resource.Resource):
         # request allowed, continue
 
         # hostname is used for logging / provenance in the usage records
-        hostname = request.getClient()
-        if hostname is None:
-            hostname = request.getClientIP()
+        hostname = resourceutil.getHostname(request)
 
         request.content.seek(0)
         ur_data = request.content.read()

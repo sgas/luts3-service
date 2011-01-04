@@ -59,12 +59,12 @@ def parseURLArguments(request_args):
 
     # only one vo name
     if len(request_args.get(VO_NAME, [])) > 1:
-        raise QueryParseError('Only one value allowed for time resolution.')
+        raise QueryParseError('Only one value allowed for VO name.')
 
     # get arguments
     machine_names    = request_args.get(MACHINE_NAME)
     user_identities  = request_args.get(USER_IDENTITY)
-    vo_name          = request_args.get(VO_NAME)
+    vo_name          = request_args.get(VO_NAME, [None])[0]
     iso_start_date   = request_args.get(START_DATE, [DEFAULT_START_DATE])[0]
     iso_end_date     = request_args.get(END_DATE, [time.strftime(DEFAULT_END_DATE_FORMAT)])[0]
     time_resolution  = request_args.get(TIME_RESOLUTION, [DEFAULT_TIME_RESOLUTION])[0]

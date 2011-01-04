@@ -2,6 +2,10 @@
 HTTP server resource utilities.
 """
 
+LOOPBACK_ADDRESSES = ('127.0.0.1', '::1')
+
+X_SSL_SUBJECT   = "x-ssl-subject"
+X_FORWARDED_FOR = "x-forwarded-for"
 
 
 def getSubject(request):
@@ -16,10 +20,23 @@ def getSubject(request):
             return subject
 
     # identity forwarded by reverse proxy
-    if request.getClientIP() in ('127.0.0.1', '::1') and 'x-ssl-subject' in request.received_headers:
-        return request.received_headers.get('x-ssl-subject')
+    if request.getClientIP() in LOOPBACK_ADDRESSES and X_SSL_SUBJECT in request.received_headers:
+        return request.received_headers.get(X_SSL_SUBJECT)
 
     # request wasn't secure or no certificate was presented
     return None
 
+
+def getHostname(request):
+    """
+    Utility method for getting hostname of client.
+    """
+    if request.getClientIP() in LOOPBACK_ADDRESSES and X_FORWARDED_FOR in request.received_headers:
+        return request.received_headers.get(X_FORWARDED_FOR)
+
+    else:
+        hostname = request.getClient()
+        if hostname is None:
+            hostname = request.getClientIP()
+        return hostname
 

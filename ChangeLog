@@ -1,5 +1,28 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+
+3.4.1
+
+Make OrderedDict implementation not rely on _zip_longest, as it was broken
+(using len instead to provide equality check).
+
+Updates to query documentation (fixes and updates in 3.4.1)
+
+Make the query result return min and max dates in the resulting records, and
+not the query ranges.
+
+Updates resourceutil module for getting hostname, and use constants when
+accessing headers.
+
+Fix a copy/paste error in a query engine error message.
+
+Always include vo name/project name in query results.
+
+Fix the query parser to correctly read vo_name query parameter.
+
+Fix PostgreSQL database setup to be Python 2.7 compatible.
+
+
 3.4.0
 
 Support for CouchDB has been removed.
