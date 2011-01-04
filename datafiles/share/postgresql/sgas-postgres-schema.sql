@@ -82,7 +82,7 @@ CREATE TABLE jobtransferdata (
     usage_data_id           integer         REFERENCES usagedata (id),
     job_transfer_url_id     integer         REFERENCES jobtransferurl (id),
     transfer_type           job_file_transfer_type  NOT NULL,
-    size                    integer,
+    size                    bigint,
     start_time              timestamp,
     end_time                timestamp,
     bypass_cache            boolean,
