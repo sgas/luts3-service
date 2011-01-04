@@ -74,7 +74,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
         if 'uploads' in ur_doc:
             uls = []
             for ul in ur_doc['uploads']:
-                ula = ul.get('url'), dl.get('size'), dl.get('start_time'), dl.get('end_time')
+                ula = ul.get('url'), ul.get('size'), ul.get('start_time'), ul.get('end_time')
                 uls.append(ula)
             ur_doc['uploads'] = [ [ stringify(f) for f in e  ] for e in uls ]
 
