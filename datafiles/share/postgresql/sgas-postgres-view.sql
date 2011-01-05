@@ -108,8 +108,8 @@ SELECT
     END                                                                             AS runtime_environments,
     jobstatus.status                                                                AS status,
     n_jobs                                                                          AS n_jobs,
-    cputime                                                                         AS cputime,
-    walltime                                                                        AS walltime,
+    ROUND(cputime  / 3600.0, 2)                                                     AS cputime,
+    ROUND(walltime / 3600.0, 2)                                                     AS walltime,
     generate_time                                                                   AS generate_time
 FROM
     uraggregated_data

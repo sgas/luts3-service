@@ -140,8 +140,8 @@ CREATE TABLE uraggregated_data (
     runtime_environments_id integer[],
     status_id               integer,
     n_jobs                  integer,
-    cputime                 numeric(14,2),
-    walltime                numeric(14,2),
+    cputime                 bigint,
+    walltime                bigint,
     generate_time           timestamp
 );
 
