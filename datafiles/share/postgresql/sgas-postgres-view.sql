@@ -29,6 +29,8 @@ SELECT
     submit_time,
     cpu_duration,
     wall_duration,
+    cpu_duration  * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name) AS cpu_duration_scaled,
+    wall_duration * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name) AS wall_duration_scaled,
     user_time,
     kernel_time,
     major_page_faults,
@@ -110,6 +112,10 @@ SELECT
     n_jobs                                                                          AS n_jobs,
     ROUND(cputime  / 3600.0, 2)                                                     AS cputime,
     ROUND(walltime / 3600.0, 2)                                                     AS walltime,
+    ROUND(cputime  / 3600.0, 2) * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name)
+                                                                                    AS cputime_scaled,
+    ROUND(walltime / 3600.0, 2) * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name)
+                                                                                    AS walltime_scaled,
     generate_time                                                                   AS generate_time
 FROM
     uraggregated_data
