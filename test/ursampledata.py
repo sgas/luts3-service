@@ -18,7 +18,7 @@ UR1 = """<?xml version="1.0" encoding="UTF-8" ?>
     <ur:MachineName>benedict.grid.aau.dk</ur:MachineName>
     <ur:StartTime>2009-08-07T09:06:37Z</ur:StartTime>
     <ur:EndTime>2009-08-07T09:06:52Z</ur:EndTime>
-    <ur:WallDuration>PT234S</ur:WallDuration>
+    <ur:WallDuration>PT234.1S</ur:WallDuration>
 </ur:JobUsageRecord>
 """
 
