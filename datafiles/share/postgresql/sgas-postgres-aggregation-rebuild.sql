@@ -11,7 +11,7 @@ TRUNCATE TABLE uraggregated_update;
 
 
 -- rebuild everything with a single statement
-INSERT INTO uraggregated_data;
+INSERT INTO uraggregated_data
 SELECT
     COALESCE(end_time::DATE, create_time::DATE)                     AS s_execute_time,
     insert_time::DATE                                               AS s_insert_time,
