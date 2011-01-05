@@ -44,15 +44,8 @@ DROP FUNCTION urcreate (character varying,
                         timestamp without time zone
 );
 
--- now the actual changes
-ALTER table usagedata DROP COLUMN ksi2k_cpu_duration;
-ALTER table usagedata DROP COLUMN ksi2k_wall_duration;
 
-ALTER TABLE usagedata ALTER COLUMN exit_code TYPE smallint;
-ALTER TABLE usagedata ALTER COLUMN node_count TYPE smallint;
-ALTER TABLE usagedata ALTER COLUMN processors TYPE smallint;
-
-
+-- create new tables for normalizing
 CREATE TABLE runtimeenvironment (
     id                      serial          NOT NULL PRIMARY KEY,
     runtime_environment     varchar(512)    NOT NULL UNIQUE
@@ -64,66 +57,67 @@ CREATE TABLE runtimeenvironment_usagedata (
     PRIMARY KEY (usagedata_id, runtimeenvironments_id)
 );
 
--- populate runtime environments table
-INSERT INTO runtimeenvironment (runtime_environment)
-    SELECT DISTINCT unnest(runtime_environments) FROM usagedata;
-
--- populate runtimeenvironment_usagedata table
-INSERT INTO runtimeenvironment_usagedata (usagedata_id, runtimeenvironments_id)
-SELECT idre.id, runtimeenvironment.id FROM
-    (SELECT usagedata.id, unnest(usagedata.runtime_environments) AS re FROM usagedata) AS idre
-    LEFT OUTER JOIN runtimeenvironment ON (idre.re = runtimeenvironment.runtime_environment) ORDER BY idre.id;
-
--- drop column with runtime environments
-ALTER TABLE usagedata DROP COLUMN runtime_environments;
-
-
--- normalize insert_hostname column
 CREATE TABLE inserthost (
     id                      serial          NOT NULL PRIMARY KEY,
     insert_host             varchar(1024)   NOT NULL UNIQUE
 );
 
-INSERT INTO inserthost (insert_host) SELECT DISTINCT insert_hostname FROM usagedata WHERE insert_hostname IS NOT NULL;
-ALTER TABLE usagedata RENAME COLUMN insert_hostname TO insert_host_id;
-UPDATE usagedata SET insert_host_id = (SELECT id FROM inserthost WHERE insert_host = insert_host_id);
-ALTER TABLE usagedata ALTER COLUMN insert_host_id TYPE integer USING CAST(insert_host_id AS integer);
-ALTER TABLE usagedata ADD CONSTRAINT usagedata_insert_host_id_fkey FOREIGN KEY (insert_host_id) REFERENCES inserthost (id);
-
-
--- normalize job status
 CREATE TABLE jobstatus (
     id                      serial          NOT NULL PRIMARY KEY,
     status                  varchar(100)    NOT NULL UNIQUE
 );
 
-INSERT INTO jobstatus (status) SELECT DISTINCT status FROM usagedata WHERE status IS NOT NULL;
-ALTER TABLE usagedata RENAME COLUMN status TO status_id;
-UPDATE usagedata SET status_id = (SELECT id FROM jobstatus WHERE jobstatus.status = usagedata.status_id);
-ALTER TABLE usagedata ALTER COLUMN status_id TYPE integer USING CAST(status_id AS integer);
-ALTER TABLE usagedata ADD CONSTRAINT usagedata_status_id_fkey FOREIGN KEY (status_id) REFERENCES jobstatus (id);
-
-
--- normalize queue
 CREATE TABLE jobqueue (
     id                      serial          NOT NULL PRIMARY KEY,
     queue                   varchar(200)    NOT NULL UNIQUE
 );
 
-INSERT INTO jobqueue (queue) SELECT DISTINCT queue FROM usagedata WHERE queue IS NOT NULL;
-ALTER TABLE usagedata RENAME COLUMN queue TO queue_id;
-UPDATE usagedata SET queue_id = (SELECT id FROM jobqueue WHERE jobqueue.queue = usagedata.queue_id);
-ALTER TABLE usagedata ALTER COLUMN queue_id TYPE integer USING CAST(queue_id AS integer);
-ALTER TABLE usagedata ADD CONSTRAINT usagedata_queue_id_fkey FOREIGN KEY (queue_id) REFERENCES jobqueue (id);
-
-
--- host scaling table
 CREATE TABLE hostscalefactors (
     machine_name            varchar(200)    NOT NULL UNIQUE PRIMARY KEY,
     scale_factor            float           NOT NULL
 );
 
+-- populate new tables
+INSERT INTO runtimeenvironment (runtime_environment) SELECT DISTINCT unnest(runtime_environments) FROM usagedata;
 
+INSERT INTO runtimeenvironment_usagedata (usagedata_id, runtimeenvironments_id)
+    SELECT idre.id, runtimeenvironment.id FROM
+        (SELECT usagedata.id, unnest(usagedata.runtime_environments) AS re FROM usagedata) AS idre
+        LEFT OUTER JOIN runtimeenvironment ON (idre.re = runtimeenvironment.runtime_environment) ORDER BY idre.id;
+
+INSERT INTO inserthost (insert_host) SELECT DISTINCT insert_hostname FROM usagedata WHERE insert_hostname IS NOT NULL;
+
+INSERT INTO jobstatus (status) SELECT DISTINCT status FROM usagedata WHERE status IS NOT NULL;
+
+INSERT INTO jobqueue (queue) SELECT DISTINCT queue FROM usagedata WHERE queue IS NOT NULL;
+
+-- renames does not require table scans so we don't have to batch them
+ALTER TABLE usagedata RENAME COLUMN insert_hostname TO insert_host_id;
+ALTER TABLE usagedata RENAME COLUMN status TO status_id;
+ALTER TABLE usagedata RENAME COLUMN queue TO queue_id;
+
+-- update previous not-normalized values to id/foreign keys
+UPDATE usagedata SET insert_host_id = (SELECT id FROM inserthost WHERE insert_host = insert_host_id),
+                     status_id = (SELECT id FROM jobstatus WHERE jobstatus.status = usagedata.status_id),
+                     queue_id = (SELECT id FROM jobqueue WHERE jobqueue.queue = usagedata.queue_id);
+
+-- now the actual changes
+ALTER TABLE usagedata
+    DROP COLUMN ksi2k_cpu_duration,
+    DROP COLUMN ksi2k_wall_duration,
+    DROP COLUMN runtime_environments,
+    ALTER COLUMN exit_code TYPE smallint,
+    ALTER COLUMN node_count TYPE smallint,
+    ALTER COLUMN processors TYPE smallint,
+    ALTER COLUMN insert_host_id TYPE integer USING CAST(insert_host_id AS integer),
+    ALTER COLUMN status_id TYPE integer USING CAST(status_id AS integer),
+    ALTER COLUMN queue_id TYPE integer USING CAST(queue_id AS integer),
+    ADD CONSTRAINT usagedata_insert_host_id_fkey FOREIGN KEY (insert_host_id) REFERENCES inserthost (id),
+    ADD CONSTRAINT usagedata_status_id_fkey FOREIGN KEY (status_id) REFERENCES jobstatus (id),
+    ADD CONSTRAINT usagedata_queue_id_fkey FOREIGN KEY (queue_id) REFERENCES jobqueue (id);
+
+
+-- new aggregation schema
 DROP FUNCTION update_uraggregate();
 
 DROP TABLE uraggregated;
