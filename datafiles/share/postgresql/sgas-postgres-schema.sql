@@ -33,6 +33,26 @@ CREATE TABLE jobqueue (
     queue                   varchar(200)    NOT NULL UNIQUE
 );
 
+CREATE TABLE localuser (
+    id                      serial          NOT NULL PRIMARY KEY,
+    local_user              varchar(100)    NOT NULL UNIQUE
+);
+
+CREATE TABLE projectname (
+    id                      serial          NOT NULL PRIMARY KEY,
+    project_name            varchar(200)    NOT NULL UNIQUE
+);
+
+CREATE TABLE submithost (
+    id                      serial          NOT NULL PRIMARY KEY,
+    submit_host             varchar(200)    NOT NULL UNIQUE
+);
+
+CREATE TABLE host (
+    id                      serial          NOT NULL PRIMARY KEY,
+    host                    varchar(1500)   NOT NULL UNIQUE
+);
+
 CREATE TABLE insertidentity (
     id                      serial          NOT NULL PRIMARY KEY,
     insert_identity         varchar(1024)   NOT NULL UNIQUE
@@ -52,16 +72,16 @@ CREATE TABLE usagedata (
     machine_name_id         integer         REFERENCES machinename (id),
     global_job_id           varchar(1000),
     local_job_id            varchar(500),
-    local_user_id           varchar(100),
+    local_user_id           integer         REFERENCES localuser (id),
     job_name                varchar(1000),
     charge                  integer,
     status_id               integer         REFERENCES jobstatus(id),
     queue_id                integer         REFERENCES jobqueue(id),
-    host                    varchar(1500),
+    host_id                 integer         REFERENCES host(id),
     node_count              smallint,
     processors              smallint,
-    project_name            varchar(200),
-    submit_host             varchar(200),
+    project_name_id         integer         REFERENCES projectname(id),
+    submit_host_id          integer         REFERENCES submithost(id),
     start_time              timestamp,
     end_time                timestamp,
     submit_time             timestamp,
@@ -125,9 +145,9 @@ CREATE TABLE uraggregated_data (
     machine_name_id         integer,
     queue_id                integer,
     global_user_name_id     integer,
-    local_user_id           varchar(500),
+    local_user_id           integer,
     vo_information_id       integer,
-    project_name            varchar(200),
+    project_name_id         integer,
     runtime_environments_id integer[],
     status_id               integer,
     n_jobs                  integer,

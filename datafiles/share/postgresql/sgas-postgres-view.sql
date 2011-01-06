@@ -14,16 +14,16 @@ SELECT
     machinename.machine_name,
     global_job_id,
     local_job_id,
-    local_user_id,
+    localuser.local_user,
     job_name,
     charge,
     jobstatus.status,
     jobqueue.queue,
-    host,
+    host.host,
     node_count,
     processors,
-    project_name,
-    submit_host,
+    projectname.project_name,
+    submithost.submit_host,
     start_time,
     end_time,
     submit_time,
@@ -47,9 +47,13 @@ FROM
     usagedata
 LEFT OUTER JOIN globalusername  ON (usagedata.global_user_name_id = globalusername.id)
 LEFT OUTER JOIN voinformation   ON (usagedata.vo_information_id   = voinformation.id)
+LEFT OUTER JOIN localuser       ON (usagedata.local_user_id       = localuser.id)
 LEFT OUTER JOIN machinename     ON (usagedata.machine_name_id     = machinename.id)
 LEFT OUTER JOIN jobqueue        ON (usagedata.queue_id            = jobqueue.id)
+LEFT OUTER JOIN host            ON (usagedata.host_id             = host.id)
 LEFT OUTER JOIN jobstatus       ON (usagedata.status_id           = jobstatus.id)
+LEFT OUTER JOIN projectname     ON (usagedata.project_name_id     = projectname.id)
+LEFT OUTER JOIN submithost      ON (usagedata.submit_host_id      = submithost.id)
 LEFT OUTER JOIN inserthost      ON (usagedata.insert_host_id      = inserthost.id)
 LEFT OUTER JOIN insertidentity  ON (usagedata.insert_identity_id  = insertidentity.id)
 ;
@@ -86,7 +90,7 @@ SELECT
     machinename.machine_name                                                        AS machine_name,
     jobqueue.queue                                                                  AS queue,
     CASE WHEN global_user_name_id IS NOT NULL THEN globalusername.global_user_name
-        ELSE machine_name || ':' || local_user_id
+        ELSE machine_name || ':' || localuser.local_user
     END                                                                             AS user_identity,
     CASE WHEN vo_information_id IS NOT NULL THEN
         CASE WHEN voinformation.vo_issuer LIKE 'file:///%' THEN NULL
@@ -100,7 +104,7 @@ SELECT
         CASE WHEN voinformation.vo_name LIKE '/%' THEN NULL
              ELSE voinformation.vo_name
         END
-        ELSE machine_name || ':' || project_name
+        ELSE machine_name || ':' || projectname.project_name
     END                                                                             AS vo_name,
     voinformation.vo_attributes[1][1]                                               AS vo_group,
     voinformation.vo_attributes[1][2]                                               AS vo_role,
@@ -122,7 +126,9 @@ FROM
 LEFT OUTER JOIN machinename         ON (uraggregated_data.machine_name_id     = machinename.id)
 LEFT OUTER JOIN jobqueue            ON (uraggregated_data.queue_id            = jobqueue.id)
 LEFT OUTER JOIN globalusername      ON (uraggregated_data.global_user_name_id = globalusername.id)
+LEFT OUTER JOIN localuser           ON (uraggregated_data.local_user_id       = localuser.id)
 LEFT OUTER JOIN voinformation       ON (uraggregated_data.vo_information_id   = voinformation.id)
+LEFT OUTER JOIN projectname         ON (uraggregated_data.project_name_id     = projectname.id)
 LEFT OUTER JOIN jobstatus           ON (uraggregated_data.status_id           = jobstatus.id)
 ;
 

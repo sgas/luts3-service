@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION urcreate (
     in_create_time             timestamp,
     in_global_job_id           varchar,
     in_local_job_id            varchar,
-    in_local_user_id           varchar,
+    in_local_user              varchar,
     in_global_user_name        varchar,
     in_vo_type                 varchar,
     in_vo_issuer               varchar,
@@ -40,11 +40,15 @@ CREATE OR REPLACE FUNCTION urcreate (
 RETURNS varchar[] AS $recordid_rowid$
 
 DECLARE
+    local_user_fid          integer;
     globalusername_id       integer;
     voinformation_id        integer;
     machinename_id          integer;
     status_fid              integer;
     queue_fid               integer;
+    host_fid                integer;
+    project_name_fid        integer;
+    submit_host_fid         integer;
     inserthost_id           integer;
     insertidentity_id       integer;
     runtime_environment_id  integer;
@@ -83,6 +87,16 @@ BEGIN
             IF NOT FOUND THEN
                 INSERT INTO uraggregated_update (insert_time, machine_name_id) VALUES (ur_insert_time, ur_machine_name_id);
             END IF;
+        END IF;
+    END IF;
+
+    -- local user name
+    IF in_local_user IS NULL THEN
+        local_user_fid = NULL;
+    ELSE
+        SELECT INTO local_user_fid id FROM localuser WHERE local_user = in_local_user;
+        IF NOT FOUND THEN
+            INSERT INTO localuser (local_user) VALUES (in_local_user) RETURNING id INTO local_user_fid;
         END IF;
     END IF;
 
@@ -147,6 +161,36 @@ BEGIN
         END IF;
     END IF;
 
+    -- host
+    IF in_host IS NULL THEN
+        host_fid = NULL;
+    ELSE
+        SELECT INTO host_fid id FROM host WHERE host = in_host;
+        IF NOT FOUND THEN
+            INSERT INTO host (host) VALUES (in_host) RETURNING id INTO host_fid;
+        END IF;
+    END IF;
+
+    -- project name
+    IF in_project_name IS NULL THEN
+        project_name_fid = NULL;
+    ELSE
+        SELECT INTO project_name_fid id FROM projectname WHERE project_name = in_project_name;
+        IF NOT FOUND THEN
+            INSERT INTO projectname (project_name) VALUES (in_project_name) RETURNING id INTO project_name_fid;
+        END IF;
+    END IF;
+
+    -- submit host
+    IF in_submit_host IS NULL THEN
+        submit_host_fid = NULL;
+    ELSE
+        SELECT INTO submit_host_fid id FROM submithost WHERE submit_host = in_submit_host;
+        IF NOT FOUND THEN
+            INSERT INTO submithost (submit_host) VALUES (in_submit_host) RETURNING id INTO submit_host_fid;
+        END IF;
+    END IF;
+
     -- insert host
     IF in_insert_host IS NULL THEN
         inserthost_id = NULL;
@@ -184,11 +228,11 @@ BEGIN
                         charge,
                         status_id,
                         queue_id,
-                        host,
+                        host_id,
                         node_count,
                         processors,
-                        project_name,
-                        submit_host,
+                        project_name_id,
+                        submit_host_id,
                         start_time,
                         end_time,
                         submit_time,
@@ -210,16 +254,16 @@ BEGIN
                         machinename_id,
                         in_global_job_id,
                         in_local_job_id,
-                        in_local_user_id,
+                        local_user_fid,
                         in_job_name,
                         in_charge,
                         status_fid,
                         queue_fid,
-                        in_host,
+                        host_fid,
                         in_node_count::smallint,
                         in_processors::smallint,
-                        in_project_name,
-                        in_submit_host,
+                        project_name_fid,
+                        submit_host_fid,
                         in_start_time,
                         in_end_time,
                         in_submit_time,
@@ -333,7 +377,7 @@ BEGIN
         global_user_name_id                                                     AS s_global_user_name_id,
         CASE WHEN global_user_name_id IS NULL THEN local_user_id ELSE NULL END  AS s_local_user_id,
         vo_information_id                                                       AS s_vo_information_id,
-        CASE WHEN vo_information_id IS NULL THEN project_name ELSE NULL END     AS s_project_name,
+        CASE WHEN vo_information_id IS NULL THEN project_name_id ELSE NULL END  AS s_project_name_id,
         ARRAY(SELECT runtimeenvironment_usagedata.runtimeenvironments_id
               FROM runtimeenvironment_usagedata
               WHERE usagedata.id = runtimeenvironment_usagedata.usagedata_id)   AS s_runtime_environments,
@@ -348,7 +392,7 @@ BEGIN
         insert_time::date = q_insert_date AND machine_name_id = q_machine_name_id
     GROUP BY
         s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
-        s_global_user_name_id, s_local_user_id, s_vo_information_id, s_project_name,
+        s_global_user_name_id, s_local_user_id, s_vo_information_id, s_project_name_id,
         s_runtime_environments, s_status_id;
 
     result[0] = q_insert_date::varchar;

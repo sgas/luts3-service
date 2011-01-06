@@ -22,9 +22,9 @@ SELECT
          ELSE NULL
     END                                                             AS s_local_user_id,
     vo_information_id                                               AS s_vo_information_id,
-    CASE WHEN vo_information_id IS NULL THEN project_name
+    CASE WHEN vo_information_id IS NULL THEN project_name_id
          ELSE NULL
-    END                                                             AS s_project_name,
+    END                                                             AS s_project_name_id,
     ARRAY(SELECT runtimeenvironment_usagedata.runtimeenvironments_id
           FROM runtimeenvironment_usagedata
           WHERE usagedata.id = runtimeenvironment_usagedata.usagedata_id) AS s_runtime_environments,
@@ -38,9 +38,9 @@ FROM
 GROUP BY
     s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
     s_global_user_name_id, s_local_user_id, s_vo_information_id,
-    s_project_name, s_runtime_environments, s_status_id
+    s_project_name_id, s_runtime_environments, s_status_id
 ORDER BY
     s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
     s_global_user_name_id, s_local_user_id, s_vo_information_id,
-    s_project_name, s_runtime_environments, s_status_id;
+    s_project_name_id, s_runtime_environments, s_status_id;
 
