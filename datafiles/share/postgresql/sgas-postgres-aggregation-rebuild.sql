@@ -5,42 +5,38 @@
 -- SGAS should NOT be running while this script is running.
 
 
--- first clear the aggregation tables
+-- clear the aggregation tables
 TRUNCATE TABLE uraggregated_data;
 TRUNCATE TABLE uraggregated_update;
 
+-- update all aggregation combinations
+INSERT INTO uraggregated_update SELECT DISTINCT insert_time::DATE, machine_name_id FROM usagedata;
 
--- rebuild everything with a single statement
-INSERT INTO uraggregated_data
-SELECT
-    COALESCE(end_time::DATE, create_time::DATE)                     AS s_execute_time,
-    insert_time::DATE                                               AS s_insert_time,
-    machine_name_id                                                 AS s_machine_name_id,
-    queue_id                                                        AS s_queue_id,
-    global_user_name_id                                             AS s_global_user_name_id,
-    CASE WHEN global_user_name_id IS NULL THEN local_user_id
-         ELSE NULL
-    END                                                             AS s_local_user_id,
-    vo_information_id                                               AS s_vo_information_id,
-    CASE WHEN vo_information_id IS NULL THEN project_name_id
-         ELSE NULL
-    END                                                             AS s_project_name_id,
-    ARRAY(SELECT runtimeenvironment_usagedata.runtimeenvironments_id
-          FROM runtimeenvironment_usagedata
-          WHERE usagedata.id = runtimeenvironment_usagedata.usagedata_id) AS s_runtime_environments,
-    status_id                                                        AS s_status_id,
-    count(*)                                                         AS s_n_jobs,
-    SUM(COALESCE(cpu_duration,0))                                    AS s_cputime,
-    SUM(COALESCE(wall_duration,0) * COALESCE(processors,1))          AS s_walltime,
-    now()                                                            AS s_generate_time
-FROM
-    usagedata
-GROUP BY
-    s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
-    s_global_user_name_id, s_local_user_id, s_vo_information_id,
-    s_project_name_id, s_runtime_environments, s_status_id
-ORDER BY
-    s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
-    s_global_user_name_id, s_local_user_id, s_vo_information_id,
-    s_project_name_id, s_runtime_environments, s_status_id;
+-- function for performing aggregation steps until all done
+CREATE FUNCTION uraggregated_upate_all() RETURNS integer AS $updates$
+DECLARE
+    updates     integer;
+    update_info varchar[];
+BEGIN
+    updates = 0;
+    -- call update_uraggregate until nothing more to do
+    LOOP
+        SELECT update_uraggregate() INTO update_info;
+        IF update_info IS NULL THEN
+            EXIT;
+        END IF;
+        updates = updates + 1;
+    END LOOP;
+    RETURN updates;
+END;
+$updates$
+LANGUAGE plpgsql;
+
+SELECT uraggregated_upate_all();
+
+DROP FUNCTION uraggregated_upate_all();
+
+
+
+
 
