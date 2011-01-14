@@ -2,119 +2,56 @@
 Data processing functionaliy.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2009-2010)
+Copyright: Nordic Data Grid Facility (2009-2011)
 """
 
 
-def createMatrix(rows):
+import json
 
-    row_set = set()
-    col_set = set()
+from sgas.viewengine import viewcore
+
+
+
+def uniqueEntries(rows, idx):
+
+    entries = {}
+    for r in rows:
+        entries[r[idx]] = True
+
+    return entries.keys()
+
+
+def buildDictList(rows, keys):
+
+    entries = []
+
+    for r in rows:
+        assert len(r) == len(keys), 'Row length does not match key length'
+        entries.append( dict( zip(keys, r)) )
+    return entries
+
+
+def createJavascriptData(dict_list):
+
+    jd = json.dumps(dict_list, indent=4)
+    # make the javascript more compact, but still look "nice"
+    jd = jd.replace('{\n        ', '{ ')
+    jd = jd.replace(', \n       ', ',')
+    jd = jd.replace('\n    }, \n', '},\n')
+    jd = jd.replace('\n    }'    , '}')
+    return jd
+
+
+def createMatrix(dict_list):
+
     matrix = {}
 
-    for col_value, row_value, value in rows:
-        row_set.add(row_value)
-        col_set.add(col_value)
-        matrix[row_value,col_value] = value
+    for d in dict_list:
+        batch = d.get(viewcore.BATCH)
+        group = d.get(viewcore.GROUP, 0)
+        value = d.get(viewcore.VALUE)
 
-    rowss   = sorted(row_set)
-    columns = sorted(col_set)
-
-    return matrix, columns, rowss
-
-
-
-def createMatrixList(rows, row_name):
-
-    col_set = set()
-    matrix = {}
-
-    for col_value, value in rows:
-        col_set.add(col_value)
-        matrix[row_name, col_value] = value
-
-    columns = sorted(col_set)
-
-    return matrix, columns
-
-
-
-def createScatterMatrix(rows):
-
-    x_values = set()
-    groups = set()
-    matrix = {}
-
-    for x_val, group, z_val, y_val in rows:
-        x_values.add(x_val)
-        groups.add(group)
-        matrix[group, x_val] = z_val, y_val
-
-    return matrix, sorted(x_values), sorted(groups)
-
-
-
-def linearizeBlanks(matrix, m_rows, m_columns):
-    # set blank values to previous values in data series
-    for mr in m_rows:
-        blank_value = 0
-        for mc in m_columns:
-            if matrix.get((mr,mc)) is None:
-                matrix[mr,mc] = blank_value
-            else:
-                blank_value = matrix[mr,mc]
+        matrix[batch,group] = value
 
     return matrix
-
-
-
-def calculateStackedMaximum(matrix):
-
-    stack_values = {}
-    for (rn, cn), value in matrix.items():
-        stack_values[cn] = stack_values.get(cn, 0) + value
-
-    return max(stack_values.values() + [1])
-
-
-
-def createJSMatrix(matrix, column_names, row_names, fill_value='0'):
-
-    rows = []
-    for rn in row_names:
-        rows.append( '[' + ','.join( [ str(matrix.get((rn,cn), fill_value)) for cn in column_names ] ) + ']' )
-    return ',\n  '.join(rows)
-
-
-
-def createJSTransposedMatrix(matrix, column_names, row_names, fill_value='0'):
-
-    rows = []
-    for cn in column_names:
-        rows.append( '[' + ','.join( [ str(matrix.get((rn,cn), fill_value)) for rn in row_names ] ) + ']' )
-    return ',\n  '.join(rows)
-
-
-
-def createJSList(matrix, column_names, row):
-
-    elements = ','.join( [ str(matrix[row,cn]) or '0' for cn in column_names ] )
-    return elements
-
-
-def createScatterData(matrix, x_values, groups):
-
-    rows = []
-
-    for x_val in x_values:
-        group_rows = []
-        for group in groups:
-            res = matrix.get((group, x_val))
-            if res is not None:
-                group_rows.append( " { x:'%s', group:'%s', z:%s, y:%s }" % (x_val, group, res[0], res[1]) )
-        group_data = '  [' + ',\n   '.join( group_rows ) + ' ]'
-        rows.append(group_data)
-
-    data = ',\n'.join(rows)
-    return data
 

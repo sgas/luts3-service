@@ -5,64 +5,76 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
-from sgas.viewengine import dataprocess, graphbuilder, htmltable
+from sgas.viewengine import viewcore, dataprocess, htmltable
 
-
-DEFAULT_TABLE_RENDER_LIMIT = 15
 
 
 def buildViewPage(view, rows):
     # note, just the body of the page is created, not the entire page
 
-    # this scheme needs to be changed sometime (should be encapsulated into the graph builder)
-    if view.view_type == 'lines':
-        matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
+    batches, groups, dict_list = buildRowAggregates(rows, view)
+    n_batches = len(batches) if batches else 0
+    n_groups  = len(groups)  if groups  else 0
 
-    elif view.view_type == 'columns':
-        row_name = ''
-        matrix, m_columns = dataprocess.createMatrixList(rows, row_name)
-        m_rows = [row_name]
-
-    elif view.view_type == 'stacked_columns':
-        matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
-
-    elif view.view_type == 'grouped_columns':
-        matrix, m_columns, m_rows = dataprocess.createMatrix(rows)
-
-    elif view.view_type == 'discrete_scatterplot':
-        matrix, m_columns, m_rows = dataprocess.createScatterMatrix(rows)
-
-    else:
-        raise AssertionError('Invalid view type specified (%s)' % view.view_type)
-
-    render_table = shouldRenderTable(view, m_columns)
+    render_table = shouldRenderTable(view, n_batches, n_groups)
     render_graph = shouldRenderGraph(view)
 
     body = view.caption + '\n<p>\n'
     if render_table:
-        table = htmltable.createHTMLTable(matrix, m_columns, m_rows)
+        matrix = dataprocess.createMatrix(dict_list)
+        table = htmltable.createHTMLTable(matrix, sorted(batches), sorted(groups))
         body += table
 
     if render_table and render_graph:
         body += '    <p> &nbsp; <p>\n'
 
     if render_graph:
-        graph = graphbuilder.buildGraph(view.view_type, matrix, m_columns, m_rows)
+        js_data = dataprocess.createJavascriptData(dict_list)
+        graph = viewcore.VIEW_TYPES[view.view_type][viewcore.GRAPH_TEMPLATE] % {'data' : js_data}
         body += graph
 
     return body
 
 
 
-def shouldRenderTable(view, rows):
+def buildRowAggregates(rows, view):
 
-    if view.drawtable is not None:
-        return view.drawtable
+    view_cfg = viewcore.VIEW_TYPES[view.view_type]
+
+    batch_idx = view_cfg.get(viewcore.BATCH_IDX, None)
+    group_idx = view_cfg.get(viewcore.GROUP_IDX, None)
+
+    if batch_idx is not None:
+        batches = sorted(dataprocess.uniqueEntries(rows, batch_idx))
     else:
-        if len(rows) > DEFAULT_TABLE_RENDER_LIMIT:
-            return False
-        else:
-            return True
+        batches = None
+
+    if group_idx is not None:
+        groups = sorted(dataprocess.uniqueEntries(rows, group_idx))
+    else:
+        groups = None
+
+    dict_list = dataprocess.buildDictList(rows, viewcore.VIEW_TYPES[view.view_type][viewcore.DATA_TRANSFORM])
+
+    return batches, groups, dict_list
+
+
+
+def shouldRenderTable(view, n_batches, n_groups):
+
+    view_cfg = viewcore.VIEW_TYPES[view.view_type]
+
+    cfg_render = view_cfg.get(viewcore.RENDER_OVERRIDE, view.drawtable)
+    if cfg_render is not None:
+        return cfg_render
+
+    if n_batches > viewcore.DEFAULT_BATCH_TABLE_RENDER_LIMIT:
+        return False
+
+    if n_groups > viewcore.DEFAULT_GROUP_TABLE_RENDER_LIMIT:
+        return False
+
+    return True
 
 
 

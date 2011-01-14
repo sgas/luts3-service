@@ -10,6 +10,7 @@ Copyright: Nordic Data Grid Facility (2009-2010)
 from twisted.python import log
 
 from sgas.server import config
+from sgas.viewengine import viewcore
 
 
 
@@ -52,6 +53,8 @@ def createViewDefinition(view_name, view_config):
 
     for key, value in view_config.items():
         if key == config.VIEW_TYPE:
+            if not value in viewcore.VIEW_TYPES:
+                raise config.ConfigurationError('Invalid view type: %s' % value)
             view_type = value
 
         elif key == config.VIEW_GROUP:
