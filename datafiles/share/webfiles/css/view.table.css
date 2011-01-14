@@ -8,7 +8,7 @@ body {
 
 /* table layout */
 table {
-    width: 1100px; border-collapse: collapse;
+    width: 90%; border-collapse: collapse;
     border-width: 2px 2px 2px 2px; border-spacing: 2px; border-style: double ;
     font-size: 70%; font-family: Verdana, sans-serif;
 }
