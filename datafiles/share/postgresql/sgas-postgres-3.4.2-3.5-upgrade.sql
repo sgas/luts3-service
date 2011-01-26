@@ -4,6 +4,7 @@
 
 -- drop old view and functions so we can change stuff
 DROP VIEW usagerecords;
+DROP VIEW transfers;
 
 DROP FUNCTION urcreate (character varying,
                         timestamp without time zone,
