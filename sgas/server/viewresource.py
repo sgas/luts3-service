@@ -11,62 +11,8 @@ from twisted.web import resource, server
 from sgas.ext.python import json
 from sgas.database import error as dberror
 from sgas.authz import rights
-from sgas.server import resourceutil
-from sgas.viewengine import pagebuilder
-
-
-JSON_MIME_TYPE = 'application/json'
-HTML_MIME_TYPE = 'text/html'
-
-HTTP_HEADER_CONTENT_LENGTH = 'content-length'
-HTTP_HEADER_CONTENT_TYPE   = 'content-type'
-
-
-HTML_HEADER = """<!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>%(title)s</title>
-        <link rel="stylesheet" type="text/css" href="/static/css/view.frontpage.css" />
-    </head>
-    <body>
-"""
-
-HTML_FOOTER = """   </body>
-</html>
-"""
-
-HTML_VIEW_HEADER = """<!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>%(title)s</title>
-        <link rel="stylesheet" type="text/css" href="/static/css/view.table.css" />
-        <script type="text/javascript" src="/static/js/protovis-r3.2.js"></script>
-        <script type="text/javascript" src="/static/js/protovis-helper.js"></script>
-    </head>
-    <body>
-"""
-
-HTML_VIEW_FOOTER = HTML_FOOTER
-
-
-
-
-def getReturnMimeType(request):
-    # given a request, figure out if json or html content should be returned
-    # json is default
-    accepts = request.requestHeaders.getRawHeaders('Accept', [])
-    return_type = 'json'
-    if accepts:
-        for acc in accepts[0].split(','):
-            if acc == JSON_MIME_TYPE:
-                return_type = 'json'
-                break
-            elif acc == HTML_MIME_TYPE:
-                return_type = 'html'
-                break
-    return return_type
+from sgas.server import resourceutil, httphtml
+from sgas.viewengine import pagebuilder, adminmanifest
 
 
 
@@ -89,15 +35,15 @@ def handleViewError(error, request, view_name):
 
 class ViewTopResource(resource.Resource):
 
-    def __init__(self, urdb, authorizer, views):
+    def __init__(self, urdb, authorizer, views, mfst):
         resource.Resource.__init__(self)
         self.urdb = urdb
         self.authorizer = authorizer
 
         self.views = views
 
-        for view in self.views:
-            self.putChild(view.view_name, GraphRenderResource(view, urdb, authorizer))
+        self.putChild('adminmanifest', adminmanifest.AdminManifestResource(urdb, authorizer, mfst))
+        self.putChild('custom', CustomViewTopResource(urdb, authorizer, views))
 
 
     def render_GET(self, request):
@@ -114,18 +60,36 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<p>\n'
         body += 2*ib + '<div>Identity: %(identity)s</div>\n' % {'identity': identity }
         body += 2*ib + '<p>\n'
+        body += 2*ib + '<div><a href=view/adminmanifest>Administrators Manifest</a></div>\n'
+        body += 2*ib + '<p> &nbsp; <p>\n'
+        if self.views:
+            body += 2*ib + '<h4>Custom views</h4>\n'
+
         for view in self.views:
-            body += 2*ib + '<div><a href=view/%s>%s</a></div>\n' % (view.view_name, view.caption)
+            body += 2*ib + '<div><a href=view/custom/%s>%s</a></div>\n' % (view.view_name, view.caption)
+            body += 2*ib + '<p>'
         if not self.views:
             body += 2*ib + '<div>No views defined in configuration file. See docs/views in the documentation for how specify views.</div>\n'
 
-        request.write(HTML_HEADER % {'title': 'View startpage'} )
+        request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': 'View startpage'} )
         request.write(body)
-        request.write(HTML_FOOTER)
-        #request.setResponseCode(200)
+        request.write(httphtml.HTML_VIEWBASE_FOOTER)
         request.finish()
-
         return server.NOT_DONE_YET
+
+
+
+class CustomViewTopResource(resource.Resource):
+
+    def __init__(self, urdb, authorizer, views):
+        resource.Resource.__init__(self)
+        self.urdb = urdb
+        self.authorizer = authorizer
+
+        self.views = views
+
+        for view in self.views:
+            self.putChild(view.view_name, GraphRenderResource(view, urdb, authorizer))
 
 
 
@@ -153,32 +117,18 @@ class GraphRenderResource(resource.Resource):
 
     def renderView(self, request):
 
-        def gotResult(rows, return_type):
-            return_type = 'html'
-            if return_type == 'json':
-                retval = json.dumps(rows)
-                request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_TYPE, [JSON_MIME_TYPE])
-                request.responseHeaders.setRawHeaders(HTTP_HEADER_CONTENT_LENGTH, [str(len(retval))])
-                request.write(json.dumps(rows))
+        def gotResult(rows):
 
-            elif return_type == 'html':
-                # twisted web sets content-type to text/html per default
-                page_body = pagebuilder.buildViewPage(self.view, rows)
+            # twisted web sets content-type to text/html per default
+            page_body = pagebuilder.buildViewPage(self.view, rows)
 
-                request.write(HTML_VIEW_HEADER % {'title': self.view.caption} )
-                request.write(page_body)
-                request.write(HTML_VIEW_FOOTER)
-
-            else:
-                request.setResponseCode(500)
-                request.write('<html><body>Something went wrong when choosing return type</body></html>')
-
+            request.write(httphtml.HTML_VIEW_HEADER % {'title': self.view.caption} )
+            request.write(page_body)
+            request.write(httphtml.HTML_VIEW_FOOTER)
             request.finish()
 
-        return_type = getReturnMimeType(request)
-
         d = self.urdb.query(self.view.query)
-        d.addCallback(gotResult, return_type)
+        d.addCallback(gotResult)
         d.addErrback(handleViewError, request, self.view.view_name)
         return server.NOT_DONE_YET
 
