@@ -49,10 +49,9 @@ def createHTMLTable(matrix, batches, groups, caption=None, base_indent=8, indent
 
 def formatValue(value):
     """
-    Formats an arbitrarely value into a string, suitable for insertion into
-    a table.
+    Formats a value into a string, suitable for insertion into an HTML table.
     """
-    if value == 0:
+    if value is None:
         return ''
 
     if type(value) in (tuple, list):
