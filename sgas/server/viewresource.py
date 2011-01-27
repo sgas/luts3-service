@@ -122,9 +122,9 @@ class GraphRenderResource(resource.Resource):
             # twisted web sets content-type to text/html per default
             page_body = pagebuilder.buildViewPage(self.view, rows)
 
-            request.write(httphtml.HTML_VIEW_HEADER % {'title': self.view.caption} )
+            request.write(httphtml.HTML_VIEWGRAPH_HEADER % {'title': self.view.caption} )
             request.write(page_body)
-            request.write(httphtml.HTML_VIEW_FOOTER)
+            request.write(httphtml.HTML_VIEWGRAPH_FOOTER)
             request.finish()
 
         d = self.urdb.query(self.view.query)

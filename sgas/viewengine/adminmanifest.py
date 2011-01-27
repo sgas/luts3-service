@@ -113,7 +113,7 @@ class AdminManifestResource(resource.Resource):
 
         mfst_props = self.mfst.getAllProperties()
 
-        request.write(httphtml.HTML_TABLE_HEADER % {'title': 'Administrators Manifest'})
+        request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'})
         request.write('<h3>Administrators Manifest</h3>\n')
         request.write('<p>\n')
 
@@ -158,7 +158,7 @@ class AdminManifestResource(resource.Resource):
             request.write('<p>\n')
         request.write('<p>\n')
 
-        request.write(httphtml.HTML_TABLE_FOOTER)
+        request.write(httphtml.HTML_VIEWBASE_FOOTER)
 
         request.finish()
         return server.NOT_DONE_YET
@@ -166,7 +166,7 @@ class AdminManifestResource(resource.Resource):
 
     def renderErrorPage(self, error, request):
 
-        request.write('ERRRRROR')
+        request.write('Error rendering page: %s' % str(error))
         request.finish()
         return server.NOT_DONE_YET
 
