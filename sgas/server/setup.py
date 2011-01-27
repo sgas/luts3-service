@@ -1,13 +1,15 @@
 """
 Server-setup logic
 """
+import time
+
 from twisted.python import log
 from twisted.application import internet, service
 from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.authz import engine
-from sgas.server import config, topresource, insertresource, viewresource, queryresource
+from sgas.server import config, manifest, topresource, insertresource, viewresource, queryresource
 from sgas.database.postgresql import database as pgdatabase, hostscale
 from sgas.viewengine import viewdefinition
 
@@ -27,10 +29,10 @@ class ConfigurationError(Exception):
 
 
 
-def createSite(db, authorizer, views):
+def createSite(db, authorizer, views, mfst):
 
     rr = insertresource.InsertResource(db, authorizer)
-    vr = viewresource.ViewTopResource(db, authorizer, views)
+    vr = viewresource.ViewTopResource(db, authorizer, views, mfst)
     qr = queryresource.QueryResource(db, authorizer)
 
     tr = topresource.TopResource(authorizer)
@@ -47,23 +49,23 @@ def createSite(db, authorizer, views):
 
 
 
-def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
+def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None):
 
     cfg = config.readConfig(config_file)
 
     # check for whitelist and fail if it is there
     # a bit harsh, but the config needs to be updated for the system to work
-    if cfg.get(config.SERVER_BLOCK, config.HOSTNAME_CHECK_WHITELIST):
+    if config.HOSTNAME_CHECK_WHITELIST in cfg.options(config.SERVER_BLOCK):
         raise ConfigurationError('Whitelist no longer supported, use "insert:all" in sgas.authz')
 
     # some friendly messages from your service configuration
-    if cfg.get(config.SERVER_BLOCK, config.HOSTKEY):
+    if config.HOSTKEY in cfg.options(config.SERVER_BLOCK):
         log.msg('Option: hostkey can be removed from config file (no longer optional)', system='sgas.Setup')
-    if cfg.get(config.SERVER_BLOCK, config.HOSTCERT):
+    if config.HOSTCERT in cfg.options(config.SERVER_BLOCK):
         log.msg('Option:hostcert can be removed from config file (no longer optional)', system='sgas.Setup')
-    if cfg.get(config.SERVER_BLOCK, config.CERTDIR):
+    if config.CERTDIR in cfg.options(config.SERVER_BLOCK):
         log.msg('Option: certdir can be removed from config file (no longer optional)', system='sgas.Setup')
-    if cfg.get(config.SERVER_BLOCK, config.REVERSE_PROXY):
+    if config.REVERSE_PROXY in cfg.options(config.SERVER_BLOCK):
         log.msg('Option: reverse_proxy can be removed from config file (no longer optional)', system='sgas.Setup')
 
     # check depth
@@ -72,8 +74,15 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
     except ValueError: # in case casting goes wrong
         raise ConfigurationError('Configured check depth is invalid')
 
+    mfst = manifest.Manifest()
+    mfst.setProperty('start_time', time.asctime())
+
     # authz
-    authorizer = engine.AuthorizationEngine(check_depth, cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
+    if no_authz:
+        from test import utils
+        authorizer = utils.FakeAuthorizer()
+    else:
+        authorizer = engine.AuthorizationEngine(check_depth, cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
 
     # database
     db_url = cfg.get(config.SERVER_BLOCK, config.DB)
@@ -94,7 +103,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, port=None):
 
     # http site
     views = viewdefinition.buildViewList(cfg)
-    site = createSite(db, authorizer, views)
+    site = createSite(db, authorizer, views, mfst)
 
     # application
     application = service.Application("sgas")
