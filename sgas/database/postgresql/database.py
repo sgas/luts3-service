@@ -5,6 +5,7 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
 """
 
+import types
 import decimal
 
 import psycopg2
@@ -57,11 +58,12 @@ class _DatabasePoolProxy:
 
 
 
-class PostgreSQLDatabase(service.Service):
+class PostgreSQLDatabase(service.MultiService):
 
     implements(ISGASDatabase)
 
     def __init__(self, connect_info):
+        service.MultiService.__init__(self)
         self.pool_proxy = _DatabasePoolProxy(connect_info)
         #self.dbpool = self._setupPool(self.connect_info)
         self.updater = updater.AggregationUpdater(self.pool_proxy)
@@ -134,7 +136,7 @@ class PostgreSQLDatabase(service.Service):
     def query(self, query, query_args=None, retry=False):
 
         def buildValue(value):
-            if type(value) in (unicode, str, int, long, float, bool):
+            if type(value) in (unicode, str, int, long, float, bool, types.NoneType):
                 return value
             if isinstance(value, decimal.Decimal):
                 sv = str(value)
