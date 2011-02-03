@@ -12,7 +12,7 @@ from sgas.ext.python import json
 from sgas.database import error as dberror
 from sgas.authz import rights
 from sgas.server import resourceutil, httphtml
-from sgas.viewengine import pagebuilder, adminmanifest
+from sgas.viewengine import pagebuilder, adminmanifest, machineview
 
 
 
@@ -43,6 +43,7 @@ class ViewTopResource(resource.Resource):
         self.views = views
 
         self.putChild('adminmanifest', adminmanifest.AdminManifestResource(urdb, authorizer, mfst))
+        self.putChild('machines', machineview.MachineListView(urdb, authorizer, mfst))
         self.putChild('custom', CustomViewTopResource(urdb, authorizer, views))
 
 
@@ -61,6 +62,8 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<div>Identity: %(identity)s</div>\n' % {'identity': identity }
         body += 2*ib + '<p>\n'
         body += 2*ib + '<div><a href=view/adminmanifest>Administrators Manifest</a></div>\n'
+        body += 2*ib + '<p>\n'
+        body += 2*ib + '<div><a href=view/machines>Machine list</a></div>\n'
         body += 2*ib + '<p> &nbsp; <p>\n'
         if self.views:
             body += 2*ib + '<h4>Custom views</h4>\n'
