@@ -12,7 +12,7 @@ from twisted.web import server, resource
 from sgas import __version__ as sgas_version
 from sgas.authz import rights
 from sgas.server import httphtml, resourceutil
-from sgas.viewengine import htmltable
+from sgas.viewengine import htmltable, baseview
 
 
 # Various stat queries
@@ -42,14 +42,7 @@ SELECT DISTINCT machine_name FROM uraggregated WHERE insert_time > current_date 
 
 
 
-class AdminManifestResource(resource.Resource):
-
-    def __init__(self, urdb, authorizer, mfst):
-
-        resource.Resource.__init__(self)
-        self.urdb = urdb
-        self.authorizer = authorizer
-        self.mfst = mfst
+class AdminManifestResource(baseview.BaseView):
 
 
     def render_GET(self, request):
@@ -59,15 +52,10 @@ class AdminManifestResource(resource.Resource):
         ctx = [ rights.CTX_VIEWGROUP, 'admin' ]
         if self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             d = self.retrieveDatabaseStats()
-            d.addCallbacks(self.renderAdminManifestPage, self.renderErrorPage,
-                           callbackArgs=(request,), errbackArgs=(request,))
+            d.addCallbacks(self.renderAdminManifestPage, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
             return server.NOT_DONE_YET
         else:
-            request.write(httphtml.HTML_BASE_HEADER % {'title': 'Authorization Error'})
-            request.write('Access to admins manifest not allowed for %s' % (subject))
-            request.write(httphtml.HTML_BASE_FOOTER)
-            request.finish()
-            return server.NOT_DONE_YET
+            return self.renderAuthzErrorPage(request, 'administrators manifest', subject)
 
 
     def retrieveDatabaseStats(self):
@@ -111,7 +99,7 @@ class AdminManifestResource(resource.Resource):
         matrix = dict( [ ((i[0], groups[0]), i[1]) for i in inserts_per_day ] )
         inserts_table = htmltable.createHTMLTable(matrix, batches, groups)
 
-        mfst_props = self.mfst.getAllProperties()
+        manifest_props = self.manifest.getAllProperties()
 
         request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'})
         request.write('<h3>Administrators Manifest</h3>\n')
@@ -121,7 +109,7 @@ class AdminManifestResource(resource.Resource):
         request.write('<h4>Service</h4>\n')
         request.write('SGAS version: %s\n' % sgas_version)
         request.write('<p>\n')
-        request.write('Up since: %s' % mfst_props['start_time'])
+        request.write('Up since: %s' % manifest_props['start_time'])
         request.write('<p>\n')
 
         # database info
@@ -160,13 +148,6 @@ class AdminManifestResource(resource.Resource):
 
         request.write(httphtml.HTML_VIEWBASE_FOOTER)
 
-        request.finish()
-        return server.NOT_DONE_YET
-
-
-    def renderErrorPage(self, error, request):
-
-        request.write('Error rendering page: %s' % str(error))
         request.finish()
         return server.NOT_DONE_YET
 
