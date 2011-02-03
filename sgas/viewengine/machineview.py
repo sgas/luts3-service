@@ -26,7 +26,7 @@ GROUP BY d.dates ORDER BY d.dates;
 """
 
 QUERY_TOP10_PROJECTS = """
-SELECT vo_name, (sum(walltime) / 24)::integer as walltime, sum(n_jobs)
+SELECT vo_name, (sum(walltime) / 24)::integer as walltime, ((sum(cputime) * 100.0) / sum(walltime))::integer as efficiancy, sum(n_jobs)
 FROM uraggregated
 WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
 GROUP BY vo_name
@@ -35,7 +35,7 @@ LIMIT 20;
 """
 
 QUERY_TOP20_USERS = """
-SELECT user_identity, (sum(walltime) / 24)::integer as walltime, sum(n_jobs)
+SELECT user_identity, (sum(walltime) / 24)::integer as walltime, ((sum(cputime) * 100.0) / sum(walltime))::integer as efficiancy, sum(n_jobs)
 FROM uraggregated
 WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
 GROUP BY user_identity
@@ -143,21 +143,23 @@ class MachineView(baseview.BaseView):
         e_matrix  = dict( [ ((e[0], e_groups[0]), e[1]) for e in jobs_per_day ] )
         executed_table = htmltable.createHTMLTable(e_matrix, e_batches, e_groups)
 
-        p_batches = [ 'Walltime days', 'Number of jobs' ]
+        stats_batches = [ 'Walltime days', 'Efficiancy', 'Number of jobs' ]
+
         p_groups = [ e[0] for e in top_projects ] # user list
         p_dict_elements = []
-        p_dict_elements += [ ((p_batches[0], p[0]), p[1]) for p in top_projects ]
-        p_dict_elements += [ ((p_batches[1], p[0]), p[2]) for p in top_projects ]
+        p_dict_elements += [ ((stats_batches[0], p[0]), p[1]) for p in top_projects ]
+        p_dict_elements += [ ((stats_batches[1], p[0]), p[2]) for p in top_projects ]
+        p_dict_elements += [ ((stats_batches[2], p[0]), p[3]) for p in top_projects ]
         p_matrix = dict(p_dict_elements)
-        project_table = htmltable.createHTMLTable(p_matrix, p_batches, p_groups)
+        project_table = htmltable.createHTMLTable(p_matrix, stats_batches, p_groups)
 
-        u_batches = [ 'Walltime days', 'Number of jobs' ]
         u_groups = [ e[0] for e in top_users ] # user list
         u_dict_elements = []
-        u_dict_elements += [ ((u_batches[0], u[0]), u[1]) for u in top_users ]
-        u_dict_elements += [ ((u_batches[1], u[0]), u[2]) for u in top_users ]
+        u_dict_elements += [ ((stats_batches[0], u[0]), u[1]) for u in top_users ]
+        u_dict_elements += [ ((stats_batches[1], u[0]), u[2]) for u in top_users ]
+        u_dict_elements += [ ((stats_batches[2], u[0]), u[3]) for u in top_users ]
         u_matrix = dict(u_dict_elements)
-        user_table = htmltable.createHTMLTable(u_matrix, u_batches, u_groups)
+        user_table = htmltable.createHTMLTable(u_matrix, stats_batches, u_groups)
 
         title = 'Machine view for %s' % self.machine_name
 
