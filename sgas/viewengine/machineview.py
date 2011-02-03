@@ -20,13 +20,13 @@ QUERY_MACHINE_LIST = """SELECT machine_name FROM machinename;"""
 
 QUERY_EXECUTED_JOBS_PER_DAY = """
 SELECT d.dates, sum(n_jobs)
-FROM (SELECT current_date - s as dates FROM generate_series(0,8) as s) as d
+FROM (SELECT current_date - s as dates FROM generate_series(0,10) as s) as d
   LEFT OUTER JOIN uraggregated ON (d.dates = uraggregated.execution_time::date AND machine_name = %s)
 GROUP BY d.dates ORDER BY d.dates;
 """
 
 QUERY_TOP10_PROJECTS = """
-SELECT vo_name, sum(walltime)::integer as walltime, sum(n_jobs)
+SELECT vo_name, (sum(walltime) / 24)::integer as walltime, sum(n_jobs)
 FROM uraggregated
 WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
 GROUP BY vo_name
@@ -35,7 +35,7 @@ LIMIT 20;
 """
 
 QUERY_TOP20_USERS = """
-SELECT user_identity, sum(walltime)::integer as walltime, sum(n_jobs)
+SELECT user_identity, (sum(walltime) / 24)::integer as walltime, sum(n_jobs)
 FROM uraggregated
 WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
 GROUP BY user_identity
@@ -143,7 +143,7 @@ class MachineView(baseview.BaseView):
         e_matrix  = dict( [ ((e[0], e_groups[0]), e[1]) for e in jobs_per_day ] )
         executed_table = htmltable.createHTMLTable(e_matrix, e_batches, e_groups)
 
-        p_batches = [ 'Walltime hours', 'Number of jobs' ]
+        p_batches = [ 'Walltime days', 'Number of jobs' ]
         p_groups = [ e[0] for e in top_projects ] # user list
         p_dict_elements = []
         p_dict_elements += [ ((p_batches[0], p[0]), p[1]) for p in top_projects ]
@@ -151,7 +151,7 @@ class MachineView(baseview.BaseView):
         p_matrix = dict(p_dict_elements)
         project_table = htmltable.createHTMLTable(p_matrix, p_batches, p_groups)
 
-        u_batches = [ 'Walltime hours', 'Number of jobs' ]
+        u_batches = [ 'Walltime days', 'Number of jobs' ]
         u_groups = [ e[0] for e in top_users ] # user list
         u_dict_elements = []
         u_dict_elements += [ ((u_batches[0], u[0]), u[1]) for u in top_users ]
@@ -165,7 +165,7 @@ class MachineView(baseview.BaseView):
         request.write('<h3>%s</h3>\n' % title)
         request.write('<p> &nbsp; <p>\n')
 
-        request.write('<h5>Executed jobs in the last eight days</h5>\n')
+        request.write('<h5>Executed jobs in the last ten days</h5>\n')
         request.write(executed_table)
         request.write('<p> &nbsp; <p>\n')
 
