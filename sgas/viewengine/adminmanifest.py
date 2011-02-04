@@ -103,28 +103,28 @@ class AdminManifestResource(baseview.BaseView):
 
         request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'})
         request.write('<h3>Administrators Manifest</h3>\n')
-        request.write('<p>\n')
+        request.write('<p> &nbsp; <p>\n\n')
 
         # service info
         request.write('<h4>Service</h4>\n')
         request.write('SGAS version: %s\n' % sgas_version)
         request.write('<p>\n')
-        request.write('Up since: %s' % manifest_props['start_time'])
-        request.write('<p>\n')
+        request.write('Up since: %s\n' % manifest_props['start_time'])
+        request.write('<p> &nbsp; <p>\n\n')
 
         # database info
         request.write('<h4>Database</h4>\n')
         request.write('Number of usage records: %s\n' % n_jobs)
         request.write('<p>\n')
         request.write('Database size: %s\n' % db_size)
-        request.write('<p>\n')
+        request.write('<p> &nbsp; <p>\n\n')
 
         # registration info
         request.write('<h4>Registrations</h4>\n')
 
         request.write('<h5>Registrations over the last 8 days:</h5>\n')
         request.write(inserts_table)
-        request.write('<p>\n')
+        request.write('<p> &nbsp; <p>\n\n')
 
         request.write('<h5>Machines which has registered records today:</h5>\n')
         request.write('<p>\n')
@@ -134,7 +134,7 @@ class AdminManifestResource(baseview.BaseView):
         if not machines_inserted_today:
             request.write('(none)\n')
             request.write('<p>\n')
-        request.write('<p>\n')
+        request.write('<p> &nbsp; <p>\n\n')
 
         request.write('<h5>Machines which has registered records within the last two months, but not in the last three days:</h5>\n')
         request.write('<p>\n')
