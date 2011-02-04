@@ -165,7 +165,7 @@ class MachineView(baseview.BaseView):
         e_matrix  = dict( [ ((e[0], e_groups[0]), e[1]) for e in jobs_per_day ] )
         executed_table = htmltable.createHTMLTable(e_matrix, e_batches, e_groups)
 
-        stats_batches = [ 'Walltime days', 'Efficiancy', 'Number of jobs' ]
+        stats_batches = [ 'Walltime days', 'Efficiency', 'Number of jobs' ]
 
         p_groups = [ e[0] for e in top_projects ] # user list
         p_dict_elements = []
