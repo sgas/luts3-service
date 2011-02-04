@@ -18,6 +18,19 @@ from sgas.viewengine import htmltable, baseview
 
 QUERY_MACHINE_LIST = """SELECT machine_name FROM machinename;"""
 
+QUERY_MACHINE_MANIFEST = """
+SELECT  min(insert_time)    AS first_record_registration,
+        max(insert_time)    AS last_record_registration,
+        min(execution_time) AS first_job_start,
+        max(execution_time) AS last_job_termination,
+        count(distinct user_identity) AS distinct_users,
+        count(distinct vo_name) AS distinct_projects,
+        sum(n_jobs)         AS jobs
+FROM uraggregated
+WHERE machine_name = %s;
+"""
+
+
 QUERY_EXECUTED_JOBS_PER_DAY = """
 SELECT d.dates, sum(n_jobs)
 FROM (SELECT current_date - s as dates FROM generate_series(0,10) as s) as d
@@ -124,7 +137,7 @@ class MachineView(baseview.BaseView):
     def retrieveMachineInfo(self):
 
         defs = []
-        for query in [ QUERY_EXECUTED_JOBS_PER_DAY, QUERY_TOP10_PROJECTS, QUERY_TOP20_USERS ]:
+        for query in [ QUERY_MACHINE_MANIFEST, QUERY_EXECUTED_JOBS_PER_DAY, QUERY_TOP10_PROJECTS, QUERY_TOP20_USERS ]:
             d = self.urdb.query(query, (self.machine_name,))
             defs.append(d)
 
@@ -134,9 +147,18 @@ class MachineView(baseview.BaseView):
 
     def renderMachineView(self, results, request):
 
-        jobs_per_day = results[0][1]
-        top_projects = results[1][1]
-        top_users    = results[2][1]
+        machine_manifest = results[0][1][0]
+        jobs_per_day     = results[1][1]
+        top_projects     = results[2][1]
+        top_users        = results[3][1]
+
+        first_record_registration   = machine_manifest[0]
+        last_record_registration    = machine_manifest[1]
+        first_job_start             = machine_manifest[2]
+        last_job_termination        = machine_manifest[3]
+        distinct_users              = machine_manifest[4]
+        distinct_projects           = machine_manifest[5]
+        n_jobs                      = machine_manifest[6]
 
         e_batches = [ e[0] for e in jobs_per_day ] # dates
         e_groups  = [ 'jobs' ]
@@ -165,6 +187,23 @@ class MachineView(baseview.BaseView):
 
         request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': title})
         request.write('<h3>%s</h3>\n' % title)
+        request.write('<p> &nbsp; <p>\n')
+
+        request.write('<h5>Manifest</h5>\n')
+        request.write('<p>\n')
+        request.write('First record registration: %s' % first_record_registration)
+        request.write('<p>\n')
+        request.write('Last record registration: %s' % last_record_registration)
+        request.write('<p>\n')
+        request.write('First job start: %s' % first_job_start)
+        request.write('<p>\n')
+        request.write('Last job termination: %s' % last_job_termination)
+        request.write('<p>\n')
+        request.write('Distinct users: %s' % distinct_users)
+        request.write('<p>\n')
+        request.write('Distinct projects: %s' % distinct_projects)
+        request.write('<p>\n')
+        request.write('Number of jobs: %s' % n_jobs)
         request.write('<p> &nbsp; <p>\n')
 
         request.write('<h5>Executed jobs in the last ten days</h5>\n')
