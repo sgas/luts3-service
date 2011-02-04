@@ -19,27 +19,34 @@ from sgas.viewengine import htmltable, baseview
 QUERY_MACHINE_LIST = """SELECT machine_name FROM machinename;"""
 
 QUERY_MACHINE_MANIFEST = """
-SELECT  min(insert_time)    AS first_record_registration,
-        max(insert_time)    AS last_record_registration,
-        min(execution_time) AS first_job_start,
-        max(execution_time) AS last_job_termination,
-        count(distinct user_identity) AS distinct_users,
-        count(distinct vo_name) AS distinct_projects,
-        sum(n_jobs)         AS jobs
+SELECT
+    min(insert_time)    AS first_record_registration,
+    max(insert_time)    AS last_record_registration,
+    min(execution_time) AS first_job_start,
+    max(execution_time) AS last_job_termination,
+    count(distinct user_identity) AS distinct_users,
+    count(distinct vo_name) AS distinct_projects,
+    sum(n_jobs)         AS jobs
 FROM uraggregated
 WHERE machine_name = %s;
 """
 
 
 QUERY_EXECUTED_JOBS_PER_DAY = """
-SELECT d.dates, sum(n_jobs)
+SELECT
+    d.dates,
+    sum(n_jobs)
 FROM (SELECT current_date - s as dates FROM generate_series(0,10) as s) as d
   LEFT OUTER JOIN uraggregated ON (d.dates = uraggregated.execution_time::date AND machine_name = %s)
 GROUP BY d.dates ORDER BY d.dates;
 """
 
 QUERY_TOP10_PROJECTS = """
-SELECT vo_name, (sum(walltime) / 24)::integer as walltime, ((sum(cputime) * 100.0) / sum(walltime))::integer as efficiancy, sum(n_jobs)
+SELECT
+    vo_name,
+    (sum(walltime) / 24)::integer AS walltime,
+    CASE WHEN sum(walltime)::integer = 0 THEN null ELSE ((sum(cputime) * 100.0) / sum(walltime))::integer END AS efficiancy,
+    sum(n_jobs)
 FROM uraggregated
 WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
 GROUP BY vo_name
@@ -48,7 +55,11 @@ LIMIT 20;
 """
 
 QUERY_TOP20_USERS = """
-SELECT user_identity, (sum(walltime) / 24)::integer as walltime, ((sum(cputime) * 100.0) / sum(walltime))::integer as efficiancy, sum(n_jobs)
+SELECT
+    user_identity,
+    (sum(walltime) / 24)::integer as walltime,
+    CASE WHEN sum(walltime)::integer = 0 THEN null ELSE ((sum(cputime) * 100.0) / sum(walltime))::integer END as efficiancy,
+    sum(n_jobs)
 FROM uraggregated
 WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
 GROUP BY user_identity
