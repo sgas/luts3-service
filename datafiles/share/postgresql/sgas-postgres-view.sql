@@ -99,7 +99,7 @@ SELECT
              ELSE voinformation.vo_issuer
         END
         ELSE NULL
-    END                                                                             AS s_vo_issuer,
+    END                                                                             AS vo_issuer,
     CASE WHEN vo_information_id IS NOT NULL THEN
         CASE WHEN voinformation.vo_name LIKE '/%' THEN NULL
              ELSE voinformation.vo_name
