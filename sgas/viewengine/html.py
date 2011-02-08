@@ -57,3 +57,16 @@ def createParagraph(text):
     return _INDENT + text + ' <p>\n'
 
 
+def createSelector(title, name, options, current_option=None):
+
+    selector = _INDENT + title + '\n' + _INDENT + ' <select name=%s>' % name
+    for o in options:
+        assert type(o) is str, 'Selector option must be a string'
+        if current_option == o:
+            selector += _INDENT * 2 + '<option selected>%s</option>\n' % o
+        else:
+            selector += _INDENT * 2 + '<option>%s</option>\n' % o
+    selector += _INDENT + '</select>\n'
+    return selector
+
+

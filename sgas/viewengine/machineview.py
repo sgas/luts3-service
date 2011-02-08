@@ -259,30 +259,21 @@ class MachineView(baseview.BaseView):
         start_date_option = request.args.get('startdate', [''])[0]
         end_date_option   = request.args.get('enddate', [''])[0]
 
-        month_options = [ '', '2010-09', '2010-10', '2010-11', '2010-12', '2011-01', '2011-02' ]
+        # generate year-month options one year back
+        month_options = ['']
+        gmt = time.gmtime()
+        for i in range(gmt.tm_mon-12, gmt.tm_mon+1):
+            if i <= 0:
+                month_options.append('%i-%02d' % (gmt.tm_year - 1, 12 + i) )
+            elif i > 0:
+                month_options.append('%i-%02d' % (gmt.tm_year, i) )
 
+        request.write('\n    <form name="input" action="%s" method="get">\n' % self.machine_name)
+        request.write( html.createSelector('Start month', 'startdate', month_options, start_date_option) )
+        request.write('    &nbsp; &nbsp;\n')
+        request.write( html.createSelector('End month', 'enddate', month_options, end_date_option) )
+        request.write('    &nbsp; &nbsp;\n')
         request.write('''
-    <form name="input" action="%s" method="get">
-        Start month: <select name=startdate>''' % self.machine_name)
-        for mo in month_options:
-            if start_date_option == mo:
-                request.write('''            <option selected>%s</option>\n''' % mo)
-            else:
-                request.write('''            <option>%s</option>\n''' % mo)
-        request.write('''        </select>
-
-        &nbsp; &nbsp;
-
-        End month: <select name=enddate>''')
-        for mo in month_options:
-            if end_date_option == mo:
-                request.write('''            <option selected>%s</option>\n''' % mo)
-            else:
-                request.write('''            <option>%s</option>\n''' % mo)
-        request.write('''        </select>
-
-        &nbsp; &nbsp;
-
     <input type="submit" value="Submit" />
     </form>\n\n''')
 
