@@ -17,6 +17,11 @@ from sgas.queryengine import parser as queryparser, builder as querybuilder, row
 
 
 
+JSON_MIME_TYPE = 'application/json'
+HTTP_HEADER_CONTENT_TYPE   = 'content-type'
+
+
+
 class QueryResource(resource.Resource):
 
     isLeaf = True
@@ -58,6 +63,7 @@ class QueryResource(resource.Resource):
         def gotDatabaseResult(rows):
             records = queryrowrp.buildDictRecords(rows, query_args)
             payload = json.dumps(records)
+            request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
             request.write(payload)
             request.finish()
 

@@ -11,8 +11,8 @@ from twisted.web import server, resource
 
 from sgas import __version__ as sgas_version
 from sgas.authz import rights
-from sgas.server import httphtml, resourceutil
-from sgas.viewengine import htmltable, baseview
+from sgas.server import resourceutil
+from sgas.viewengine import html, htmltable, baseview
 
 
 # Various stat queries
@@ -101,7 +101,7 @@ class AdminManifestResource(baseview.BaseView):
 
         manifest_props = self.manifest.getAllProperties()
 
-        request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'})
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'})
         request.write('<h3>Administrators Manifest</h3>\n')
         request.write('<p> &nbsp; <p>\n\n')
 
@@ -146,7 +146,7 @@ class AdminManifestResource(baseview.BaseView):
             request.write('<p>\n')
         request.write('<p>\n')
 
-        request.write(httphtml.HTML_VIEWBASE_FOOTER)
+        request.write(html.HTML_VIEWBASE_FOOTER)
 
         request.finish()
         return server.NOT_DONE_YET

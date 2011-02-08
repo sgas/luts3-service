@@ -1,15 +1,9 @@
 """
-Various HTTP and HTML constants and templating.
+HTML templating for viewengine.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010-2011)
 """
-
-JSON_MIME_TYPE = 'application/json'
-HTML_MIME_TYPE = 'text/html'
-
-HTTP_HEADER_CONTENT_LENGTH = 'content-length'
-HTTP_HEADER_CONTENT_TYPE   = 'content-type'
 
 
 HTML_VIEWBASE_HEADER = """<!DOCTYPE html>

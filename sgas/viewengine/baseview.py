@@ -9,7 +9,7 @@ Copyright: Nordic Data Grid Facility (2011)
 from twisted.internet import defer
 from twisted.web import server, resource
 
-from sgas.server import httphtml
+from sgas.viewengine import html
 
 
 
@@ -33,9 +33,9 @@ class BaseView(resource.Resource):
 
     def renderAuthzErrorPage(self, request, pagename, subject):
 
-        request.write(httphtml.HTML_BASE_HEADER % {'title': 'Authorization Error'})
+        request.write(html.HTML_BASE_HEADER % {'title': 'Authorization Error'})
         request.write('Access to %s not allowed for %s' % (pagename, subject))
-        request.write(httphtml.HTML_BASE_FOOTER)
+        request.write(html.HTML_BASE_FOOTER)
         request.finish()
         return server.NOT_DONE_YET
 

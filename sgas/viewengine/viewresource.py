@@ -11,8 +11,8 @@ from twisted.web import resource, server
 from sgas.ext.python import json
 from sgas.database import error as dberror
 from sgas.authz import rights
-from sgas.server import resourceutil, httphtml
-from sgas.viewengine import pagebuilder, adminmanifest, machineview
+from sgas.server import resourceutil
+from sgas.viewengine import html, pagebuilder, adminmanifest, machineview
 
 
 
@@ -74,9 +74,9 @@ class ViewTopResource(resource.Resource):
         if not self.views:
             body += 2*ib + '<div>No views defined in configuration file. See docs/views in the documentation for how specify views.</div>\n'
 
-        request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': 'View startpage'} )
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'View startpage'} )
         request.write(body)
-        request.write(httphtml.HTML_VIEWBASE_FOOTER)
+        request.write(html.HTML_VIEWBASE_FOOTER)
         request.finish()
         return server.NOT_DONE_YET
 
@@ -125,9 +125,9 @@ class GraphRenderResource(resource.Resource):
             # twisted web sets content-type to text/html per default
             page_body = pagebuilder.buildViewPage(self.view, rows)
 
-            request.write(httphtml.HTML_VIEWGRAPH_HEADER % {'title': self.view.caption} )
+            request.write(html.HTML_VIEWGRAPH_HEADER % {'title': self.view.caption} )
             request.write(page_body)
-            request.write(httphtml.HTML_VIEWGRAPH_FOOTER)
+            request.write(html.HTML_VIEWGRAPH_FOOTER)
             request.finish()
 
         d = self.urdb.query(self.view.query)

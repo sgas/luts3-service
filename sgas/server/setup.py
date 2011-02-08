@@ -9,9 +9,9 @@ from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.authz import engine
-from sgas.server import config, manifest, topresource, insertresource, viewresource, queryresource
+from sgas.server import config, manifest, topresource, insertresource, queryresource
 from sgas.database.postgresql import database as pgdatabase, hostscale
-from sgas.viewengine import viewdefinition
+from sgas.viewengine import viewdefinition, viewresource
 
 
 # -- constants

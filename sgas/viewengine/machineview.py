@@ -12,8 +12,8 @@ from twisted.internet import defer
 from twisted.web import server
 
 from sgas.authz import rights
-from sgas.server import httphtml, resourceutil
-from sgas.viewengine import htmltable, baseview
+from sgas.server import resourceutil
+from sgas.viewengine import html, htmltable, baseview
 
 
 # Various stat queries
@@ -107,7 +107,7 @@ class MachineListView(baseview.BaseView):
         machines = [ r[0] for r in results]
         title = 'Machine list'
 
-        request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': title})
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': title})
         request.write('<h3>%s</h3>\n' % title)
         request.write('<p>\n')
 
@@ -116,7 +116,7 @@ class MachineListView(baseview.BaseView):
             request.write('<div><a href=machines/%s>%s</a></div>\n' % (machine, machine))
             request.write('<p>\n')
 
-        request.write(httphtml.HTML_VIEWBASE_FOOTER)
+        request.write(html.HTML_VIEWBASE_FOOTER)
 
         request.finish()
         return server.NOT_DONE_YET
@@ -253,8 +253,8 @@ class MachineView(baseview.BaseView):
 
         title = 'Machine view for %s' % self.machine_name
 
-        request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': title})
-        request.write( httphtml.createTitle(title) )
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': title})
+        request.write( html.createTitle(title) )
 
         start_date_option = request.args.get('startdate', [''])[0]
         end_date_option   = request.args.get('enddate', [''])[0]
@@ -286,29 +286,29 @@ class MachineView(baseview.BaseView):
     <input type="submit" value="Submit" />
     </form>\n\n''')
 
-        request.write( httphtml.createSectionTitle('Manifest') )
-        request.write( httphtml.createParagraph('First record registration: %s' % first_record_registration) )
-        request.write( httphtml.createParagraph('Last record registration: %s' % last_record_registration) )
-        request.write( httphtml.createParagraph('First job start: %s' % first_job_start) )
-        request.write( httphtml.createParagraph('Last job termination: %s' % last_job_termination) )
-        request.write( httphtml.createParagraph('Distinct users: %s' % distinct_users) )
-        request.write( httphtml.createParagraph('Distinct projects: %s' % distinct_projects) )
-        request.write( httphtml.createParagraph('Number of jobs: %s' % n_jobs) )
-        request.write( httphtml.SECTION_BREAK )
+        request.write( html.createSectionTitle('Manifest') )
+        request.write( html.createParagraph('First record registration: %s' % first_record_registration) )
+        request.write( html.createParagraph('Last record registration: %s' % last_record_registration) )
+        request.write( html.createParagraph('First job start: %s' % first_job_start) )
+        request.write( html.createParagraph('Last job termination: %s' % last_job_termination) )
+        request.write( html.createParagraph('Distinct users: %s' % distinct_users) )
+        request.write( html.createParagraph('Distinct projects: %s' % distinct_projects) )
+        request.write( html.createParagraph('Number of jobs: %s' % n_jobs) )
+        request.write( html.SECTION_BREAK )
 
-        request.write( httphtml.createSectionTitle('Executed jobs in the last ten days') )
+        request.write( html.createSectionTitle('Executed jobs in the last ten days') )
         request.write( executed_table )
-        request.write( httphtml.SECTION_BREAK)
+        request.write( html.SECTION_BREAK)
 
-        request.write( httphtml.createSectionTitle('Top 10 projects in the selected range (current month if not selected)') )
+        request.write( html.createSectionTitle('Top 10 projects in the selected range (current month if not selected)') )
         request.write( project_table )
-        request.write( httphtml.SECTION_BREAK )
+        request.write( html.SECTION_BREAK )
 
-        request.write( httphtml.createSectionTitle('Top 20 users in the selected date range (current month if not selected)') )
+        request.write( html.createSectionTitle('Top 20 users in the selected date range (current month if not selected)') )
         request.write( user_table )
-        request.write( httphtml.P + '\n' )
+        request.write( html.P + '\n' )
 
-        request.write(httphtml.HTML_VIEWBASE_FOOTER)
+        request.write(html.HTML_VIEWBASE_FOOTER)
 
         request.finish()
         return server.NOT_DONE_YET
