@@ -13,6 +13,13 @@ from sgas.server import httphtml
 
 
 
+class ViewError(Exception):
+    """
+    Base error class for view errors.
+    """
+
+
+
 class BaseView(resource.Resource):
 
 

@@ -1,5 +1,5 @@
 """
-Various HTTP and HTML constants.
+Various HTTP and HTML constants and templating.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010-2011)
@@ -39,4 +39,27 @@ HTML_VIEWGRAPH_HEADER = """<!DOCTYPE html>
 """
 
 HTML_VIEWGRAPH_FOOTER  = HTML_VIEWBASE_FOOTER
+
+
+
+_INDENT = ' ' * 4
+
+P = _INDENT + '<p>\n'
+SECTION_BREAK = _INDENT + '<p> &nbsp; \n' + P + '\n'
+
+
+def createTitle(title):
+
+    return _INDENT + '<h3>' + title + '</h3>' + '\n' + P
+
+
+def createSectionTitle(title):
+
+    return _INDENT + '<h5>' + title + '</h5>' + '\n' + P
+
+
+def createParagraph(text):
+
+    return _INDENT + text + ' <p>\n'
+
 

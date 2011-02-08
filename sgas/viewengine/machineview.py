@@ -5,6 +5,8 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2011)
 """
 
+import time
+import calendar
 
 from twisted.internet import defer
 from twisted.web import server
@@ -48,7 +50,10 @@ SELECT
     CASE WHEN sum(walltime)::integer = 0 THEN null ELSE ((sum(cputime) * 100.0) / sum(walltime))::integer END AS efficiancy,
     sum(n_jobs)
 FROM uraggregated
-WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
+WHERE
+    machine_name = %s AND
+    execution_time >= %s AND
+    execution_time <= %s
 GROUP BY vo_name
 ORDER BY walltime DESC
 LIMIT 20;
@@ -61,7 +66,10 @@ SELECT
     CASE WHEN sum(walltime)::integer = 0 THEN null ELSE ((sum(cputime) * 100.0) / sum(walltime))::integer END as efficiancy,
     sum(n_jobs)
 FROM uraggregated
-WHERE execution_time > current_date - interval '1 month' AND machine_name = %s
+WHERE
+    machine_name = %s AND
+    execution_time >= %s AND
+    execution_time <= %s
 GROUP BY user_identity
 ORDER BY walltime DESC
 LIMIT 20;
@@ -132,24 +140,73 @@ class MachineView(baseview.BaseView):
         self.machine_name = machine_name
 
 
+    def getStartEndDates(self, request):
+
+        def currentMonthStartDate():
+            gmtime = time.gmtime()
+            startdate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, '01')
+            return startdate
+
+        def currentMonthEndDate():
+            gmtime = time.gmtime()
+            last_month_day = str(calendar.monthrange(gmtime.tm_year, gmtime.tm_mon)[1])
+            enddate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, last_month_day)
+            return enddate
+
+        if 'startdate' in request.args:
+            startdate = request.args['startdate'][0].replace('-', '')
+            if startdate == '':
+                startdate = currentMonthStartDate().replace('-', '')
+            elif len(startdate) == 8:
+                pass
+            elif len(startdate) == 6:
+                startdate += '01'
+            else: 
+                raise baseview.ViewError('Invalid startdate parameter: %s' % request.args['startdate'][0])
+            startdate = startdate[0:4] + '-' + startdate[4:6] + '-' + startdate[6:8]
+        else:
+            startdate = currentMonthStartDate()
+
+        if 'enddate' in request.args:
+            enddate = request.args['enddate'][0].replace('-', '')
+            if enddate == '':
+                enddate = currentMonthEndDate().replace('-', '')
+            elif len(enddate) == 8:
+                pass
+            elif len(enddate) == 6:
+                enddate += str(calendar.monthrange(int(enddate[0:4]), int(enddate[4:6]))[1])
+            else:
+                raise baseview.ViewError('Invalid enddate parameter: %s' % request.args['enddate'][0])
+            enddate = enddate[0:4] + '-' + enddate[4:6] + '-' + enddate[6:8]
+        else:
+            enddate = currentMonthEndDate()
+
+        return startdate, enddate
+
+
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
 
         # authz check
         ctx = [ 'machine', self.machine_name ]
-        if self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
-            d = self.retrieveMachineInfo()
-            d.addCallbacks(self.renderMachineView, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
-            return server.NOT_DONE_YET
-        else:
+        if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'machine view for %s' % self.machine_name, subject)
+        # access allowed
+        start_date, end_date = self.getStartEndDates(request)
+        d = self.retrieveMachineInfo(start_date, end_date)
+        d.addCallbacks(self.renderMachineView, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
+        return server.NOT_DONE_YET
 
 
-    def retrieveMachineInfo(self):
+    def retrieveMachineInfo(self, start_date, end_date):
 
         defs = []
-        for query in [ QUERY_MACHINE_MANIFEST, QUERY_EXECUTED_JOBS_PER_DAY, QUERY_TOP10_PROJECTS, QUERY_TOP20_USERS ]:
-            d = self.urdb.query(query, (self.machine_name,))
+        for query in [ QUERY_MACHINE_MANIFEST, QUERY_EXECUTED_JOBS_PER_DAY ]:
+            d = self.urdb.query(query, (self.machine_name,) )
+            defs.append(d)
+
+        for query in [ QUERY_TOP10_PROJECTS, QUERY_TOP20_USERS ]:
+            d = self.urdb.query(query, [self.machine_name, start_date, end_date] )
             defs.append(d)
 
         dl = defer.DeferredList(defs)
@@ -174,7 +231,7 @@ class MachineView(baseview.BaseView):
         e_batches = [ e[0] for e in jobs_per_day ] # dates
         e_groups  = [ 'jobs' ]
         e_matrix  = dict( [ ((e[0], e_groups[0]), e[1]) for e in jobs_per_day ] )
-        executed_table = htmltable.createHTMLTable(e_matrix, e_batches, e_groups)
+        executed_table = htmltable.createHTMLTable(e_matrix, e_batches, e_groups, base_indent=4)
 
         stats_batches = [ 'Walltime days', 'Efficiency', 'Number of jobs' ]
 
@@ -184,7 +241,7 @@ class MachineView(baseview.BaseView):
         p_dict_elements += [ ((stats_batches[1], p[0]), p[2]) for p in top_projects ]
         p_dict_elements += [ ((stats_batches[2], p[0]), p[3]) for p in top_projects ]
         p_matrix = dict(p_dict_elements)
-        project_table = htmltable.createHTMLTable(p_matrix, stats_batches, p_groups)
+        project_table = htmltable.createHTMLTable(p_matrix, stats_batches, p_groups, base_indent=4)
 
         u_groups = [ e[0] for e in top_users ] # user list
         u_dict_elements = []
@@ -192,42 +249,64 @@ class MachineView(baseview.BaseView):
         u_dict_elements += [ ((stats_batches[1], u[0]), u[2]) for u in top_users ]
         u_dict_elements += [ ((stats_batches[2], u[0]), u[3]) for u in top_users ]
         u_matrix = dict(u_dict_elements)
-        user_table = htmltable.createHTMLTable(u_matrix, stats_batches, u_groups)
+        user_table = htmltable.createHTMLTable(u_matrix, stats_batches, u_groups, base_indent=4)
 
         title = 'Machine view for %s' % self.machine_name
 
         request.write(httphtml.HTML_VIEWBASE_HEADER % {'title': title})
-        request.write('<h3>%s</h3>\n' % title)
-        request.write('<p> &nbsp; <p>\n\n')
+        request.write( httphtml.createTitle(title) )
 
-        request.write('<h5>Manifest</h5>\n')
-        request.write('<p>\n')
-        request.write('First record registration: %s\n' % first_record_registration)
-        request.write('<p>\n')
-        request.write('Last record registration: %s\n' % last_record_registration)
-        request.write('<p>\n')
-        request.write('First job start: %s\n' % first_job_start)
-        request.write('<p>\n')
-        request.write('Last job termination: %s\n' % last_job_termination)
-        request.write('<p>\n')
-        request.write('Distinct users: %s\n' % distinct_users)
-        request.write('<p>\n')
-        request.write('Distinct projects: %s\n' % distinct_projects)
-        request.write('<p>\n')
-        request.write('Number of jobs: %s\n' % n_jobs)
-        request.write('<p> &nbsp; <p>\n\n')
+        start_date_option = request.args.get('startdate', [''])[0]
+        end_date_option   = request.args.get('enddate', [''])[0]
 
-        request.write('<h5>Executed jobs in the last ten days</h5>\n')
-        request.write(executed_table)
-        request.write('<p> &nbsp; <p>\n\n')
+        month_options = [ '', '2010-09', '2010-10', '2010-11', '2010-12', '2011-01', '2011-02' ]
 
-        request.write('<h5>Top 10 projects in the last month</h5>\n')
-        request.write(project_table)
-        request.write('<p> &nbsp; <p>\n\n')
+        request.write('''
+    <form name="input" action="%s" method="get">
+        Start month: <select name=startdate>''' % self.machine_name)
+        for mo in month_options:
+            if start_date_option == mo:
+                request.write('''            <option selected>%s</option>\n''' % mo)
+            else:
+                request.write('''            <option>%s</option>\n''' % mo)
+        request.write('''        </select>
 
-        request.write('<h5>Top 20 users for the last month</h5>\n')
-        request.write(user_table)
-        request.write('<p>\n\n')
+        &nbsp; &nbsp;
+
+        End month: <select name=enddate>''')
+        for mo in month_options:
+            if end_date_option == mo:
+                request.write('''            <option selected>%s</option>\n''' % mo)
+            else:
+                request.write('''            <option>%s</option>\n''' % mo)
+        request.write('''        </select>
+
+        &nbsp; &nbsp;
+
+    <input type="submit" value="Submit" />
+    </form>\n\n''')
+
+        request.write( httphtml.createSectionTitle('Manifest') )
+        request.write( httphtml.createParagraph('First record registration: %s' % first_record_registration) )
+        request.write( httphtml.createParagraph('Last record registration: %s' % last_record_registration) )
+        request.write( httphtml.createParagraph('First job start: %s' % first_job_start) )
+        request.write( httphtml.createParagraph('Last job termination: %s' % last_job_termination) )
+        request.write( httphtml.createParagraph('Distinct users: %s' % distinct_users) )
+        request.write( httphtml.createParagraph('Distinct projects: %s' % distinct_projects) )
+        request.write( httphtml.createParagraph('Number of jobs: %s' % n_jobs) )
+        request.write( httphtml.SECTION_BREAK )
+
+        request.write( httphtml.createSectionTitle('Executed jobs in the last ten days') )
+        request.write( executed_table )
+        request.write( httphtml.SECTION_BREAK)
+
+        request.write( httphtml.createSectionTitle('Top 10 projects in the selected range (current month if not selected)') )
+        request.write( project_table )
+        request.write( httphtml.SECTION_BREAK )
+
+        request.write( httphtml.createSectionTitle('Top 20 users in the selected date range (current month if not selected)') )
+        request.write( user_table )
+        request.write( httphtml.P + '\n' )
 
         request.write(httphtml.HTML_VIEWBASE_FOOTER)
 
