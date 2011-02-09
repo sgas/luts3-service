@@ -12,7 +12,7 @@ from twisted.internet import defer, reactor
 from twisted.web import error as weberror
 
 from sgas.ext.python import json
-from sgas.server import setup
+from sgas.server import setup, manifest
 
 from . import rclient, utils, ursampledata
 
@@ -28,7 +28,7 @@ class ResourceTest:
     @defer.inlineCallbacks
     def setUp(self):
         # self.db should be created by subclass
-        site = setup.createSite(self.db, utils.FakeAuthorizer(), [])
+        site = setup.createSite(self.db, utils.FakeAuthorizer(), [], manifest.Manifest())
         self.iport = reactor.listenTCP(self.port, site)
         self.service_url = 'http://localhost:%i/sgas' % self.port
         self.insert_url = self.service_url + '/ur'
@@ -117,7 +117,7 @@ class ResourceTest:
         yield self.iport.stopListening()
 
         # setup a new service with the "bad" database
-        site = setup.createSite(self.bad_db, utils.FakeAuthorizer(), [])
+        site = setup.createSite(self.bad_db, utils.FakeAuthorizer(), [], manifest.Manifest())
         self.iport = reactor.listenTCP(self.port, site)
 
         # the actual test
