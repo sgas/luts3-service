@@ -2,6 +2,13 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 3.5.0
 
+View engine overhaul:
+- Upgrade to Protovis 3.2.
+- Switch URLs for custom view to be under view/custom.
+- Two build in views: Administrators manifest and machine view.
+- Unified CSS file for all views.
+
+Support for host scaling, see docs/hostscaling.
 
 No more support for direct TLS/SSL. Reverse proxy setup is now required.
 
