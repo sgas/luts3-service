@@ -70,3 +70,17 @@ def createSelector(title, name, options, current_option=None):
     return selector
 
 
+def createSelectorForm(action, selectors):
+
+    form = _INDENT + '<form name="input" action="%s" method="get">\n' % action
+
+    for sel in selectors:
+        form += sel
+        form += '    &nbsp; &nbsp;\n'
+
+    form += '\n' + _INDENT + '<input type="submit" value="Submit" />\n' + \
+            '</form>\n'
+
+    return form
+
+

@@ -253,9 +253,6 @@ class MachineView(baseview.BaseView):
 
         title = 'Machine view for %s' % self.machine_name
 
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': title})
-        request.write( html.createTitle(title) )
-
         start_date_option = request.args.get('startdate', [''])[0]
         end_date_option   = request.args.get('enddate', [''])[0]
 
@@ -268,34 +265,43 @@ class MachineView(baseview.BaseView):
             elif i > 0:
                 month_options.append('%i-%02d' % (gmt.tm_year, i) )
 
-        request.write('\n    <form name="input" action="%s" method="get">\n' % self.machine_name)
-        request.write( html.createSelector('Start month', 'startdate', month_options, start_date_option) )
-        request.write('    &nbsp; &nbsp;\n')
-        request.write( html.createSelector('End month', 'enddate', month_options, end_date_option) )
-        request.write('    &nbsp; &nbsp;\n')
-        request.write('''
-    <input type="submit" value="Submit" />
-    </form>\n\n''')
+        sel1 = html.createSelector('Start month', 'startdate', month_options, start_date_option)
+        sel2 = html.createSelector('End month', 'enddate', month_options, end_date_option)
+        selector_form = html.createSelectorForm(self.machine_name, [sel1, sel2] )
 
-        request.write( html.createSectionTitle('Manifest') )
-        request.write( html.createParagraph('First record registration: %s' % first_record_registration) )
-        request.write( html.createParagraph('Last record registration: %s' % last_record_registration) )
-        request.write( html.createParagraph('First job start: %s' % first_job_start) )
-        request.write( html.createParagraph('Last job termination: %s' % last_job_termination) )
-        request.write( html.createParagraph('Distinct users: %s' % distinct_users) )
-        request.write( html.createParagraph('Distinct projects: %s' % distinct_projects) )
-        request.write( html.createParagraph('Number of jobs: %s' % n_jobs) )
-        request.write( html.SECTION_BREAK )
+        if start_date_option or end_date_option:
+            range_text = 'selected date range'
+        else:
+            range_text = 'current month'
 
-        request.write( html.createSectionTitle('Executed jobs in the last ten days') )
-        request.write( executed_table )
-        request.write( html.SECTION_BREAK)
+        # create page
 
-        request.write( html.createSectionTitle('Top 10 projects in the selected range (current month if not selected)') )
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': title})
+        request.write( html.createTitle(title) )
+
+        request.write('\n' + selector_form + '\n')
+
+        if not (start_date_option or end_date_option):
+        # skip manifest / inserts if date range is selected
+            request.write( html.createSectionTitle('Manifest') )
+            request.write( html.createParagraph('First record registration: %s' % first_record_registration) )
+            request.write( html.createParagraph('Last record registration: %s' % last_record_registration) )
+            request.write( html.createParagraph('First job start: %s' % first_job_start) )
+            request.write( html.createParagraph('Last job termination: %s' % last_job_termination) )
+            request.write( html.createParagraph('Distinct users: %s' % distinct_users) )
+            request.write( html.createParagraph('Distinct projects: %s' % distinct_projects) )
+            request.write( html.createParagraph('Number of jobs: %s' % n_jobs) )
+            request.write( html.SECTION_BREAK )
+
+            request.write( html.createSectionTitle('Executed jobs in the last ten days') )
+            request.write( executed_table )
+            request.write( html.SECTION_BREAK)
+
+        request.write( html.createSectionTitle('Top 10 projects for the %s' % range_text) )
         request.write( project_table )
         request.write( html.SECTION_BREAK )
 
-        request.write( html.createSectionTitle('Top 20 users in the selected date range (current month if not selected)') )
+        request.write( html.createSectionTitle('Top 20 users for the %s' % range_text) )
         request.write( user_table )
         request.write( html.P + '\n' )
 
