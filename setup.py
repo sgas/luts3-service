@@ -63,8 +63,7 @@ setup(name='sgas-luts-service',
 
       data_files=[
           ('share/sgas',                 ['datafiles/share/sgas.tac']),
-          ('share/sgas/webfiles/css',    ['datafiles/share/webfiles/css/view.frontpage.css',
-                                          'datafiles/share/webfiles/css/view.table.css']),
+          ('share/sgas/webfiles/css',    ['datafiles/share/webfiles/css/view.css']),
           ('share/sgas/webfiles/js',     ['datafiles/share/webfiles/js/protovis-r3.2.js',
                                           'datafiles/share/webfiles/js/protovis-helper.js']),
           ('share/sgas/postgres',        ['datafiles/share/postgresql/sgas-postgres-schema.sql',
