@@ -283,9 +283,9 @@ BEGIN
     IF in_runtime_environments IS NOT NULL THEN
         FOR i IN array_lower(in_runtime_environments, 1) .. array_upper(in_runtime_environments, 1) LOOP
             -- check if re exists, isert if it does not
-            SELECT INTO runtime_environment_id id FROM runtimeenvironments WHERE runtime_environment = in_runtime_environments[i];
+            SELECT INTO runtime_environment_id id FROM runtimeenvironment WHERE runtime_environment = in_runtime_environments[i];
             IF NOT FOUND THEN
-                INSERT INTO runtimeenvironments (runtime_environment) VALUES (in_runtime_environments[i]) RETURNING id INTO runtime_environment_id;
+                INSERT INTO runtimeenvironment (runtime_environment) VALUES (in_runtime_environments[i]) RETURNING id INTO runtime_environment_id;
             END IF;
             -- insert record ur usage, perform duplicate check first though
             PERFORM * FROM runtimeenvironment_usagedata WHERE usagedata_id = ur_id AND runtime_environment_id = runtimeenvironments_id;
