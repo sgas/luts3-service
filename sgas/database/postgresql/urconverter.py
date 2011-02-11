@@ -6,6 +6,8 @@ Author: Henrik Thostrup Jensen
 Copyright: Nordic Data Grid Facility (2010)
 """
 
+from twisted.python import log
+
 
 
 ARG_LIST = [
@@ -55,6 +57,25 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
     args = []
 
     for ur_doc in usagerecord_docs:
+
+        # hack for dealing with bad local job ids (occurs from time to time in ARC)
+        if 'local_job_id' in ur_doc:
+            lji = ur_doc['local_job_id']
+            # heuristic for checking for bad local job id
+            # AFAIK this catches all the bad local job ids i've seen so far, with no false positives
+            if len(lji) > 40 or lji.startswith('/'):
+                ur_doc['local_job_id'] = None
+                # the record id is typically machine_name:local_job_id, so we need to change that as well
+                old_record_id = ur_doc['record_id']
+                if 'global_job_id' in ur_doc:
+                    # if available, just use the global job, this is a good value to use
+                    ur_doc['record_id'] = ur_doc['global_job_id']
+                else:
+                    # if no global job id is avalable, use the createtime as it is fairly unique and required to exist
+                    ur_doc['record_id'] = ur_doc.get('machine_name', '') + ':' + ur_doc.get('create_time', '')
+                # finally, log that the heuristic was used
+                log.msg('HEURISTIC IN USE. Removed LocalJobId and rewrote recordId from %s to %s' % (old_record_id, ur_doc['record_id']))
+        # end hack :-)
 
         # convert vo attributes into arrays (adaption is done by psycopg2)
         if 'vo_attrs' in ur_doc:
