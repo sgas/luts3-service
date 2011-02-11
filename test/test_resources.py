@@ -65,6 +65,18 @@ class ResourceTest:
 
 
     @defer.inlineCallbacks
+    def testURBadLocalJobId(self):
+        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR_BAD_LOCAL_JOB_ID)
+        r = yield d
+        self.failUnlessEqual(f.status, '200')
+
+        # check that we got proper result with internal db representation
+        ids = json.loads(r)
+        self.failUnlessEqual(len(ids), 1)
+        self.failUnlessIn(ursampledata.UR_BAD_LOCAL_JOB_ID_GLOBAL_JOB_ID, ids)
+
+
+    @defer.inlineCallbacks
     def testQuery(self):
 
         # insert some data, so there is something to query

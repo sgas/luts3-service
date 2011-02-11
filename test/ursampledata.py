@@ -158,3 +158,73 @@ URT = """<?xml version="1.0" encoding="UTF-8" ?>
 </ur:JobUsageRecord>
 """
 
+
+UR_BAD_LOCAL_JOB_ID_RECORD_ID = '''recordId="ce03.titan.uio.no:sbatch: error: Slurm temporarily unable to accept job, sleeping and retrying.'''
+UR_BAD_LOCAL_JOB_ID_GLOBAL_JOB_ID = '''gsiftp://ce03.titan.uio.no:2811/jobs/981012957074611335880653'''
+UR_BAD_LOCAL_JOB_ID = """
+<ns0:JobUsageRecord xmlns:ns0="http://schema.ogf.org/urf/2003/09/urf">
+    <ns0:RecordIdentity ns0:createTime="2011-01-24T12:45:48Z" ns0:recordId="ce03.titan.uio.no:sbatch: error: Slurm temporarily unable to accept job, sleeping and retrying." />
+    <ns0:JobIdentity>
+        <ns0:GlobalJobId>gsiftp://ce03.titan.uio.no:2811/jobs/981012957074611335880653</ns0:GlobalJobId>
+        <ns0:LocalJobId>sbatch: error: Slurm temporarily unable to accept job, sleeping and retrying.</ns0:LocalJobId>
+    </ns0:JobIdentity>
+    <ns0:UserIdentity>
+        <ns0:LocalUserId>grid</ns0:LocalUserId>
+        <ns0:GlobalUserName>/C=SI/O=SiGNET/O=IJS/OU=F9/CN=Andrej Filipcic</ns0:GlobalUserName>
+        <ns1:VO ns1:type="voms" xmlns:ns1="http://www.sgas.se/namespaces/2009/05/ur/vo">
+            <ns1:Name>atlas</ns1:Name>
+            <ns1:Issuer>/DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch</ns1:Issuer>
+            <ns1:Attribute>
+                <ns1:Group>atlas</ns1:Group>
+                <ns1:Role>production</ns1:Role>
+            </ns1:Attribute>
+            <ns1:Attribute>
+                <ns1:Group>atlas</ns1:Group>
+            </ns1:Attribute>
+            <ns1:Attribute>
+                <ns1:Group>atlas/lcg1</ns1:Group>
+            </ns1:Attribute>
+        </ns1:VO>
+    </ns0:UserIdentity>
+    <ns0:JobName>mc10_7TeV.107700.AlpgenJimmyWtaunuNp0_pt20.simul.e600_s933_tid251613._063586.job</ns0:JobName>
+    <ns0:Status>completed</ns0:Status>
+    <ns0:MachineName>ce03.titan.uio.no</ns0:MachineName>
+    <ns0:Queue>atlas-t1-reprocessing</ns0:Queue>
+    <ns0:Processors>1</ns0:Processors>
+    <ns1:SubmitTime xmlns:ns1="http://rmis.deisa.org/acct">2011-01-22T14:44:22Z</ns1:SubmitTime>
+    <ns0:StartTime>2011-01-24T12:45:48Z</ns0:StartTime>
+    <ns0:EndTime>2011-01-24T12:45:48Z</ns0:EndTime>
+    <ns1:LoggerName ns1:version="0.8.3.1" xmlns:ns1="http://www.sgas.se/namespaces/2010/08/logger">ARC0-URLogger</ns1:LoggerName>
+    <ns1:FileTransfers xmlns:ns1="http://www.sgas.se/namespaces/2010/10/filetransfer">
+        <ns1:FileDownload>
+            <ns1:URL>lfc://lfc1.ndgf.org//grid/atlas/dq2/mc10_7TeV/EVNT/mc10_7TeV.107700.AlpgenJimmyWtaunuNp0_pt20.evgen.EVNT.e600_tid251393_00/EVNT.251393._003662.pool.root.1</ns1:URL>
+            <ns1:Size>12036413</ns1:Size>
+            <ns1:StartTime>2011-01-22T14:44:24Z</ns1:StartTime>
+            <ns1:EndTime>2011-01-22T14:44:26Z</ns1:EndTime>
+            <ns1:RetrievedFromCache>true</ns1:RetrievedFromCache>
+        </ns1:FileDownload>
+        <ns1:FileDownload>
+            <ns1:URL>lfc://lfc1.ndgf.org//grid/atlas/dq2/user/user.andrejfilipcic.production/pilot3-SULU44i.tgz</ns1:URL>
+            <ns1:Size>267490</ns1:Size>
+            <ns1:StartTime>2011-01-22T14:44:24Z</ns1:StartTime>
+            <ns1:EndTime>2011-01-22T14:44:26Z</ns1:EndTime>
+            <ns1:RetrievedFromCache>true</ns1:RetrievedFromCache>
+        </ns1:FileDownload>
+        <ns1:FileDownload>
+            <ns1:URL>lfc:////grid/atlas/dq2/user/user.andrejfilipcic.production/NGpilot.8</ns1:URL>
+            <ns1:Size>2439</ns1:Size>
+            <ns1:StartTime>2011-01-22T14:44:24Z</ns1:StartTime>
+            <ns1:EndTime>2011-01-22T14:44:26Z</ns1:EndTime>
+            <ns1:RetrievedFromCache>true</ns1:RetrievedFromCache>
+        </ns1:FileDownload>
+        <ns1:FileDownload>
+            <ns1:URL>lfc://lfc1.ndgf.org//grid/atlas/dq2/ddo/DBRelease/v120201/ddo.000001.Atlas.Ideal.DBRelease.v120201/DBRelease-12.2.1.tar.gz</ns1:URL>
+            <ns1:Size>427086136</ns1:Size>
+            <ns1:StartTime>2011-01-22T14:44:57Z</ns1:StartTime>
+            <ns1:EndTime>2011-01-22T14:45:05Z</ns1:EndTime>
+            <ns1:RetrievedFromCache>true</ns1:RetrievedFromCache>
+        </ns1:FileDownload>
+    </ns1:FileTransfers>
+</ns0:JobUsageRecord>
+"""
+
