@@ -82,7 +82,10 @@ BEGIN
             RETURN result;
         ELSE
             -- delete record, mark update, and continue as normal
-            DELETE from usagedata WHERE record_id = in_record_id;
+            -- technically we should delete job transfers and runtime environments first
+            -- however records coming from the LRMS does not contain these, so if an error
+            -- occurs here it usally due to an ARC/Grid bug.
+            DELETE FROM usagedata WHERE record_id = in_record_id;
             PERFORM * FROM uraggregated_update WHERE insert_time = ur_insert_time::date AND machine_name_id = ur_machine_name_id;
             IF NOT FOUND THEN
                 INSERT INTO uraggregated_update (insert_time, machine_name_id) VALUES (ur_insert_time, ur_machine_name_id);
