@@ -33,9 +33,9 @@ class BaseView(resource.Resource):
 
     def renderAuthzErrorPage(self, request, pagename, subject):
 
-        request.write(html.HTML_BASE_HEADER % {'title': 'Authorization Error'})
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'Authorization Error'})
         request.write('Access to %s not allowed for %s' % (pagename, subject))
-        request.write(html.HTML_BASE_FOOTER)
+        request.write(html.HTML_VIEWBASE_FOOTER)
         request.finish()
         return server.NOT_DONE_YET
 
