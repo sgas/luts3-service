@@ -188,7 +188,7 @@ class MachineView(baseview.BaseView):
         subject = resourceutil.getSubject(request)
 
         # authz check
-        ctx = [ 'machine', self.machine_name ]
+        ctx = [ ('machine', self.machine_name) ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'machine view for %s' % self.machine_name, subject)
         # access allowed
