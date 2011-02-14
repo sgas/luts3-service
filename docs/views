@@ -1,18 +1,36 @@
+=== SGAS View Engine ===
 
-As of version 3.3, SGAS features a small, but quite usefull view engine. The
-view engine is capable of visualizing information in browsers, using graphs and
-tables.
+As of version 3.3, SGAS LUTS features a small, but usefull view engine. However
+view had to be manually defined. In version 3.5, two automatic views
+"administrators manifest", and "machine view" as added.
 
-This document explains how to setup the views, and what the view engine is
-capable of.
-
-Note: If you want view, you will have to setup a reverse proxy in front of
-SGAS. See docs/nginx-setup.
+The view engine is capable of visualizing information in browsers, using graphs
+and tables.
 
 The SGAS view frontpage is found at the URL path /sgas/view, e.g.,:
 https://host.example.org:6443/sgas/view. Here there are links to view, which
 are defined in sgas.conf.
 
+
+== Automatic view ==
+
+The automatic view are enabled per default.
+
+Access to adminstrators manifest page is guarded by the admin viewgroup, i.e.,
+access is granted by "view:viewgroup=admin". The "view:all" will also work
+(will grant full access).
+
+Access to machine view is guarded per machine, enabling machine admins to see
+usage of their machine, but not other machines. This is done granting the
+following permission: "view:machine=host.example.org". Again, the "view:all",
+will also work, and will grant access to all machines.
+
+
+== Custom views ==
+
+Custom views can visualize/report arbitraty data from the database assuming the
+data fits into the form needed for graph type. The cost of this flexibility, is
+complexity in defining the view, which is done in the configure file.
 
 * Short overview of all configuration options:
 
@@ -28,7 +46,7 @@ query           The query send to the database for data retrieval. Note that the
                 follow the specific format of the view type in order to make sense.
 
 
-* Explanatory, In-depth View Configuratio
+* Explanatory, In-depth View Configuration
 
 [view:insert_total]
 viewgroup=vg1,vg2
