@@ -49,7 +49,7 @@ class AdminManifestResource(baseview.BaseView):
         subject = resourceutil.getSubject(request)
 
         # authz check
-        ctx = [ rights.CTX_VIEWGROUP, 'admin' ]
+        ctx = [ (rights.CTX_VIEWGROUP, 'admin') ]
         if self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             d = self.retrieveDatabaseStats()
             d.addCallbacks(self.renderAdminManifestPage, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
