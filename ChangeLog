@@ -2,6 +2,8 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 3.5.0
 
+Add workaround for dealing with invalid local job ids from ARC reporters.
+
 View engine overhaul:
 - Upgrade to Protovis 3.2.
 - Switch URLs for custom view to be under view/custom.
