@@ -16,14 +16,14 @@ from twisted.application import service
 
 
 TRUNCATE_HOST_SCALE_FACTOR = '''TRUNCATE TABLE hostscalefactors'''
-INSERT_HOST_SCALE_FACTOR   = '''INSERT INTO hostscalefactors (machine_name, factors) VALUES (%s, %s)'''
+INSERT_HOST_SCALE_FACTOR   = '''INSERT INTO hostscalefactors (machine_name, scale_factor) VALUES (%s, %s)'''
 
 
 
 class HostScaleFactorUpdater(service.Service):
 
-    def __init__(self, pool_proxy, scale_factors):
-        self.pool_proxy = pool_proxy
+    def __init__(self, db, scale_factors):
+        self.pool_proxy = db.pool_proxy
         self.scale_factors = scale_factors
 
 
@@ -40,8 +40,8 @@ class HostScaleFactorUpdater(service.Service):
     @defer.inlineCallbacks
     def updateScaleFactors(self):
         try:
-            conn = adbapi.Connection(self.pool_proxy.dbpool)
-            yield conn.runInteraction(self.issueUpdateStatements)
+            yield self.pool_proxy.dbpool.runInteraction(self.issueUpdateStatements)
+            log.msg("Host scale factors updated (%i entries)" % len(self.scale_factors), system='sgas.HostScaleFactorUpdate')
         except Exception, e:
             log.msg('Error updating host scale factors. Message: %s' % str(e), system='sgas.HostScaleFactorUpdate')
 
