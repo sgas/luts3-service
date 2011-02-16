@@ -77,6 +77,10 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
                 log.msg('HEURISTIC IN USE. Removed LocalJobId and rewrote recordId from %s to %s' % (old_record_id, ur_doc['record_id']))
         # end hack :-)
 
+        # from version 3.5 the db schema only does integers
+        if 'charge' in ur_doc:
+            ur_doc['charge'] = int(ur_doc['charge'])
+
         # convert vo attributes into arrays (adaption is done by psycopg2)
         if 'vo_attrs' in ur_doc:
             vo_attrs = [ [ e.get('group'), e.get('role') ] for e in ur_doc['vo_attrs'] ]
