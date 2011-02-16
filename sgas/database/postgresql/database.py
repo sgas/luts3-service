@@ -29,7 +29,7 @@ DEFAULT_POSTGRESQL_PORT = 5432
 
 class _DatabasePoolProxy:
     # abstraction over a database pool object, so we can provide a sensible way
-    # to replcate the pool if something goes wrong.
+    # to replace the pool if something goes wrong.
 
     def __init__(self, connect_info):
 
