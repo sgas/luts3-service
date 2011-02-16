@@ -70,12 +70,12 @@ class PostgreSQLDatabase(service.MultiService):
 
 
     def startService(self):
-        service.Service.startService(self)
+        service.MultiService.startService(self)
         return self.updater.startService()
 
 
     def stopService(self):
-        service.Service.stopService(self)
+        service.MultiService.stopService(self)
         return self.updater.stopService()
 
 
