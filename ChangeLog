@@ -1,5 +1,15 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.5.1
+
+Convert charge field into integer in order to prevent insertion errors, when
+the field is present.
+
+Fix multi-service initiation for database such the hostscaling is started.
+
+Fix update statement and db pool usage in host scaling.
+
+
 3.5.0
 
 Add workaround for dealing with invalid local job ids from ARC reporters.
