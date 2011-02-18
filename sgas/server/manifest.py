@@ -32,7 +32,12 @@ class Manifest:
         self.properties[property_] = value
 
 
-    def getProperty(self, property_, value):
+    def hasProperty(self, property_):
+
+        return property_ in self.properties
+
+
+    def getProperty(self, property_):
 
         try:
             return self.properties[property_]
