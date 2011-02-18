@@ -13,7 +13,7 @@ from twisted.web import server
 
 from sgas.authz import rights
 from sgas.server import resourceutil
-from sgas.viewengine import html, htmltable, baseview
+from sgas.viewengine import html, htmltable, urlparser, baseview
 
 
 # Various stat queries
@@ -140,50 +140,6 @@ class MachineView(baseview.BaseView):
         self.machine_name = machine_name
 
 
-    def getStartEndDates(self, request):
-
-        def currentMonthStartDate():
-            gmtime = time.gmtime()
-            startdate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, '01')
-            return startdate
-
-        def currentMonthEndDate():
-            gmtime = time.gmtime()
-            last_month_day = str(calendar.monthrange(gmtime.tm_year, gmtime.tm_mon)[1])
-            enddate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, last_month_day)
-            return enddate
-
-        if 'startdate' in request.args:
-            startdate = request.args['startdate'][0].replace('-', '')
-            if startdate == '':
-                startdate = currentMonthStartDate().replace('-', '')
-            elif len(startdate) == 8:
-                pass
-            elif len(startdate) == 6:
-                startdate += '01'
-            else: 
-                raise baseview.ViewError('Invalid startdate parameter: %s' % request.args['startdate'][0])
-            startdate = startdate[0:4] + '-' + startdate[4:6] + '-' + startdate[6:8]
-        else:
-            startdate = currentMonthStartDate()
-
-        if 'enddate' in request.args:
-            enddate = request.args['enddate'][0].replace('-', '')
-            if enddate == '':
-                enddate = currentMonthEndDate().replace('-', '')
-            elif len(enddate) == 8:
-                pass
-            elif len(enddate) == 6:
-                enddate += str(calendar.monthrange(int(enddate[0:4]), int(enddate[4:6]))[1])
-            else:
-                raise baseview.ViewError('Invalid enddate parameter: %s' % request.args['enddate'][0])
-            enddate = enddate[0:4] + '-' + enddate[4:6] + '-' + enddate[6:8]
-        else:
-            enddate = currentMonthEndDate()
-
-        return startdate, enddate
-
-
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
 
@@ -192,7 +148,7 @@ class MachineView(baseview.BaseView):
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'machine view for %s' % self.machine_name, subject)
         # access allowed
-        start_date, end_date = self.getStartEndDates(request)
+        start_date, end_date = urlparser.getStartEndDates(request)
         d = self.retrieveMachineInfo(start_date, end_date)
         d.addCallbacks(self.renderMachineView, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
         return server.NOT_DONE_YET
