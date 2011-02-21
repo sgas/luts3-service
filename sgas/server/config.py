@@ -27,6 +27,7 @@ SERVER_BLOCK         = 'server'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
 HOSTNAME_CHECK_DEPTH = 'check_depth'
+WLCG_CONFIG_FILE     = 'wlcg_config_file'
 
 # the following are no longer used, but are used to issue warnings
 HOSTKEY              = 'hostkey'

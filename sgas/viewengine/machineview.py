@@ -6,14 +6,13 @@ Copyright: Nordic Data Grid Facility (2011)
 """
 
 import time
-import calendar
 
 from twisted.internet import defer
 from twisted.web import server
 
 from sgas.authz import rights
 from sgas.server import resourceutil
-from sgas.viewengine import html, htmltable, urlparser, baseview
+from sgas.viewengine import html, htmltable, dateform, baseview
 
 
 # Various stat queries
@@ -148,7 +147,7 @@ class MachineView(baseview.BaseView):
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'machine view for %s' % self.machine_name, subject)
         # access allowed
-        start_date, end_date = urlparser.getStartEndDates(request)
+        start_date, end_date = dateform.parseStartEndDates(request)
         d = self.retrieveMachineInfo(start_date, end_date)
         d.addCallbacks(self.renderMachineView, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
         return server.NOT_DONE_YET

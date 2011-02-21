@@ -76,6 +76,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
 
     mfst = manifest.Manifest()
     mfst.setProperty('start_time', time.asctime())
+    if cfg.has_option(config.SERVER_BLOCK, config.WLCG_CONFIG_FILE):
+        mfst.setProperty('wlcg_config_file', cfg.get(config.SERVER_BLOCK, config.WLCG_CONFIG_FILE))
 
     # authz
     if no_authz:

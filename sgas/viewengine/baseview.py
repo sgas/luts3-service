@@ -6,7 +6,6 @@ Copyright: Nordic Data Grid Facility (2011)
 """
 
 
-from twisted.internet import defer
 from twisted.web import server, resource
 
 from sgas.viewengine import html

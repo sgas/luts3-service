@@ -8,10 +8,9 @@ Copyright: Nordic Data Grid Facility (2010)
 from twisted.python import log
 from twisted.web import resource, server
 
-from sgas.ext.python import json
 from sgas.database import error as dberror
 from sgas.authz import rights
-from sgas.server import resourceutil
+from sgas.server import config, resourceutil
 from sgas.viewengine import html, pagebuilder, adminmanifest, machineview
 
 
@@ -45,6 +44,9 @@ class ViewTopResource(resource.Resource):
         self.putChild('adminmanifest', adminmanifest.AdminManifestResource(urdb, authorizer, mfst))
         self.putChild('machines', machineview.MachineListView(urdb, authorizer, mfst))
         self.putChild('custom', CustomViewTopResource(urdb, authorizer, views))
+        if mfst.hasProperty(config.WLCG_CONFIG_FILE):
+            from sgas.viewengine import wlcgview
+            self.putChild('wlcg', wlcgview.WLCGView(urdb, authorizer, mfst))
 
 
     def render_GET(self, request):
@@ -64,7 +66,13 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<div><a href=view/adminmanifest>Administrators Manifest</a></div>\n'
         body += 2*ib + '<p>\n'
         body += 2*ib + '<div><a href=view/machines>Machine list</a></div>\n'
+
+        if 'wlcg' in self.children:
+            body += 2*ib + '<p>\n'
+            body += 2*ib + '<div><a href=view/wlcg>WLCG Views</a></div>\n'
+
         body += 2*ib + '<p> &nbsp; <p>\n'
+
         if self.views:
             body += 2*ib + '<h4>Custom views</h4>\n'
 
