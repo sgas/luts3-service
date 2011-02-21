@@ -27,6 +27,8 @@ class WLCGView(baseview.BaseView):
             return WLCGVOView(self.urdb, self.authorizer, self.manifest, path)
         elif path == 'tier':
             return WLCGTierView(self.urdb, self.authorizer, self.manifest, path)
+        elif path == 'user':
+            return WLCGUserView(self.urdb, self.authorizer, self.manifest, path)
         # no such resource
         return baseview.BaseView.getChild(self, path, request)
 
@@ -48,6 +50,8 @@ class WLCGView(baseview.BaseView):
         request.write('<div><a href=wlcg/vo>WLCG VO View</a></div>\n')
         request.write( html.P )
         request.write('<div><a href=wlcg/tier>WLCG tier view</a></div>\n')
+        request.write( html.P )
+        request.write('<div><a href=wlcg/user>WLCG user view</a></div>\n')
         request.write( html.P )
         request.write(html.HTML_VIEWBASE_FOOTER)
 
@@ -170,4 +174,11 @@ class WLCGMachineView(WLCGBaseView):
     collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER )
     columns = [ dataprocess.HOST, dataprocess.VO_NAME, dataprocess.N_JOBS,
                 dataprocess.WALL_TIME, dataprocess.WALL_EQUIVALENTS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+
+
+class WLCGUserView(WLCGBaseView):
+
+    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.HOST, dataprocess.VO_GROUP )
+    columns = [ dataprocess.USER, dataprocess.VO_NAME, dataprocess.VO_ROLE, dataprocess.N_JOBS,
+                dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
 
