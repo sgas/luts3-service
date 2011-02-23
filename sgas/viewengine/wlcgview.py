@@ -146,11 +146,13 @@ class WLCGBaseView(baseview.BaseView):
         wlcg_records = dataprocess.addEffiencyProperty(wlcg_records)
         wlcg_records = dataprocess.addEquivalentProperties(wlcg_records, days)
 
+        sk = lambda key : dataprocess.sortKey(key, field_order=self.columns)
         if self.split is None:
-            sk = lambda key : dataprocess.sortKey(key, field_order=self.columns)
             wlcg_records = sorted(wlcg_records, key=sk)
         else:
             split_records = dataprocess.splitRecords(wlcg_records, dataprocess.TIER)
+            for split_attr, records in split_records.items():
+                split_records[split_attr] = sorted(records, key=sk)
 
         #print "L2", len(wlcg_records)
         t_dataprocess = time.time() - t_dataprocess_start
@@ -160,8 +162,6 @@ class WLCGBaseView(baseview.BaseView):
         else:
             table_content = ''
             for split_attr, records in split_records.items():
-                sk = lambda key : dataprocess.sortKey(key, field_order=self.columns)
-                records = sorted(records, key=sk)
                 table = self.createTable(records, self.columns)
                 table_content += html.createParagraph(split_attr) + table + html.SECTION_BREAK
 
