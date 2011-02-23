@@ -17,6 +17,29 @@ from sgas.server import resourceutil
 from sgas.viewengine import html, htmltable, dateform, baseview
 
 
+# Mapping for more readable column names
+COLUMN_NAMES = {
+    dataprocess.YEAR                    : 'Year',
+    dataprocess.MONTH                   : 'Month',
+    dataprocess.TIER                    : 'Tier',
+    dataprocess.HOST                    : 'Host',
+    dataprocess.VO_NAME                 : 'VO',
+    dataprocess.VO_GROUP                : 'VO Group',
+    dataprocess.VO_ROLE                 : 'VO Role',
+    dataprocess.USER                    : 'User',
+    dataprocess.N_JOBS                  : 'Job count',
+    dataprocess.CPU_TIME                : 'CPU time',
+    dataprocess.WALL_TIME               : 'Wall time',
+    dataprocess.KSI2K_CPU_TIME          : 'KSI2K CPU time',
+    dataprocess.KSI2K_WALL_TIME         : 'KSI2K wall time',
+    dataprocess.EFFICIENCY              : 'Job efficiency',
+    dataprocess.CPU_EQUIVALENTS         : 'CPU node equivalents',
+    dataprocess.WALL_EQUIVALENTS        : 'Wall node equivalents',
+    dataprocess.KSI2K_CPU_EQUIVALENTS   : 'KSI2K CPU node equivalents',
+    dataprocess.KSI2K_WALL_EQUIVALENTS  : 'KSI2K Wall node equivalents'
+}
+
+
 
 class WLCGView(baseview.BaseView):
 
@@ -146,7 +169,7 @@ class WLCGBaseView(baseview.BaseView):
                 for c in self.columns:
                     elements.append( ((c, rn), formatValue(wlcg_records[rn][c])) )
             matrix = dict(elements)
-            table_content = htmltable.createHTMLTable(matrix, self.columns, row_names, skip_base_column=True)
+            table_content = htmltable.createHTMLTable(matrix, self.columns, row_names, column_labels=COLUMN_NAMES, skip_base_column=True)
 
         else:
             table_content = ''
@@ -159,7 +182,7 @@ class WLCGBaseView(baseview.BaseView):
                     for c in self.columns:
                         elements.append( ((c, rn), formatValue(records[rn][c])) )
                 matrix = dict(elements)
-                table = htmltable.createHTMLTable(matrix, self.columns, row_names, skip_base_column=True)
+                table = htmltable.createHTMLTable(matrix, self.columns, row_names, column_labels=COLUMN_NAMES, skip_base_column=True)
                 table_content += html.createParagraph(split_attr)
                 table_content += table
                 table_content += html.SECTION_BREAK

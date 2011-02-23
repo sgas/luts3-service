@@ -7,11 +7,14 @@ Copyright: Nordic Data Grid Facility (2009-2011)
 
 
 
-def createHTMLTable(matrix, batches, groups, caption=None, base_indent=8, indent=4, skip_base_column=False):
+def createHTMLTable(matrix, batches, groups, caption=None, base_indent=8, indent=4, column_labels=None, skip_base_column=False):
     """
     Givena a matrix, and a suitable column and row names, create an HTML table of the data
     values in the matrix.
     """
+    if column_labels is None:
+        column_labels = {}
+
     i0 = ' ' * base_indent
     i1 = ' ' * base_indent + ' ' * 1 * indent
     i2 = ' ' * base_indent + ' ' * 2 * indent
@@ -27,7 +30,7 @@ def createHTMLTable(matrix, batches, groups, caption=None, base_indent=8, indent
     res += i2 + '<tr>\n'
     res += i3 + '<td></td>\n'
     for b in batches:
-        res += i3 + '<th>' + str(b) + '</th>\n'
+        res += i3 + '<th>' + str(column_labels.get(b, b)) + '</th>\n'
     res += i2 + '</tr>\n'
     res += i1 + '</thead>\n'
 
