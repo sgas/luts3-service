@@ -129,12 +129,6 @@ class WLCGBaseView(baseview.BaseView):
 
         t_query = time.time() - t_query_start
 
-        def formatValue(v):
-            if type(v) is float:
-                return int(v)
-            else:
-                return v
-
         days = dateform.dayDelta(start_date, end_date)
 
         # massage data
@@ -161,31 +155,15 @@ class WLCGBaseView(baseview.BaseView):
         #print "L2", len(wlcg_records)
         t_dataprocess = time.time() - t_dataprocess_start
 
-
         if self.split is None:
-            row_names = range(0, len(wlcg_records))
-            elements = []
-            for rn in row_names:
-                for c in self.columns:
-                    elements.append( ((c, rn), formatValue(wlcg_records[rn][c])) )
-            matrix = dict(elements)
-            table_content = htmltable.createHTMLTable(matrix, self.columns, row_names, column_labels=COLUMN_NAMES, skip_base_column=True)
-
+            table_content = self.createTable(wlcg_records, self.columns)
         else:
             table_content = ''
             for split_attr, records in split_records.items():
                 sk = lambda key : dataprocess.sortKey(key, field_order=self.columns)
                 records = sorted(records, key=sk)
-                row_names = range(0, len(records))
-                elements = [] 
-                for rn in row_names:
-                    for c in self.columns:
-                        elements.append( ((c, rn), formatValue(records[rn][c])) )
-                matrix = dict(elements)
-                table = htmltable.createHTMLTable(matrix, self.columns, row_names, column_labels=COLUMN_NAMES, skip_base_column=True)
-                table_content += html.createParagraph(split_attr)
-                table_content += table
-                table_content += html.SECTION_BREAK
+                table = self.createTable(records, self.columns)
+                table_content += html.createParagraph(split_attr) + table + html.SECTION_BREAK
 
         start_date_option = request.args.get('startdate', [''])[0]
         end_date_option   = request.args.get('enddate', [''])[0]
@@ -207,6 +185,26 @@ class WLCGBaseView(baseview.BaseView):
 
         request.finish()
         return server.NOT_DONE_YET
+
+
+
+    def createTable(self, records, columns):
+
+        def formatValue(v):
+            if type(v) is float:
+                return int(v)
+            else:
+                return v
+
+        row_names = range(0, len(records))
+        elements = []
+        for rn in row_names:
+            for c in columns:
+                elements.append( ((c, rn), formatValue(records[rn][c])) )
+        matrix = dict(elements)
+        table_markup = htmltable.createHTMLTable(matrix, columns, row_names, column_labels=COLUMN_NAMES, skip_base_column=True)
+
+        return table_markup
 
 
 
