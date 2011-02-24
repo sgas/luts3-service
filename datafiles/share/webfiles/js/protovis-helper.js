@@ -23,11 +23,11 @@ function add_xticks(vis, x, x_ticks) {
     vis.add(pv.Label)
         .data(x_ticks)
         .bottom(0)
-        .left(function(d) x(d) + x.range().band / 2)
+        .left(function(d) { return x(d) + x.range().band / 2; } )
         .textMargin(5)
         .textBaseline("top")
         .textAlign("center")
-        .text(function(d) d);
+        .text(function(d) { return d; } );
 
 }
 
@@ -36,8 +36,8 @@ function add_yticks(vis, y, width) {
 
     vis.add(pv.Rule)
         .data(y.ticks())
-        .bottom(function(d) Math.round(y(d)) - .5)
-        .strokeStyle(function(d) d ? "rgba(255,255,255,.0)" : "#000")
+        .bottom(function(d) { return Math.round(y(d)) - .5; } )
+        .strokeStyle(function(d) { d ? "rgba(255,255,255,.0)" : "#000"; } )
         .width(width)
       .add(pv.Rule)
         .left(0)
@@ -45,7 +45,7 @@ function add_yticks(vis, y, width) {
         .strokeStyle("#000")
         .anchor("left")
       .add(pv.Label)
-        .text(function(d) parseInt(d.toFixed(1)));
+        .text(function(d) { return parseInt(d.toFixed(1)); } );
 
 }
 
@@ -55,10 +55,10 @@ function add_legend(vis, groups) {
     vis.add(pv.Dot)
         .data(groups)
         .right(10)
-        .top(function() (5 + (groups.length  - this.index) * 19))
+        .top(function() { return (5 + (groups.length  - this.index) * 19); } )
         .size(40)
         .strokeStyle('#444444')
-        .fillStyle(function(g) c(g) )
+        .fillStyle(function(g) { return c(g); } )
         .anchor("left")
       .add(pv.Label);
 
