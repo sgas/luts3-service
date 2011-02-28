@@ -3,13 +3,12 @@ Server-setup logic
 """
 import time
 
-from twisted.python import log
 from twisted.application import internet, service
 from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.authz import engine
-from sgas.server import config, manifest, topresource, insertresource, queryresource
+from sgas.server import config, messages, manifest, topresource, insertresource, queryresource
 from sgas.database.postgresql import database as pgdatabase, hostscale
 from sgas.viewengine import viewdefinition, viewresource
 
@@ -50,6 +49,8 @@ def createSite(db, authorizer, views, mfst):
 
 
 def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None):
+
+    log = messages.Messages()
 
     cfg = config.readConfig(config_file)
 
@@ -110,6 +111,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
     # application
     application = service.Application("sgas")
 
+    log.setServiceParent(application)
     db.setServiceParent(application)
 
     internet.TCPServer(port or DEFAULT_PORT, site, interface='localhost').setServiceParent(application)
