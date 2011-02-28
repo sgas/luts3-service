@@ -61,13 +61,13 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
 
     # some friendly messages from your service configuration
     if config.HOSTKEY in cfg.options(config.SERVER_BLOCK):
-        log.msg('Option: hostkey can be removed from config file (no longer optional)', system='sgas.Setup')
+        log.msg('Option "hostkey" can be removed from config file (no longer used)', system='sgas.Setup')
     if config.HOSTCERT in cfg.options(config.SERVER_BLOCK):
-        log.msg('Option:hostcert can be removed from config file (no longer optional)', system='sgas.Setup')
+        log.msg('Option "hostcert" can be removed from config file (no longer used)', system='sgas.Setup')
     if config.CERTDIR in cfg.options(config.SERVER_BLOCK):
-        log.msg('Option: certdir can be removed from config file (no longer optional)', system='sgas.Setup')
+        log.msg('Option "certdir" can be removed from config file (no longer used)', system='sgas.Setup')
     if config.REVERSE_PROXY in cfg.options(config.SERVER_BLOCK):
-        log.msg('Option: reverse_proxy can be removed from config file (no longer optional)', system='sgas.Setup')
+        log.msg('Option "reverse_proxy" can be removed from config file (no longer used)', system='sgas.Setup')
 
     # check depth
     try:
