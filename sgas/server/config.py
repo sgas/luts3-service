@@ -10,13 +10,6 @@ import ConfigParser
 from sgas.ext.python import ConfigDict
 
 
-# log isn't loaded yet, so make a fake log
-class FakeLog:
-    def msg(self, *args):
-        print ','.join(args)
-log = FakeLog()
-
-
 
 # configuration defaults
 DEFAULT_AUTHZ_FILE            = '/etc/sgas.authz'
