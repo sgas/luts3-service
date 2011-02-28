@@ -33,5 +33,8 @@ class Messages(service.Service):
 
 
     def msg(self, message, system=None):
-        self.messages.append((message, system))
+        if self.started:
+            log.msg(message, system=system)
+        else:
+            self.messages.append((message, system))
 
