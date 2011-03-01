@@ -6,6 +6,7 @@ Copyright: Nordic Data Grid Facility (2011)
 """
 
 import time
+import math
 import datetime
 import calendar
 
@@ -96,5 +97,77 @@ def createMonthSelectorForm(baseurl, start_date_option, end_date_option):
 
 
 
+def _monthToQuarter(m):
 
+    return int(math.ceil(m/3.0))
+
+
+
+def parseQuarter(request):
+
+    def currentQuarter():
+        gmt = time.gmtime()
+        quarter = str(gmt.tm_year) + '-Q' + str(_monthToQuarter(gmt.tm_mon))
+        return quarter
+
+    if 'quarter' in request.args:
+        quarter = request.args['quarter'][0]
+    else:
+        quarter = currentQuarter()
+
+    if len(quarter) != 7 or quarter[4:6] != '-Q':
+        raise baseview.ViewError('Invalid quarter parameter: %s' % quarter)
+
+    try:
+        year = int(quarter[:4])
+        quart = int(quarter[6])
+    except ValueError, e:
+        raise baseview.ViewError(str(e))
+
+    return year, quart
+
+
+
+def quarterStartEndDates(year, quart):
+
+    base_dates = {
+        1 : ('%i-01-01', '%i-03-31'),
+        2 : ('%i-04-01', '%i-06-30'),
+        3 : ('%i-07-01', '%i-09-30'),
+        4 : ('%i-10-01', '%i-12-31')
+    }
+
+    if not quart in base_dates:
+        raise ValueError('Invalid quart specified (%s)' % quart)
+
+    sd, ed = base_dates[quart]
+
+    # if quarter is current quarter, make enddate today
+    gmt = time.gmtime()
+    if year == gmt.tm_year and _monthToQuarter(gmt.tm_mon) == quart:
+        ed = '%i-' + '%02d-%02d' % (gmt.tm_mon, gmt.tm_mday)
+
+    return (sd % year, ed % year)
+
+
+
+def generateQuarterFormOptions():
+
+    quarter_options = ['']
+    gmt = time.gmtime()
+    for i in range(1,5):
+        quarter_options.append('%i-Q%i' % (gmt.tm_year - 1, i))
+    for i in range (1, _monthToQuarter(gmt.tm_mon)+1):
+        quarter_options.append('%i-Q%i' % (gmt.tm_year, i))
+    return quarter_options
+
+
+
+def createQuarterSelectorForm(baseurl, quarter):
+
+    quarter_options = generateQuarterFormOptions()
+
+    sel = html.createSelector('Quarter', 'quarter', quarter_options, quarter)
+    selector_form = html.createSelectorForm(baseurl, [sel] )
+    return selector_form
 
