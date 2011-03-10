@@ -333,7 +333,7 @@ class WLCGQuarterlyView(baseview.BaseView):
             tld = host.split('.')[-1].upper()
             tld_groups.setdefault(tld, []).append(host)
 
-        # create composive to-tier names
+        # create composite to-tier names
         vo_tiers = set()
         for rec in wlcg_records:
             tl = 't1' if 'T1' in rec[dataprocess.TIER] else 't2'
@@ -347,6 +347,13 @@ class WLCGQuarterlyView(baseview.BaseView):
         site_totals = dataprocess.collapseFields(wlcg_records, ( dataprocess.VO_NAME, ) )
         for r in site_totals:
             r[dataprocess.VO_NAME] = site_total
+
+        # calculate total per country
+        country_records = [ r.copy() for r in wlcg_records ]
+        for rec in country_records:
+            rec[dataprocess.HOST] = rec[dataprocess.HOST].split('.')[-1].upper() + '-TOTAL'
+            rec[dataprocess.USER] = 'FAKE'
+        country_totals = dataprocess.collapseFields(country_records, ( dataprocess.USER, ) )
 
         # calculate total per tier-vo
         tier_vo_total = 'Tier-VO total'
@@ -363,6 +370,7 @@ class WLCGQuarterlyView(baseview.BaseView):
 
         # put all calculated records together and add equivalents
         wlcg_records += site_totals
+        wlcg_records += country_totals
         wlcg_records += tier_vo_totals
         wlcg_records += [ total_record ]
         wlcg_records = dataprocess.addEquivalentProperties(wlcg_records, days)
@@ -373,8 +381,9 @@ class WLCGQuarterlyView(baseview.BaseView):
 
         row_names = []
         for tld in sorted(tld_groups):
-            row_names.append(tld)
+#            row_names.append(tld)
             row_names += tld_groups[tld]
+            row_names.append(tld + '-TOTAL')
         row_names.append(tier_vo_total)
 
         elements = []
@@ -382,7 +391,11 @@ class WLCGQuarterlyView(baseview.BaseView):
             for col in columns:
                 for rec in wlcg_records:
                     if rec[dataprocess.HOST] == row and rec[dataprocess.VO_NAME] == col:
-                        elements.append( ((col,row), _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS]) ) )
+                        #elements.append( ((col,row), _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS]) ) )
+                        value = _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS])
+                        if row.endswith('-TOTAL') or row == 'Tier-VO total' or col == 'Site total':
+                            value = htmltable.BoldTableValue(value)
+                        elements.append( ((col,row), value))
                         break
                 else:
                     elements.append( ((col,row), '') )

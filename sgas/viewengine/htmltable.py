@@ -6,6 +6,12 @@ Copyright: Nordic Data Grid Facility (2009-2011)
 """
 
 
+class BoldTableValue:
+
+    def __init__(self, value):
+        self.value = value
+
+
 
 def createHTMLTable(matrix, batches, groups, caption=None, base_indent=8, indent=4, column_labels=None, skip_base_column=False):
     """
@@ -62,6 +68,8 @@ def formatValue(value):
 
     if type(value) in (tuple, list):
         return ' / '.join( [ str(e) for e in value ] )
+    if isinstance(value, BoldTableValue):
+        return '<b>' + str(value.value) + '</b>'
     else:
         return str(value)
 
