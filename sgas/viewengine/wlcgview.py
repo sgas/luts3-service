@@ -342,34 +342,41 @@ class WLCGQuarterlyView(baseview.BaseView):
             del rec[dataprocess.TIER] # same as collapsing afterwards
             vo_tiers.add(vt)
 
+        TOTAL = 'Total'
+        TIER_TOTAL = self.default_tier.upper()
+
         # calculate total per site
-        site_total = 'Site total'
         site_totals = dataprocess.collapseFields(wlcg_records, ( dataprocess.VO_NAME, ) )
         for r in site_totals:
-            r[dataprocess.VO_NAME] = site_total
+            r[dataprocess.VO_NAME] = TOTAL
 
-        # calculate total per country
-        country_records = [ r.copy() for r in wlcg_records ]
-        for rec in country_records:
+        # calculate total per country-tier
+        country_tier_totals = [ r.copy() for r in wlcg_records ]
+        for rec in country_tier_totals:
             rec[dataprocess.HOST] = rec[dataprocess.HOST].split('.')[-1].upper() + '-TOTAL'
             rec[dataprocess.USER] = 'FAKE'
-        country_totals = dataprocess.collapseFields(country_records, ( dataprocess.USER, ) )
+        country_tier_totals = dataprocess.collapseFields(country_tier_totals, ( dataprocess.USER, ) )
+
+        # calculate total per country
+        country_totals = dataprocess.collapseFields(country_tier_totals, ( dataprocess.VO_NAME, ) )
+        for rec in country_totals:
+            rec[dataprocess.VO_NAME] = TOTAL
 
         # calculate total per tier-vo
-        tier_vo_total = 'Tier-VO total'
         tier_vo_totals = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, ) )
         for r in tier_vo_totals:
-            r[dataprocess.HOST] = tier_vo_total
+            r[dataprocess.HOST] = TIER_TOTAL
 
         # calculate total
         total = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, dataprocess.VO_NAME ) )
         assert len(total) == 1, 'Records did not collapse into a single record when calculating grand total'
         total_record = total[0]
-        total_record[dataprocess.HOST] = tier_vo_total
-        total_record[dataprocess.VO_NAME] = site_total
+        total_record[dataprocess.HOST] = TIER_TOTAL
+        total_record[dataprocess.VO_NAME] = TOTAL
 
         # put all calculated records together and add equivalents
         wlcg_records += site_totals
+        wlcg_records += country_tier_totals
         wlcg_records += country_totals
         wlcg_records += tier_vo_totals
         wlcg_records += [ total_record ]
@@ -377,14 +384,13 @@ class WLCGQuarterlyView(baseview.BaseView):
 
         # create table
         columns = sorted(vo_tiers)
-        columns.append(site_total)
+        columns.append(TOTAL)
 
         row_names = []
         for tld in sorted(tld_groups):
-#            row_names.append(tld)
             row_names += tld_groups[tld]
             row_names.append(tld + '-TOTAL')
-        row_names.append(tier_vo_total)
+        row_names.append(TIER_TOTAL)
 
         elements = []
         for row in row_names:
@@ -393,7 +399,7 @@ class WLCGQuarterlyView(baseview.BaseView):
                     if rec[dataprocess.HOST] == row and rec[dataprocess.VO_NAME] == col:
                         #elements.append( ((col,row), _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS]) ) )
                         value = _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS])
-                        if row.endswith('-TOTAL') or row == 'Tier-VO total' or col == 'Site total':
+                        if row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
                             value = htmltable.BoldTableValue(value)
                         elements.append( ((col,row), value))
                         break
