@@ -6,10 +6,23 @@ Copyright: Nordic Data Grid Facility (2009-2011)
 """
 
 
-class BoldTableValue:
+class StyledTableValue:
 
-    def __init__(self, value):
+    def __init__(self, value, bold=False, underlined=False, double_underlined=False):
         self.value = value
+        self.bold = bold
+        self.underlined = underlined
+        self.double_underlined = double_underlined
+
+    def html(self):
+        tag = str(self.value)
+        if self.bold:
+            tag = '<b>' + tag + '</b>'
+        if self.underlined:
+            tag = '<u>' + tag + '</u>'
+        if self.double_underlined:
+            tag = '<u style="border-bottom: 1px inset black;">' + tag + '</u>'
+        return tag
 
 
 
@@ -68,8 +81,8 @@ def formatValue(value):
 
     if type(value) in (tuple, list):
         return ' / '.join( [ str(e) for e in value ] )
-    if isinstance(value, BoldTableValue):
-        return '<b>' + str(value.value) + '</b>'
+    if isinstance(value, StyledTableValue):
+        return value.html()
     else:
         return str(value)
 

@@ -343,7 +343,7 @@ class WLCGQuarterlyView(baseview.BaseView):
             vo_tiers.add(vt)
 
         TOTAL = 'Total'
-        TIER_TOTAL = self.default_tier.upper()
+        TIER_TOTAL = self.default_tier.split('-')[0].upper()
 
         # calculate total per site
         site_totals = dataprocess.collapseFields(wlcg_records, ( dataprocess.VO_NAME, ) )
@@ -399,8 +399,13 @@ class WLCGQuarterlyView(baseview.BaseView):
                     if rec[dataprocess.HOST] == row and rec[dataprocess.VO_NAME] == col:
                         #elements.append( ((col,row), _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS]) ) )
                         value = _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS])
-                        if row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
-                            value = htmltable.BoldTableValue(value)
+                        # hurrah for formatting
+                        if row == TIER_TOTAL and col == TOTAL:
+                            value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
+                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == TIER_TOTAL:
+                            value = htmltable.StyledTableValue(value, bold=True, underlined=True)
+                        elif row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
+                            value = htmltable.StyledTableValue(value, bold=True)
                         elements.append( ((col,row), value))
                         break
                 else:
