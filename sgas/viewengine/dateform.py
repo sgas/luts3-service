@@ -115,6 +115,9 @@ def parseQuarter(request):
     else:
         quarter = currentQuarter()
 
+    if quarter == '':
+        quarter = currentQuarter()
+
     if len(quarter) != 7 or quarter[4:6] != '-Q':
         raise baseview.ViewError('Invalid quarter parameter: %s' % quarter)
 
