@@ -397,7 +397,6 @@ class WLCGQuarterlyView(baseview.BaseView):
             for col in columns:
                 for rec in wlcg_records:
                     if rec[dataprocess.HOST] == row and rec[dataprocess.VO_NAME] == col:
-                        #elements.append( ((col,row), _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS]) ) )
                         value = _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS])
                         # hurrah for formatting
                         if row == TIER_TOTAL and col == TOTAL:
@@ -427,6 +426,8 @@ class WLCGQuarterlyView(baseview.BaseView):
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph(range_text) )
         request.write( table_content )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph('Numbers are scaled node equivalents') )
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
         request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
