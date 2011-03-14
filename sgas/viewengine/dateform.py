@@ -103,12 +103,18 @@ def _monthToQuarter(m):
 
 
 
-def parseQuarter(request):
+def currentYearQuart():
+    gmt = time.gmtime()
+    return gmt.tm_year, _monthToQuarter(gmt.tm_mon)
 
-    def currentQuarter():
-        gmt = time.gmtime()
-        quarter = str(gmt.tm_year) + '-Q' + str(_monthToQuarter(gmt.tm_mon))
-        return quarter
+
+def currentQuarter():
+    year, quart = currentYearQuart()
+    quarter = str(year) + '-Q' + str(quart)
+    return quarter
+
+
+def parseQuarter(request):
 
     if 'quarter' in request.args:
         quarter = request.args['quarter'][0]

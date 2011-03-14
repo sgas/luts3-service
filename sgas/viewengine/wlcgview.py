@@ -287,13 +287,18 @@ class WLCGQuarterlyView(baseview.BaseView):
             return self.renderAuthzErrorPage(request, 'WLCG Querterly view' % self.path, subject)
 
         # access allowed
-        year, quart = dateform.parseQuarter(request)
-        start_date, end_date = dateform.quarterStartEndDates(year, quart)
-        days = dateform.dayDelta(start_date, end_date)
+        start_date, end_date = dateform.parseStartEndDates(request)
+
+        # set dates if not specified (defaults are current month, which is not what we want)
+        year, quart = dateform.currentYearQuart()
+        if not 'startdate' in request.args:
+            start_date, _ = dateform.quarterStartEndDates(year, quart)
+        if not 'enddate' in request.args:
+            _, end_date = dateform.quarterStartEndDates(year, quart)
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date)
-        d.addCallbacks(self.renderWLCGViewPage, self.renderErrorPage, callbackArgs=(request, days, t_query_start), errbackArgs=(request,))
+        d.addCallbacks(self.renderWLCGViewPage, self.renderErrorPage, callbackArgs=(request, start_date, end_date, t_query_start), errbackArgs=(request,))
         return server.NOT_DONE_YET
 
 
@@ -303,9 +308,10 @@ class WLCGQuarterlyView(baseview.BaseView):
         return d
 
 
-    def renderWLCGViewPage(self, wlcg_data, request, days, t_query_start):
+    def renderWLCGViewPage(self, wlcg_data, request, start_date, end_date, t_query_start):
 
         t_query = time.time() - t_query_start
+        days = dateform.dayDelta(start_date, end_date)
         t_dataprocess_start = time.time()
 
         wlcg_records = dataprocess.rowsToDicts(wlcg_data)
@@ -369,7 +375,9 @@ class WLCGQuarterlyView(baseview.BaseView):
 
         # calculate total
         total = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, dataprocess.VO_NAME ) )
-        assert len(total) == 1, 'Records did not collapse into a single record when calculating grand total'
+        assert len(total) in (0,1), 'Records did not collapse into a single record when calculating grand total'
+        if len(total) == 0:
+            total = [ { dataprocess.CPU_TIME : 0, dataprocess.WALL_TIME : 0, dataprocess.KSI2K_CPU_TIME : 0, dataprocess.KSI2K_WALL_TIME : 0 } ]
         total_record = total[0]
         total_record[dataprocess.HOST] = TIER_TOTAL
         total_record[dataprocess.VO_NAME] = TOTAL
@@ -414,11 +422,12 @@ class WLCGQuarterlyView(baseview.BaseView):
         table_content = htmltable.createHTMLTable(matrix, columns, row_names, column_labels=COLUMN_NAMES)
 
         # render page
-        quarter = request.args.get('quarter', [''])[0]
+        start_date_option = request.args.get('startdate', [''])[0]
+        end_date_option   = request.args.get('enddate', [''])[0]
 
-        title = 'WLCG %s view' % self.path
-        selector_form = dateform.createQuarterSelectorForm(self.path, quarter)
-        range_text = html.createParagraph('Quarter: %s (%i days)' % (quarter or 'current', days))
+        title = 'WLCG oversight view'
+        selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option)
+        range_text = html.createParagraph('Date range: %s - %s (%s days)' % (start_date, end_date, days))
 
         request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
         request.write( html.createTitle(title) )
