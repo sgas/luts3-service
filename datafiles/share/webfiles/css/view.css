@@ -10,7 +10,8 @@ body {
 
 /* table layout */
 table {
-    width: 90%;
+    min-width: 600px;
+    max-width: 95%;
     border-collapse: collapse;
     border-width: 2px 2px 2px 2px;
     border-spacing: 2px;
