@@ -61,7 +61,7 @@ class WLCGView(baseview.BaseView):
             'tier'      : ('WLCG tier view',    WLCGTierView(self.urdb, self.authorizer, self.manifest, 'tier')),
             'fulltier'  : ('WLCG full tier view', WLCGFullTierView(self.urdb, self.authorizer, self.manifest, 'fulltier')),
             'tiersplit' : ('WLCG tier-machine split view', WLCGTierMachineSplitView(self.urdb, self.authorizer, self.manifest, 'tiersplit')),
-            'quarterly' : ('WLCG Quarterly view', WLCGQuarterlyView(self.urdb, self.authorizer, self.manifest, 'quarterly'))
+            'oversight' : ('WLCG Oversight view', WLCGOversightView(self.urdb, self.authorizer, self.manifest, 'oversight'))
         }
 
     def getChild(self, path, request):
@@ -263,7 +263,7 @@ class WLCGUserView(WLCGBaseView):
 
 
 
-class WLCGQuarterlyView(baseview.BaseView):
+class WLCGOversightView(baseview.BaseView):
 
     # This view is rather different than the others, so it is its own class
     collapse = [ dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER ]
