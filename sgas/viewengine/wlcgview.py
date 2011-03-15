@@ -107,7 +107,7 @@ class WLCGBaseView(baseview.BaseView):
         wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
         self.tier_mapping = wlcg_config['tier-mapping']
         self.tier_shares  = wlcg_config['tier-ratio']
-        self.default_tier = wlcg_config['default-tier']
+        self.default_tier = str(wlcg_config['default-tier'])
 
 
     def render_GET(self, request):
