@@ -95,6 +95,7 @@ def createMonthSelectorForm(baseurl, start_date_option, end_date_option):
     return selector_form
 
 
+# quarter stuff from here
 
 
 def _monthToQuarter(m):
@@ -108,13 +109,26 @@ def currentYearQuart():
     return gmt.tm_year, _monthToQuarter(gmt.tm_mon)
 
 
+
 def currentQuarter():
     year, quart = currentYearQuart()
     quarter = str(year) + '-Q' + str(quart)
     return quarter
 
 
-def parseQuarter(request):
+
+def parseQuarter(quarter):
+
+    if len(quarter) != 7 or quarter[4:6] != '-Q':
+        raise ValueError('Invalid quarter value: %s' % quarter)
+
+    year = int(quarter[:4])
+    quart = int(quarter[6])
+    return year, quart
+
+
+
+def parseRequestQuarter(request):
 
     if 'quarter' in request.args:
         quarter = request.args['quarter'][0]
@@ -124,12 +138,8 @@ def parseQuarter(request):
     if quarter == '':
         quarter = currentQuarter()
 
-    if len(quarter) != 7 or quarter[4:6] != '-Q':
-        raise baseview.ViewError('Invalid quarter parameter: %s' % quarter)
-
     try:
-        year = int(quarter[:4])
-        quart = int(quarter[6])
+        year, quart = parseQuarter(quarter)
     except ValueError, e:
         raise baseview.ViewError(str(e))
 
@@ -160,14 +170,21 @@ def quarterStartEndDates(year, quart):
 
 
 
+def generateFormQuarters():
+
+    gmt = time.gmtime()
+    quarters = []
+    for i in range(1,5):
+        quarters.append('%i-Q%i' % (gmt.tm_year - 1, i))
+    for i in range (1, _monthToQuarter(gmt.tm_mon)+1):
+        quarters.append('%i-Q%i' % (gmt.tm_year, i))
+    return quarters
+
+
+
 def generateQuarterFormOptions():
 
-    quarter_options = ['']
-    gmt = time.gmtime()
-    for i in range(1,5):
-        quarter_options.append('%i-Q%i' % (gmt.tm_year - 1, i))
-    for i in range (1, _monthToQuarter(gmt.tm_mon)+1):
-        quarter_options.append('%i-Q%i' % (gmt.tm_year, i))
+    quarter_options = [''] + generateFormQuarters()
     return quarter_options
 
 

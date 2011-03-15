@@ -427,11 +427,18 @@ class WLCGQuarterlyView(baseview.BaseView):
 
         title = 'WLCG oversight view'
         selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option)
+        quarters = dateform.generateFormQuarters()
+        quarter_links = []
+        for q in quarters:
+            year, quart = dateform.parseQuarter(q)
+            sd, ed = dateform.quarterStartEndDates(year, quart)
+            quarter_links.append(html.createLink('%s?startdate=%s&enddate=%s' % (self.path, sd, ed), q ) )
         range_text = html.createParagraph('Date range: %s - %s (%s days)' % (start_date, end_date, days))
 
         request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
         request.write( html.createTitle(title) )
         request.write( html.createParagraph(selector_form) )
+        request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ) )
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph(range_text) )
         request.write( table_content )

@@ -38,6 +38,8 @@ HTML_VIEWGRAPH_FOOTER  = HTML_VIEWBASE_FOOTER
 
 _INDENT = ' ' * 4
 
+NBSP = '&nbsp;'
+
 P = _INDENT + '<p>\n'
 SECTION_BREAK = _INDENT + '<p> &nbsp; \n' + P + '\n'
 
@@ -55,6 +57,11 @@ def createSectionTitle(title):
 def createParagraph(text):
 
     return _INDENT + text + ' <p>\n'
+
+
+def createLink(url, description):
+
+    return '<a href=%s>%s</a>\n' % (url, description)
 
 
 def createSelector(title, name, options, current_option=None):
