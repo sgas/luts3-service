@@ -64,6 +64,17 @@ def createLink(url, description):
     return '<a href=%s>%s</a>\n' % (url, description)
 
 
+def createRadioButtons(name, values):
+
+    RADIO_TEMPLATE = '''<input type="radio" name="%s" value="%s" />%s<br>'''
+
+    inputs = []
+    for value, description in values:
+        inputs.append( RADIO_TEMPLATE % (name, value, description) )
+
+    return '\n'.join(inputs)
+
+
 def createSelector(title, name, options, current_option=None):
 
     selector = _INDENT + title + '\n' + _INDENT + ' <select name=%s>' % name
@@ -77,13 +88,18 @@ def createSelector(title, name, options, current_option=None):
     return selector
 
 
-def createSelectorForm(action, selectors):
+def createSelectorForm(action, selectors, buttons=None):
 
     form = _INDENT + '<form name="input" action="%s" method="get">\n' % action
 
     for sel in selectors:
         form += sel
         form += '    &nbsp; &nbsp;\n'
+
+    if buttons is not None:
+        form += '<br><br>'
+        form += buttons
+        form += '<br>'
 
     form += '\n' + _INDENT + '<input type="submit" value="Submit" />\n' + \
             '</form>\n'

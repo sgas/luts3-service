@@ -259,7 +259,13 @@ class WLCGUserView(WLCGBaseView):
 
 
 
-## --- work area
+WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[dataprocess.KSI2K_WALL_EQUIVALENTS]
+WLCG_UNIT_MAPPING = {
+    'ksi2k-ne' : WLCG_UNIT_MAPPING_DEFAULT,
+    'hs06-ne'  : lambda rec : rec[dataprocess.KSI2K_WALL_EQUIVALENTS] * 4,
+    'ksi2k-wallhours' : lambda rec : rec[dataprocess.KSI2K_WALL_TIME],
+    'hs06-wallhours'  : lambda rec : rec[dataprocess.KSI2K_WALL_TIME] * 4
+}
 
 
 
@@ -295,10 +301,14 @@ class WLCGOversightView(baseview.BaseView):
             start_date, _ = dateform.quarterStartEndDates(year, quart)
         if not 'enddate' in request.args:
             _, end_date = dateform.quarterStartEndDates(year, quart)
+        if 'unit' in request.args and request.args['unit'][0] not in WLCG_UNIT_MAPPING:
+            return self.renderErrorPage('Invalid units parameters')
+        unit = request.args.get('unit', [None])[0]
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date)
-        d.addCallbacks(self.renderWLCGViewPage, self.renderErrorPage, callbackArgs=(request, start_date, end_date, t_query_start), errbackArgs=(request,))
+        d.addCallbacks(self.renderWLCGViewPage, self.renderErrorPage,
+                       callbackArgs=(request, start_date, end_date, unit, t_query_start), errbackArgs=(request,))
         return server.NOT_DONE_YET
 
 
@@ -308,7 +318,7 @@ class WLCGOversightView(baseview.BaseView):
         return d
 
 
-    def renderWLCGViewPage(self, wlcg_data, request, start_date, end_date, t_query_start):
+    def renderWLCGViewPage(self, wlcg_data, request, start_date, end_date, unit, t_query_start):
 
         t_query = time.time() - t_query_start
         days = dateform.dayDelta(start_date, end_date)
@@ -400,12 +410,14 @@ class WLCGOversightView(baseview.BaseView):
             row_names.append(tld + '-TOTAL')
         row_names.append(TIER_TOTAL)
 
+        unit_extractor = WLCG_UNIT_MAPPING.get(unit, WLCG_UNIT_MAPPING_DEFAULT)
+
         elements = []
         for row in row_names:
             for col in columns:
                 for rec in wlcg_records:
                     if rec[dataprocess.HOST] == row and rec[dataprocess.VO_NAME] == col:
-                        value = _formatValue(rec[dataprocess.KSI2K_WALL_EQUIVALENTS])
+                        value = _formatValue( unit_extractor(rec) )
                         # hurrah for formatting
                         if row == TIER_TOTAL and col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
@@ -426,7 +438,11 @@ class WLCGOversightView(baseview.BaseView):
         end_date_option   = request.args.get('enddate', [''])[0]
 
         title = 'WLCG oversight view'
-        selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option)
+        unit_options = [ ( 'ksi2k-ne', 'KSI2K Node Equivalents (default)') , ( 'hs06-ne', 'HS06 Node Equivalents' ),
+                         ( 'ksi2k-wallhours', 'KSI2K Walltime Hours' ) , ( 'hs06-wallhours', 'HS06 Walltime hours') ]
+        unit_buttons = html.createRadioButtons('unit', unit_options)
+        selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option, unit_buttons)
+
         quarters = dateform.generateFormQuarters()
         quarter_links = []
         for q in quarters:
@@ -437,13 +453,12 @@ class WLCGOversightView(baseview.BaseView):
 
         request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
         request.write( html.createTitle(title) )
-        request.write( html.createParagraph(selector_form) )
         request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(selector_form) )
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph(range_text) )
         request.write( table_content )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph('Numbers are scaled node equivalents') )
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
         request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )

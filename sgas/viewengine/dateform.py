@@ -84,13 +84,13 @@ def generateMonthFormOptions():
 
 
 
-def createMonthSelectorForm(baseurl, start_date_option, end_date_option):
+def createMonthSelectorForm(baseurl, start_date_option, end_date_option, buttons=None):
 
     month_options = generateMonthFormOptions()
 
     sel1 = html.createSelector('Start month', 'startdate', month_options, start_date_option)
     sel2 = html.createSelector('End month', 'enddate', month_options, end_date_option)
-    selector_form = html.createSelectorForm(baseurl, [sel1, sel2] )
+    selector_form = html.createSelectorForm(baseurl, [ sel1, sel2 ], buttons)
 
     return selector_form
 
