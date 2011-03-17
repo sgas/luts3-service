@@ -65,20 +65,21 @@ def dayDelta(start_date, end_date):
     d_start = datetime.date(int(start_date[0:4]), int(start_date[5:7]),int(start_date[8:10]))
     d_end   = datetime.date(int(end_date[0:4]),   int(end_date[5:7]),  int(end_date[8:10]))
     days = (d_end - d_start).days + 1
+    if days < 1:
+        raise ValueError('Cannot calculate day delta for decreasing date span')
     return days
 
 
 
 def generateMonthFormOptions():
 
-    # generate year-month options one year back
+    # generate year-month options for entire last year and all months this year
     month_options = ['']
     gmt = time.gmtime()
-    for i in range(gmt.tm_mon-12, gmt.tm_mon+1):
-        if i <= 0:
-            month_options.append('%i-%02d' % (gmt.tm_year - 1, 12 + i) )
-        elif i > 0:
-            month_options.append('%i-%02d' % (gmt.tm_year, i) )
+    for i in range(1,13):
+        month_options.append('%i-%02d' % (gmt.tm_year - 1, i) )
+    for i in range(1,gmt.tm_mon+1):
+           month_options.append('%i-%02d' % (gmt.tm_year, i) )
 
     return month_options
 
