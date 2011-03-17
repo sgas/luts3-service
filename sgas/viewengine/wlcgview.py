@@ -297,13 +297,13 @@ class WLCGOversightView(baseview.BaseView):
 
         # set dates if not specified (defaults are current month, which is not what we want)
         year, quart = dateform.currentYearQuart()
-        if not 'startdate' in request.args:
+        if not 'startdate' in request.args or request.args['startdate'] == ['']:
             start_date, _ = dateform.quarterStartEndDates(year, quart)
-        if not 'enddate' in request.args:
+        if not 'enddate' in request.args or request.args['enddate'] == ['']:
             _, end_date = dateform.quarterStartEndDates(year, quart)
         if 'unit' in request.args and request.args['unit'][0] not in WLCG_UNIT_MAPPING:
             return self.renderErrorPage('Invalid units parameters')
-        unit = request.args.get('unit', [None])[0]
+        unit = request.args.get('unit', ['ksi2k-ne'])[0]
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date)
@@ -440,7 +440,7 @@ class WLCGOversightView(baseview.BaseView):
         title = 'WLCG oversight view'
         unit_options = [ ( 'ksi2k-ne', 'KSI2K Node Equivalents (default)') , ( 'hs06-ne', 'HS06 Node Equivalents' ),
                          ( 'ksi2k-wallhours', 'KSI2K Walltime Hours' ) , ( 'hs06-wallhours', 'HS06 Walltime hours') ]
-        unit_buttons = html.createRadioButtons('unit', unit_options)
+        unit_buttons = html.createRadioButtons('unit', unit_options, checked_value=unit)
         selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option, unit_buttons)
 
         quarters = dateform.generateFormQuarters()
