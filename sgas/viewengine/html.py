@@ -64,13 +64,16 @@ def createLink(url, description):
     return '<a href=%s>%s</a>\n' % (url, description)
 
 
-def createRadioButtons(name, values):
+def createRadioButtons(name, values, checked_value=None):
 
-    RADIO_TEMPLATE = '''<input type="radio" name="%s" value="%s" />%s<br>'''
+    RADIO_TEMPLATE = '''<input type="radio" name="%s" value="%s" %s />%s<br>'''
 
     inputs = []
     for value, description in values:
-        inputs.append( RADIO_TEMPLATE % (name, value, description) )
+        checked = ''
+        if checked_value == value:
+            checked = 'checked'
+        inputs.append( RADIO_TEMPLATE % (name, value, checked, description) )
 
     return '\n'.join(inputs)
 
