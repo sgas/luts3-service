@@ -221,3 +221,15 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
         self.failUnlessEqual(len(rows), 0)
 
 
+    @defer.inlineCallbacks
+    def testExitCodeCorrection(self):
+
+        yield self.db.insert(ursampledata.UR_BAD_EXIT_CODE)
+
+        rows = yield self.postgres_dbpool.runQuery('SELECT * from usagerecords')
+        self.failUnlessEqual(len(rows), 1)
+        self.failUnlessEqual(rows[0][31], 166) # corrected from 68774 in the ur
+
+
+
+

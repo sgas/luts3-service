@@ -229,3 +229,34 @@ UR_BAD_LOCAL_JOB_ID = """
 </ns0:JobUsageRecord>
 """
 
+
+
+UR_BAD_EXIT_CODE_ID = "job.bad.exit.code"
+UR_BAD_EXIT_CODE = """<?xml version="1.0" encoding="UTF-8" ?>
+<ur:JobUsageRecord xmlns:ur="http://schema.ogf.org/urf/2003/09/urf">
+    <ur:RecordIdentity ur:createTime="2010-10-22T14:51:18Z" ur:recordId="job.bad.exit.code" />
+    <ur:JobIdentity>
+        <ur:GlobalJobId>gsiftp://test.ndgf.org:2811/jobs/badexitcodejob12354</ur:GlobalJobId>
+    </ur:JobIdentity>
+    <ur:UserIdentity>
+        <ur:LocalUserId>sgastest</ur:LocalUserId>
+        <ur:GlobalUserName>/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Test User</ur:GlobalUserName>
+        <vo:VO vo:type="voms" xmlns:vo="http://www.sgas.se/namespaces/2009/05/ur/vo">
+            <vo:Name>atlas</vo:Name>
+        </vo:VO>
+    </ur:UserIdentity>
+    <ur:Status>completed</ur:Status>
+    <ur:MachineName>zalizo.uio.no</ur:MachineName>
+    <ur:Queue>fork</ur:Queue>
+    <ur:NodeCount>1</ur:NodeCount>
+    <ur:Processors>1</ur:Processors>
+    <deisa:SubmitTime xmlns:deisa="http://rmis.deisa.org/acct">2010-10-22T14:50:56Z</deisa:SubmitTime>
+    <ur:StartTime>2010-10-22T14:51:08Z</ur:StartTime>
+    <ur:EndTime>2010-10-22T14:51:18Z</ur:EndTime>
+    <ur:WallDuration>PT10S</ur:WallDuration>
+    <ur:CpuDuration>PT0S</ur:CpuDuration>
+    <sgas:ExitCode xmlns:sgas="http://www.sgas.se/namespaces/2009/07/ur">68774</sgas:ExitCode>
+</ur:JobUsageRecord>
+"""
+
+

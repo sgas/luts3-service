@@ -81,6 +81,9 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
         if 'charge' in ur_doc:
             ur_doc['charge'] = int(ur_doc['charge'])
 
+        if 'exit_code' in ur_doc:
+            ur_doc['exit_code'] = ur_doc['exit_code'] & 0377 # equivalent to modulus 256
+
         # convert vo attributes into arrays (adaption is done by psycopg2)
         if 'vo_attrs' in ur_doc:
             vo_attrs = [ [ e.get('group'), e.get('role') ] for e in ur_doc['vo_attrs'] ]
