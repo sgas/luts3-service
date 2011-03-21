@@ -22,7 +22,7 @@ def buildViewPage(view, rows):
     body = view.caption + '\n<p>\n'
     if render_table:
         matrix = dataprocess.createMatrix(dict_list)
-        table = htmltable.createHTMLTable(matrix, sorted(batches), sorted(groups))
+        table = htmltable.createHTMLTable(matrix, sorted(batches), sorted(groups or [0]))
         body += table
 
     if render_table and render_graph:
