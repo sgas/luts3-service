@@ -1,5 +1,22 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.5.2
+
+Fix bug for rendering HTML table for 2-dimensional data.
+
+Perform modulus 256 on exit code to ensure that it fits into PostgreSQL schema.
+
+Add WLCG specific view (requires wlcgsgas library and configuration).
+
+Automatically size table to fit in CSS.
+
+Enable logging before startup be capturing log statements and emitting them
+after startup.
+
+Use proper return statements in javascript helper functions (fixes graph
+rendering in Chromium browser).
+
+
 3.5.1
 
 Convert charge field into integer in order to prevent insertion errors, when
