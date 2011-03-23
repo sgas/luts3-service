@@ -2,6 +2,9 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 3.5.2
 
+Increase error verbosity increase maximum client body size in nginx sample
+configuration.
+
 Fix bug for rendering HTML table for 2-dimensional data.
 
 Perform modulus 256 on exit code to ensure that it fits into PostgreSQL schema.
