@@ -5,6 +5,7 @@ server {
     server_name  YOUR_FQDN_NAME_HERE;
 
     access_log   /var/log/nginx/sgas.access.log;
+    error_log    /var/log/nginx/sgas.error.log info;
 
     ssl on;
     ssl_certificate      /etc/grid-security/hostcert.pem;
