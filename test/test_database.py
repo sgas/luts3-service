@@ -30,7 +30,7 @@ class GenericDatabaseTest:
     @defer.inlineCallbacks
     def testSingleInsert(self):
 
-        doc_ids = yield self.db.insert(ursampledata.UR1)
+        doc_ids = yield self.db.insertJobUsageRecords(ursampledata.UR1)
         self.failUnlessEqual(len(doc_ids), 1)
 
         doc = yield self.fetchUsageRecord(ursampledata.UR1_ID)
@@ -45,7 +45,7 @@ class GenericDatabaseTest:
         doc = yield self.fetchUsageRecord(ursampledata.UR2_ID)
         self.failUnlessEqual(doc, None)
 
-        doc_ids = yield self.db.insert(ursampledata.UR2)
+        doc_ids = yield self.db.insertJobUsageRecords(ursampledata.UR2)
         self.failUnlessEqual(len(doc_ids), 1)
 
         doc = yield self.fetchUsageRecord(ursampledata.UR2_ID)
@@ -57,7 +57,7 @@ class GenericDatabaseTest:
     @defer.inlineCallbacks
     def testCompoundInsert(self):
 
-        doc_ids = yield self.db.insert(ursampledata.CUR)
+        doc_ids = yield self.db.insertJobUsageRecords(ursampledata.CUR)
 
         self.failUnlessEqual(len(doc_ids), 2)
 
@@ -76,8 +76,8 @@ class QueryDatabaseTest:
     @defer.inlineCallbacks
     def testBasicQuery(self):
 
-        yield self.db.insert(ursampledata.UR1)
-        yield self.db.insert(ursampledata.UR2)
+        yield self.db.insertJobUsageRecords(ursampledata.UR1)
+        yield self.db.insertJobUsageRecords(ursampledata.UR2)
 
         yield self.triggerAggregateUpdate()
 
@@ -88,8 +88,8 @@ class QueryDatabaseTest:
     @defer.inlineCallbacks
     def testGroupQuery(self):
 
-        yield self.db.insert(ursampledata.UR1)
-        yield self.db.insert(ursampledata.UR2)
+        yield self.db.insertJobUsageRecords(ursampledata.UR1)
+        yield self.db.insertJobUsageRecords(ursampledata.UR2)
         yield self.triggerAggregateUpdate()
 
         result = yield self.db.query('SELECT user_identity, sum(n_jobs) FROM uraggregated GROUP BY user_identity')
@@ -99,7 +99,7 @@ class QueryDatabaseTest:
     @defer.inlineCallbacks
     def testFilterQuery(self):
 
-        yield self.db.insert(ursampledata.CUR)
+        yield self.db.insertJobUsageRecords(ursampledata.CUR)
         yield self.triggerAggregateUpdate()
 
         result = yield self.db.query('SELECT user_identity, sum(n_jobs) FROM uraggregated ' +
@@ -110,7 +110,7 @@ class QueryDatabaseTest:
     @defer.inlineCallbacks
     def testOrderQuery(self):
 
-        yield self.db.insert(ursampledata.CUR)
+        yield self.db.insertJobUsageRecords(ursampledata.CUR)
         yield self.triggerAggregateUpdate()
 
         result = yield self.db.query('SELECT machine_name FROM uraggregated ORDER BY machine_name')
@@ -161,16 +161,16 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
 
         self.real_db = database.PostgreSQLDatabase(db_url)
 
-        class FakeDB:
+        class WrapperDB:
             def __init__(self, db):
                 self.db = db
                 self.authorizer = utils.FakeAuthorizer()
-            def insert(self, ur_data):
-                return inserter.insertRecords(ur_data, self.db, self.authorizer)
+            def insertJobUsageRecords(self, ur_data):
+                return inserter.insertJobUsageRecords(ur_data, self.db, self.authorizer)
             def query(self, *args):
                 return self.db.query(*args)
 
-        self.db = FakeDB(self.real_db)
+        self.db = WrapperDB(self.real_db)
 
         return self.real_db.startService()
 
@@ -194,7 +194,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def testUpdateAfterSingleInsert(self):
 
-        yield self.db.insert(ursampledata.UR1)
+        yield self.db.insertJobUsageRecords(ursampledata.UR1)
 
         rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
         mid_rows = yield self.postgres_dbpool.runQuery("SELECT id from machinename WHERE machine_name = %s", (ursampledata.UR1_MACHINE_NAME,))
@@ -214,7 +214,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def testUpdateAfterTrigger(self):
 
-        yield self.db.insert(ursampledata.CUR)
+        yield self.db.insertJobUsageRecords(ursampledata.CUR)
         yield self.triggerAggregateUpdate()
 
         rows = yield self.postgres_dbpool.runQuery('SELECT * from uraggregated_update')
@@ -224,7 +224,7 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
     @defer.inlineCallbacks
     def testExitCodeCorrection(self):
 
-        yield self.db.insert(ursampledata.UR_BAD_EXIT_CODE)
+        yield self.db.insertJobUsageRecords(ursampledata.UR_BAD_EXIT_CODE)
 
         rows = yield self.postgres_dbpool.runQuery('SELECT * from usagerecords')
         self.failUnlessEqual(len(rows), 1)

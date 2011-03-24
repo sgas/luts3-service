@@ -18,7 +18,7 @@ from sgas.database import error
 
 
 
-def insertRecords(usagerecord_data, db, authorizer, insert_identity=None, insert_hostname=None):
+def insertJobUsageRecords(usagerecord_data, db, authorizer, insert_identity=None, insert_hostname=None):
 
     # parse ur data
     insert_time = time.gmtime()
@@ -37,8 +37,7 @@ def insertRecords(usagerecord_data, db, authorizer, insert_identity=None, insert
     ctx = [ ('machine_name', mn) for mn in machine_names ]
 
     if authorizer.isAllowed(insert_identity, rights.ACTION_INSERT, ctx):
-        # insert records, if allowed
-        return db.insert(ur_docs)
+        return db.insertJobUsageRecords(ur_docs)
     else:
         MSG = 'Subject %s is not allowed to perform insertion for machines: %s' % (insert_identity, ','.join(machine_names))
         return defer.fail(error.SecurityError(MSG))

@@ -65,7 +65,6 @@ class PostgreSQLDatabase(service.MultiService):
     def __init__(self, connect_info):
         service.MultiService.__init__(self)
         self.pool_proxy = _DatabasePoolProxy(connect_info)
-        #self.dbpool = self._setupPool(self.connect_info)
         self.updater = updater.AggregationUpdater(self.pool_proxy)
 
 
@@ -80,8 +79,7 @@ class PostgreSQLDatabase(service.MultiService):
 
 
     @defer.inlineCallbacks
-    def insert(self, usagerecord_docs, retry=False):
-        # inserts usage record
+    def insertJobUsageRecords(self, usagerecord_docs, retry=False):
 
         arg_list = urconverter.createInsertArguments(usagerecord_docs)
 
@@ -99,12 +97,11 @@ class PostgreSQLDatabase(service.MultiService):
 
                 trans.close()
                 conn.commit()
-                log.msg('Database: %i records inserted' % len(id_dict), system='sgas.PostgreSQLDatabase')
-                # NOTIFY does not appear to work under adbapi, so we just do the notification here
+                log.msg('Database: %i job usage records inserted' % len(id_dict), system='sgas.PostgreSQLDatabase')
                 self.updater.updateNotification()
                 defer.returnValue(id_dict)
             except psycopg2.InterfaceError:
-                # error (usually) implies that the connection is closed, can't rollback
+                # this usually implies that the connection is closed (can't rollback)
                 raise
             except:
                 conn.rollback()
@@ -121,7 +118,7 @@ class PostgreSQLDatabase(service.MultiService):
                 log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
                 log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
                 self.pool_proxy.reconnect()
-                yield self.insert(usagerecord_docs, retry=True)
+                yield self.insertJobUsageRecords(usagerecord_docs, retry=True)
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
