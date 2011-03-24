@@ -62,7 +62,7 @@ class InsertResource(resource.Resource):
 
         request.content.seek(0)
         ur_data = request.content.read()
-        d = inserter.insertRecords(ur_data, self.db, self.authorizer, subject, hostname)
+        d = inserter.insertJobUsageRecords(ur_data, self.db, self.authorizer, subject, hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
 
