@@ -1,5 +1,5 @@
 """
-Implementation of ISGASDatabase interface for PostgreSQL.
+High-level inteface for PostgreSQL.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2010)
@@ -18,7 +18,7 @@ from twisted.internet import defer
 from twisted.enterprise import adbapi
 from twisted.application import service
 
-from sgas.database import ISGASDatabase, error
+from sgas.database import error
 from sgas.database.postgresql import urconverter, updater
 
 
@@ -59,8 +59,6 @@ class _DatabasePoolProxy:
 
 
 class PostgreSQLDatabase(service.MultiService):
-
-    implements(ISGASDatabase)
 
     def __init__(self, connect_info):
         service.MultiService.__init__(self)
