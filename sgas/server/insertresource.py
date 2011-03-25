@@ -51,7 +51,7 @@ class InsertResource(resource.Resource):
         # FIXME check for postpath, and if any reject request
 
         subject = resourceutil.getSubject(request)
-        if not self.authorizer.hasRelevantRight(subject, rights.ACTION_INSERT):
+        if not self.authorizer.hasRelevantRight(subject, rights.ACTION_JOB_INSERT):
             log.msg("Rejecting insert for %s, has no insert rights." % subject)
             request.setResponseCode(403) # forbidden
             return "Insertion not allowed for identity %s" % subject
