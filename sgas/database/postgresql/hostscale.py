@@ -10,7 +10,6 @@ Copyright: Nordic Data Grid Facility (2010)
 
 from twisted.python import log
 from twisted.internet import defer
-from twisted.enterprise import adbapi
 from twisted.application import service
 
 

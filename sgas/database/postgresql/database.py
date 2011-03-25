@@ -11,8 +11,6 @@ import decimal
 import psycopg2
 import psycopg2.extensions # not used, but enables tuple adaption
 
-from zope.interface import implements
-
 from twisted.python import log
 from twisted.internet import defer
 from twisted.enterprise import adbapi
