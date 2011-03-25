@@ -52,6 +52,7 @@ class InsertResource(resource.Resource):
 
         subject = resourceutil.getSubject(request)
         if not self.authorizer.hasRelevantRight(subject, rights.ACTION_INSERT):
+            log.msg("Rejecting insert for %s, has no insert rights." % subject)
             request.setResponseCode(403) # forbidden
             return "Insertion not allowed for identity %s" % subject
 
