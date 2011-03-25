@@ -43,9 +43,10 @@ class AuthorizationEngine:
             self.parseAuthzData(authz_data)
 
         self.context_checkers = {
-            rights.ACTION_INSERT : ctxinsertchecker.InsertChecker(insert_check_depth),
-            rights.ACTION_VIEW   : ctxsetchecker.AnySetChecker,
-            rights.ACTION_QUERY  : ctxsetchecker.AllSetChecker
+            rights.ACTION_JOB_INSERT        : ctxinsertchecker.JobInsertChecker(insert_check_depth),
+            rights.ACTION_STORAGE_INSERT    : ctxinsertchecker.StorageInsertChecker(insert_check_depth),
+            rights.ACTION_VIEW              : ctxsetchecker.AnySetChecker,
+            rights.ACTION_QUERY             : ctxsetchecker.AllSetChecker
         }
 
 
@@ -73,18 +74,37 @@ class AuthorizationEngine:
         action_authzgroup = action_desc.split(':')
 
         if len(action_authzgroup) == 1:
+
             action = action_authzgroup[0]
             if not action in rights.ACTIONS:
                 log.msg('Invalid authz action: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
                 return
-            user_authz_rights.setdefault(action, AuthzRights())
-            # some backwards compat
+
+            authz_rights = AuthzRights()
+
+             # some backwards compat
+            if action == rights.ACTION_INSERT:
+                log.msg("Changing 'insert' stanza to 'jobinsert'. Consider changing this in the authz file.", system='sgas.Authorizer')
+                action = rights.ACTION_JOB_INSERT
+
+             # more (older) backwards compat
             if action == rights.ACTION_VIEW:
                 log.msg("Expanding 'view' stanza to 'view:all'. Please change to 'view:all'. This behaviour might change in the future", system='sgas.Authorizer')
-                user_authz_rights[action].options.append(rights.OPTION_ALL)
+                authz_rights.options.append(rights.OPTION_ALL)
+
+            # add rights
+            user_authz_rights.setdefault(action, authz_rights)
 
         elif len(action_authzgroup) == 2:
             action, authzgroup = action_authzgroup
+            if not action in rights.ACTIONS:
+                log.msg('Invalid authz action: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
+                return
+
+            if action == rights.ACTION_INSERT:
+                log.msg("Changing 'insert' stanza to 'jobinsert'. Consider changing this in the authz file.", system='sgas.Authorizer')
+                action = rights.ACTION_JOB_INSERT
+
             for authz in authzgroup.split(','):
                 if '=' in authz: # context
                     ctx = {}

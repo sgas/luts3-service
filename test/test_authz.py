@@ -11,10 +11,10 @@ from sgas.authz import engine, rights
 # includes all basic authz types and some basic combinations
 # there will probably be more later
 TEST_AUTHZ_DATA = """
-"host1"     insert
-"host2"     insert:all
-"host3"     insert:machine_name=host2
-"host4.ex.org" insert:machine_name=host2
+"host1"     jobinsert
+"host2"     jobinsert:all
+"host3"     jobinsert:machine_name=host2
+"host4.ex.org" jobinsert:machine_name=host2
 # comment
 "user1"     view
 "user2"     view:view=viewname
@@ -30,6 +30,15 @@ TEST_AUTHZ_DATA = """
 "bot5"      query:machine_name=host2+user_identity=user2
 "bot6"      query:machine_name=host2+user_identity=user2;user4
 "bot7"      query:vo_name=vo1
+
+"shost1"    storageinsert
+"shost2"    storageinsert:all
+"shost3"    storageinsert:storage_system=shost2
+
+# legacy insert compact
+"host5"     insert
+"host6"     insert:all
+"host7"     insert:machine_name=host6
 """
 
 
@@ -45,42 +54,61 @@ class AuthzTest(unittest.TestCase):
         pass
 
 
+    def testInsertAuthzCompat(self):
+        # "host5"     insert
+        # "host6"     insert:all
+        # "host7"     insert:machine_name=host6
+
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host5', rights.ACTION_JOB_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host6', rights.ACTION_JOB_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host7', rights.ACTION_JOB_INSERT) )
+
+        self.failUnlessTrue(  self.authz.isAllowed('host5', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host5')] ))
+
+        self.failUnlessTrue(  self.authz.isAllowed('host6', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host6')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host6', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host5')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host6', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host7')] ) )
+
+        self.failUnlessTrue(  self.authz.isAllowed('host7', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host7')]) )
+        self.failUnlessTrue(  self.authz.isAllowed('host7', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host6')] ) )
+        self.failUnlessFalse( self.authz.isAllowed('host7', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host5')] ) )
+
+
     def testInsertAuthz(self):
-        # "host1"     insert
-        # "host2"     insert:all
-        # "host3"     insert:machine_name=host2
-        # "host4.ex.org" insert:machine_name=host2
+        # "host1"     jobinsert
+        # "host2"     jobinsert:all
+        # "host3"     jobinsert:machine_name=host2
+        # "host4.ex.org" jobinsert:machine_name=host2
 
-        self.failUnlessTrue(  self.authz.hasRelevantRight('host1', rights.ACTION_INSERT) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('host2', rights.ACTION_INSERT) )
-        self.failUnlessTrue(  self.authz.hasRelevantRight('host3', rights.ACTION_INSERT) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('user1', rights.ACTION_INSERT) )
-        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  rights.ACTION_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host1', rights.ACTION_JOB_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host2', rights.ACTION_JOB_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('host3', rights.ACTION_JOB_INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user1', rights.ACTION_JOB_INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('bot1',  rights.ACTION_JOB_INSERT) )
 
+        self.failUnlessFalse( self.authz.isAllowed('host_unknown', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host_unknown')] ))
 
-        self.failUnlessFalse( self.authz.isAllowed('host_unknown', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host_unknown')] ))
+        self.failUnlessTrue(  self.authz.isAllowed('host1', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ))
+        self.failUnlessFalse( self.authz.isAllowed('host1', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
 
-        self.failUnlessTrue(  self.authz.isAllowed('host1', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ))
-        self.failUnlessFalse( self.authz.isAllowed('host1', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
-
-        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
-        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
-        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')] ) )
         # can a host insert a usage record with a certain user - yes it can
         # doesn't make a that much of sense, but it can
-        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_INSERT, [( rights.CTX_USER_IDENTITY, 'user1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host2', rights.ACTION_JOB_INSERT, [( rights.CTX_USER_IDENTITY, 'user1')] ) )
 
-        self.failUnlessTrue(  self.authz.isAllowed('host3', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')]) )
-        self.failUnlessTrue(  self.authz.isAllowed('host3', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
-        self.failUnlessFalse( self.authz.isAllowed('host3', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host3', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')]) )
+        self.failUnlessTrue(  self.authz.isAllowed('host3', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
+        self.failUnlessFalse( self.authz.isAllowed('host3', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
 
-        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2.ex.org')] ) )
-        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host4.ex.org')] ) )
-        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
-        self.failUnlessFalse( self.authz.isAllowed('host4.ex.org', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host2.ex.org')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host4.ex.org')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('host4.ex.org', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host2')] ) )
+        self.failUnlessFalse( self.authz.isAllowed('host4.ex.org', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')] ) )
 
-        self.failUnlessFalse( self.authz.isAllowed('user1', rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')]) )
-        self.failUnlessFalse( self.authz.isAllowed('bot1',  rights.ACTION_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')]) )
+        self.failUnlessFalse( self.authz.isAllowed('user1', rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host3')]) )
+        self.failUnlessFalse( self.authz.isAllowed('bot1',  rights.ACTION_JOB_INSERT, [( rights.CTX_MACHINE_NAME, 'host1')]) )
 
 
     def testViewAuthz(self):
@@ -197,4 +225,38 @@ class AuthzTest(unittest.TestCase):
         self.failUnlessTrue  ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_VO_NAME, 'vo1' )]  ) )
         self.failUnlessTrue  ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_MACHINE_NAME, 'host2'), (rights.CTX_VO_NAME, 'vo1' )]  ) )
         self.failUnlessTrue  ( self.authz.isAllowed('bot7', rights.ACTION_QUERY, [( rights.CTX_USER_IDENTITY, 'user1'), (rights.CTX_VO_NAME, 'vo1' )]  ) )
+
+
+
+    def testStorageAuthz(self):
+
+        # "shost1"    storageinsert
+        # "shost2"    storageinsert:all
+        # "shost3"    storageinsert:storage_system=shost2
+
+        self.failUnlessTrue(  self.authz.hasRelevantRight('shost1', rights.ACTION_STORAGE_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('shost2', rights.ACTION_STORAGE_INSERT) )
+        self.failUnlessTrue(  self.authz.hasRelevantRight('shost3', rights.ACTION_STORAGE_INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('host1',  rights.ACTION_STORAGE_INSERT) )
+        self.failUnlessFalse( self.authz.hasRelevantRight('user1',  rights.ACTION_STORAGE_INSERT) )
+
+        self.failUnlessFalse( self.authz.isAllowed('host_unknown', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'host_unknown')] ))
+
+        self.failUnlessTrue(  self.authz.isAllowed('shost1', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost1')] ))
+        self.failUnlessFalse( self.authz.isAllowed('shost1', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost2')] ) )
+
+        self.failUnlessTrue(  self.authz.isAllowed('shost2', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost2')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('shost2', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost1')] ) )
+        self.failUnlessTrue(  self.authz.isAllowed('shost2', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost3')] ) )
+        # can a host insert a storage record with a certain user - yes it can
+        # doesn't make a that much of sense, but it can
+        self.failUnlessTrue(  self.authz.isAllowed('shost2', rights.ACTION_STORAGE_INSERT, [( rights.CTX_USER_IDENTITY, 'user1')] ) )
+
+        self.failUnlessTrue(  self.authz.isAllowed('shost3', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost3')]) )
+        self.failUnlessTrue(  self.authz.isAllowed('shost3', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost2')] ) )
+        self.failUnlessFalse( self.authz.isAllowed('shost3', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost1')] ) )
+
+        self.failUnlessFalse( self.authz.isAllowed('user1', rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost3')]) )
+        self.failUnlessFalse( self.authz.isAllowed('bot1',  rights.ACTION_STORAGE_INSERT, [( rights.CTX_STORAGE_SYSTEM, 'shost1')]) )
+
 

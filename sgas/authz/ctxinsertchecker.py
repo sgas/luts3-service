@@ -16,6 +16,8 @@ from sgas.authz import rights
 
 class InsertChecker:
 
+    CONTEXT_KEY = None
+
     def __init__(self, check_depth):
 
         self.check_depth = check_depth
@@ -23,24 +25,23 @@ class InsertChecker:
 
     def contextCheck(self, subject_identity, subject_rights, action_context):
         """
-        Given a (x509) subject identity, subject rights and a context with machine
-        names, this function decides if the subject is allowed to perform insertion
-        on the machine names specified in the action context.
+        Given a (x509) subject identity, subject rights and a context with for the
+        insertion, this function decides if the subject is allowed to perform insertion
+        for the given context.
 
-        This is done both with specific checking of allowed host names, and by checking
-        "similarity" between the subject identity host name and the machine names in
-        the action context.
+        This is done both with specific checking of specified context, and by checking
+        "similarity" between the subject identity host name and the action context.
         """
         if action_context is None:
             return True # compat mode
 
         subject_fqdn = extractFQDNfromX509Identity(subject_identity)
-        machine_names = [ ctx_value for ctx_key, ctx_value in action_context if ctx_key == rights.CTX_MACHINE_NAME ]
+        insert_context = [ ctx_value for ctx_key, ctx_value in action_context if ctx_key == self.CONTEXT_KEY ]
 
-        # machine names explicitely allowed
-        sr_machine_names = []
+        # insert context explicitely allowed
+        explicit_allowed_contexts = []
         for sr in subject_rights:
-            sr_machine_names += sr.get(rights.CTX_MACHINE_NAME, [])
+            explicit_allowed_contexts += sr.get(self.CONTEXT_KEY, [])
 
         # subject name parts for depth checking
         id_parts = [ p for p in subject_fqdn.split('.') if p != '' ]
@@ -48,19 +49,19 @@ class InsertChecker:
 
         # go through all requested machine names and check if insert is allowed
         allowed = []
-        for mn in machine_names:
-            if mn in sr_machine_names:
+        for ic in insert_context:
+            if ic in explicit_allowed_contexts:
                 allowed.append(True)
                 continue
 
             # check if x509 identity is close enough to machine name to allow insertion
-            mn_parts = [ p for p in mn.split('.') if p != '' ]
-            if len(mn_parts) < cd:
+            ic_parts = [ p for p in ic.split('.') if p != '' ]
+            if len(ic_parts) < cd:
                 allowed.append(False)
                 continue
 
             for d in range( - cd, 0):
-                if mn_parts[d] != id_parts[d]:
+                if ic_parts[d] != id_parts[d]:
                     allowed.append(False)
                     break
             else:
@@ -68,6 +69,18 @@ class InsertChecker:
                 allowed.append(True)
 
         return all(allowed)
+
+
+
+class JobInsertChecker(InsertChecker):
+
+    CONTEXT_KEY = rights.CTX_MACHINE_NAME
+
+
+
+class StorageInsertChecker(InsertChecker):
+
+    CONTEXT_KEY = rights.CTX_STORAGE_SYSTEM
 
 
 
