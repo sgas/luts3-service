@@ -4,7 +4,7 @@ Authorization rights.
 
 
 # actions
-ACTION_INSERT           = 'insert'
+ACTION_INSERT           = 'insert' # backwards compat
 ACTION_JOB_INSERT       = 'jobinsert'
 ACTION_STORAGE_INSERT   = 'storageinsert'
 ACTION_VIEW             = 'view'
