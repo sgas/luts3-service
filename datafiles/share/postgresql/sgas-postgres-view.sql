@@ -132,3 +132,42 @@ LEFT OUTER JOIN projectname         ON (uraggregated_data.project_name_id     = 
 LEFT OUTER JOIN jobstatus           ON (uraggregated_data.status_id           = jobstatus.id)
 ;
 
+
+CREATE VIEW storagerecords AS
+SELECT
+        record_id                       AS record_id,
+        create_time                     AS create_time,
+        storagesystem.storage_system    AS storage_system,
+        storageshare.storage_share      AS storage_share,
+        storagemedia.storage_media      AS storage_media,
+        storageclass.storage_class      AS storage_class,
+        file_count                      AS file_count,
+        directorypath.directory_path    AS directory_path,
+        localuser.local_user            AS local_user,
+        localgroup.local_group          AS local_group,
+        useridentity.user_identity      AS user_identity,
+        groupidentity.group_identity    AS group_identity,
+        groupidentity.group_attribute   AS group_attribute,
+        measure_time                    AS measure_time,
+        valid_duration                  AS valid_duration,
+        resource_capacity_used          AS resource_capacity_used,
+        logical_capacity_used           AS logical_capacity_used,
+        inserthost.insert_host          AS insert_host,
+        insertidentity.insert_identity  AS insert_identity,
+        insert_time                     AS insert_time
+FROM
+    storagedata
+LEFT OUTER JOIN storagesystem   ON (storagedata.storage_system_id   = storagesystem.id)
+LEFT OUTER JOIN storageshare    ON (storagedata.storage_share_id    = storageshare.id)
+LEFT OUTER JOIN storagemedia    ON (storagedata.storage_media_id    = storagemedia.id)
+LEFT OUTER JOIN storageclass    ON (storagedata.storage_class_id    = storageclass.id)
+LEFT OUTER JOIN directorypath   ON (storagedata.directory_path_id   = directorypath.id)
+LEFT OUTER JOIN localuser       ON (storagedata.local_user_id       = localuser.id)
+LEFT OUTER JOIN localgroup      ON (storagedata.local_group_id      = localgroup.id)
+LEFT OUTER JOIN useridentity    ON (storagedata.user_identity_id    = useridentity.id)
+LEFT OUTER JOIN groupidentity   ON (storagedata.group_identity_id   = groupidentity.id)
+LEFT OUTER JOIN inserthost      ON (storagedata.insert_host_id      = inserthost.id)
+LEFT OUTER JOIN insertidentity  ON (storagedata.insert_identity_id  = insertidentity.id)
+;
+
+
