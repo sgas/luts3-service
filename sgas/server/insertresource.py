@@ -60,7 +60,7 @@ class GenericInsertResource(resource.Resource):
         # FIXME check for postpath, and if any reject request
 
         subject = resourceutil.getSubject(request)
-        if not self.authorizer.hasRelevantRight(subject, rights.ACTION_JOB_INSERT):
+        if not self.authorizer.hasRelevantRight(subject, self.authz_right)
             reject_msg = self.insert_authz_reject_msg % subject
             #log.msg("Rejecting insert for %s, has no insert rights." % subject)
             log.msg(reject_msg)
