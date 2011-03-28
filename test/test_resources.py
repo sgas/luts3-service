@@ -14,7 +14,7 @@ from twisted.web import error as weberror
 from sgas.ext.python import json
 from sgas.server import setup, manifest
 
-from . import rclient, utils, ursampledata
+from . import rclient, utils, ursampledata, srsampledata
 
 
 SGAS_TEST_FILE = os.path.join(os.path.expanduser('~'), '.sgas-test')
@@ -31,7 +31,8 @@ class ResourceTest:
         site = setup.createSite(self.db, utils.FakeAuthorizer(), [], manifest.Manifest())
         self.iport = reactor.listenTCP(self.port, site)
         self.service_url = 'http://localhost:%i/sgas' % self.port
-        self.insert_url = self.service_url + '/ur'
+        self.job_insert_url = self.service_url + '/ur'
+        self.storage_insert_url = self.service_url + '/sr'
         yield defer.succeed(None)
 
 
@@ -41,8 +42,8 @@ class ResourceTest:
 
 
     @defer.inlineCallbacks
-    def testInsert(self):
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR1)
+    def testJobUsageInsert(self):
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.UR1)
         r = yield d
         self.failUnlessEqual(f.status, '200')
 
@@ -53,8 +54,20 @@ class ResourceTest:
 
 
     @defer.inlineCallbacks
+    def testStorageUsageInsert(self):
+        d, f = rclient.httpRequest(self.storage_insert_url, method='POST', payload=srsampledata.SR_0)
+        r = yield d
+        self.failUnlessEqual(f.status, '200')
+
+        # check that we got proper result with internal db representation
+        ids = json.loads(r)
+        self.failUnlessEqual(len(ids), 1)
+        self.failUnlessIn(srsampledata.SR_0_ID, ids)
+
+
+    @defer.inlineCallbacks
     def testURTransferInsert(self):
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.URT)
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.URT)
         r = yield d
         self.failUnlessEqual(f.status, '200')
 
@@ -66,7 +79,7 @@ class ResourceTest:
 
     @defer.inlineCallbacks
     def testURBadLocalJobId(self):
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR_BAD_LOCAL_JOB_ID)
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.UR_BAD_LOCAL_JOB_ID)
         r = yield d
         self.failUnlessEqual(f.status, '200')
 
@@ -80,11 +93,11 @@ class ResourceTest:
     def testQuery(self):
 
         # insert some data, so there is something to query
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR1)
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.UR1)
         yield d
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR2)
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.UR2)
         yield d
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.CUR)
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.CUR)
         yield d
 
         yield self.triggerAggregateUpdate()
@@ -134,7 +147,7 @@ class ResourceTest:
 
         # the actual test
 
-        d, f = rclient.httpRequest(self.insert_url, method='POST', payload=ursampledata.UR1)
+        d, f = rclient.httpRequest(self.job_insert_url, method='POST', payload=ursampledata.UR1)
         try:
             yield d
             self.fail('Request should have failed with 503')

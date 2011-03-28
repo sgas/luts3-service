@@ -30,12 +30,14 @@ class ConfigurationError(Exception):
 
 def createSite(db, authorizer, views, mfst):
 
-    rr = insertresource.InsertResource(db, authorizer)
+    rr = insertresource.JobUsageRecordInsertResource(db, authorizer)
+    sr = insertresource.StorageUsageRecordInsertResource(db, authorizer)
     vr = viewresource.ViewTopResource(db, authorizer, views, mfst)
     qr = queryresource.QueryResource(db, authorizer)
 
     tr = topresource.TopResource(authorizer)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
+    tr.registerService(sr, 'sr', (('StorageRegistration', 'sr'),) )
     tr.registerService(vr, 'view', (('View', 'view'),))
     tr.registerService(qr, 'query', (('Query', 'query'),))
 

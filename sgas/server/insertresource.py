@@ -1,10 +1,10 @@
 """
-UR insertion resource for SGAS.
+Insertion resources for SGAS.
 
-Used for inserting usage records into database.
+Used for inserting usage and storage records into database.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2009)
+Copyright: NorduNET / Nordic Data Grid Facility (2009, 2010, 2011)
 """
 
 from twisted.python import log
@@ -17,14 +17,22 @@ from sgas.database import inserter, error as dberror
 
 
 
-class InsertResource(resource.Resource):
+class GenericInsertResource(resource.Resource):
 
     isLeaf = False
+
+    authz_right = None
+    insert_error_msg = 'Error during insert: %s'
+    insert_authz_reject_msg = 'Rejecting insert for %s, has no insert rights.'
 
     def __init__(self, db, authorizer):
         resource.Resource.__init__(self)
         self.db = db
         self.authorizer = authorizer
+
+
+    def insertRecords(self, data, subject, hostname):
+        raise NotImplementedError('This method should have been overridden in subclass')
 
 
     def render_POST(self, request):
@@ -34,7 +42,8 @@ class InsertResource(resource.Resource):
             request.finish()
 
         def insertError(error):
-            log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
+            #log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
+            log.msg(self.insert_error_msg % error.getErrorMessage(), system='sgas.InsertResource')
 
             error_msg = error.getErrorMessage()
             if error.check(dberror.DatabaseUnavailableError):
@@ -52,9 +61,11 @@ class InsertResource(resource.Resource):
 
         subject = resourceutil.getSubject(request)
         if not self.authorizer.hasRelevantRight(subject, rights.ACTION_JOB_INSERT):
-            log.msg("Rejecting insert for %s, has no insert rights." % subject)
+            reject_msg = self.insert_authz_reject_msg % subject
+            #log.msg("Rejecting insert for %s, has no insert rights." % subject)
+            log.msg(reject_msg)
             request.setResponseCode(403) # forbidden
-            return "Insertion not allowed for identity %s" % subject
+            return reject_msg
 
         # request allowed, continue
 
@@ -62,8 +73,34 @@ class InsertResource(resource.Resource):
         hostname = resourceutil.getHostname(request)
 
         request.content.seek(0)
-        ur_data = request.content.read()
-        d = inserter.insertJobUsageRecords(ur_data, self.db, self.authorizer, subject, hostname)
+        data = request.content.read()
+        #d = inserter.insertJobUsageRecords(data, self.db, self.authorizer, subject, hostname)
+        d = self.insertRecords(data, subject, hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
+
+
+
+class JobUsageRecordInsertResource(GenericInsertResource):
+
+    authz_right = rights.ACTION_JOB_INSERT
+    insert_error_msg = 'Error during job usage insert: %s'
+    insert_authz_reject_msg = 'Rejecting job usage insert for %s. No insert rights.'
+
+
+    def insertRecords(self, data, subject, hostname):
+        d = inserter.insertJobUsageRecords(data, self.db, self.authorizer, subject, hostname)
+        return d
+
+
+
+class StorageUsageRecordInsertResource(GenericInsertResource):
+
+    authz_right = rights.ACTION_STORAGE_INSERT
+    insert_error_msg = 'Error during storage usage insert: %s'
+    insert_authz_reject_msg = 'Rejecting storage usage insert for %s. No insert rights.'
+
+    def insertRecords(self, data, subject, hostname):
+        d = inserter.insertStorageUsageRecords(data, self.db, self.authorizer, subject, hostname)
+        return d
 
