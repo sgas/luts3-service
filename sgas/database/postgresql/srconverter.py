@@ -37,8 +37,6 @@ ARG_LIST = [
 
 def createInsertArguments(storagerecord_docs, insert_identity=None, insert_hostname=None):
 
-    stringify = lambda f : str(f) if f is not None else None
-
     args = []
 
     for sr_doc in storagerecord_docs:
