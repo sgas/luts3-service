@@ -10,7 +10,7 @@ import time
 from twisted.trial import unittest
 from twisted.internet import defer
 
-from . import ursampledata, utils
+from . import ursampledata, srsampledata, utils
 
 
 
@@ -21,7 +21,7 @@ SGAS_TEST_FILE = os.path.join(os.path.expanduser('~'), '.sgas-test')
 
 class GenericDatabaseTest:
 
-    def fetchUsageRecord(self, record_id):
+    def fetchJobUsageRecord(self, record_id):
         # fetch an individual usage record from the underlying database given a record id
         # should return none if the record does not exist
         raise NotImplementedError('fetching individual usage record is not implemented in generic test (nor should it be)')
@@ -33,7 +33,7 @@ class GenericDatabaseTest:
         doc_ids = yield self.db.insertJobUsageRecords(ursampledata.UR1)
         self.failUnlessEqual(len(doc_ids), 1)
 
-        doc = yield self.fetchUsageRecord(ursampledata.UR1_ID)
+        doc = yield self.fetchJobUsageRecord(ursampledata.UR1_ID)
 
         self.failUnlessEqual(doc.get('record_id', None), ursampledata.UR1_ID)
         self.failUnlessEqual(doc.get('job_name', None),  'test job 1')
@@ -42,13 +42,13 @@ class GenericDatabaseTest:
     @defer.inlineCallbacks
     def testExistenceBeforeAndAfterInsert(self):
 
-        doc = yield self.fetchUsageRecord(ursampledata.UR2_ID)
+        doc = yield self.fetchJobUsageRecord(ursampledata.UR2_ID)
         self.failUnlessEqual(doc, None)
 
         doc_ids = yield self.db.insertJobUsageRecords(ursampledata.UR2)
         self.failUnlessEqual(len(doc_ids), 1)
 
-        doc = yield self.fetchUsageRecord(ursampledata.UR2_ID)
+        doc = yield self.fetchJobUsageRecord(ursampledata.UR2_ID)
 
         self.failUnlessEqual(doc.get('record_id', None), ursampledata.UR2_ID, doc)
         self.failUnlessEqual(doc.get('job_name', None),  'test job 2')
@@ -62,7 +62,7 @@ class GenericDatabaseTest:
         self.failUnlessEqual(len(doc_ids), 2)
 
         for ur_id in ursampledata.CUR_IDS:
-            doc = yield self.fetchUsageRecord(ur_id)
+            doc = yield self.fetchJobUsageRecord(ur_id)
             self.failUnlessEqual(doc.get('record_id', None), ur_id)
 
 
@@ -118,10 +118,47 @@ class QueryDatabaseTest:
 
 
 
-class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCase):
+class StorageRecordTest:
 
     @defer.inlineCallbacks
-    def fetchUsageRecord(self, record_id):
+    def testBasicStorageInsert(self):
+
+        doc_ids = yield self.db.insertStorageUsageRecords(srsampledata.SR_0)
+        self.failUnlessEqual(len(doc_ids), 1)
+        self.failUnlessEqual(doc_ids.keys()[0], srsampledata.SR_0_ID)
+
+        doc = yield self.fetchStorageUsageRecord(srsampledata.SR_0_ID)
+
+        self.failUnlessEqual(doc.get('record_id', None), srsampledata.SR_0_ID)
+        self.failUnlessEqual(doc.get('storage_media', None),  'disk')
+
+        # one more
+
+        doc_ids = yield self.db.insertStorageUsageRecords(srsampledata.SR_1)
+        self.failUnlessEqual(len(doc_ids), 1)
+        self.failUnlessEqual(doc_ids.keys()[0], srsampledata.SR_1_ID)
+
+        doc = yield self.fetchStorageUsageRecord(srsampledata.SR_1_ID)
+
+        self.failUnlessEqual(doc.get('record_id', None), srsampledata.SR_1_ID)
+        self.failUnlessEqual(doc.get('group', None),  'Alice')
+
+
+    @defer.inlineCallbacks
+    def testCompoundStorageInsert(self):
+
+        doc_ids = yield self.db.insertStorageUsageRecords(srsampledata.SRS)
+        self.failUnlessEqual(len(doc_ids), 3)
+        record_ids = doc_ids.keys()
+        for rid in record_ids:
+            self.failUnlessIn(rid, srsampledata.SRS_IDS)
+
+
+
+class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, StorageRecordTest, unittest.TestCase):
+
+    @defer.inlineCallbacks
+    def fetchJobUsageRecord(self, record_id):
 
         from sgas.database.postgresql import urconverter
 
@@ -134,7 +171,24 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
             ur_doc = dict( zip(urconverter.ARG_LIST, res[0]) )
             defer.returnValue(ur_doc)
         else:
-            self.fail('Multiple results returned for a single usage record')
+            self.fail('Multiple results returned for a single job usage record')
+
+
+    @defer.inlineCallbacks
+    def fetchStorageUsageRecord(self, record_id):
+
+        from sgas.database.postgresql import srconverter
+
+        stm = "SELECT * from storagerecords where record_id = %s"
+        res = yield self.postgres_dbpool.runQuery(stm, (record_id,))
+
+        if res == []:
+            defer.returnValue(None)
+        elif len(res) == 1:
+            sr_doc = dict( zip(srconverter.ARG_LIST, res[0]) )
+            defer.returnValue(sr_doc)
+        else:
+            self.fail('Multiple results returned for a single storage usage record')
 
 
     @defer.inlineCallbacks
@@ -167,6 +221,8 @@ class PostgreSQLTestCase(GenericDatabaseTest, QueryDatabaseTest, unittest.TestCa
                 self.authorizer = utils.FakeAuthorizer()
             def insertJobUsageRecords(self, ur_data):
                 return inserter.insertJobUsageRecords(ur_data, self.db, self.authorizer)
+            def insertStorageUsageRecords(self, sr_data):
+                return inserter.insertStorageUsageRecords(sr_data, self.db, self.authorizer)
             def query(self, *args):
                 return self.db.query(*args)
 
