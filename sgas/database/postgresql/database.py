@@ -17,7 +17,7 @@ from twisted.enterprise import adbapi
 from twisted.application import service
 
 from sgas.database import error
-from sgas.database.postgresql import urconverter, updater
+from sgas.database.postgresql import urconverter, srconverter, updater
 
 
 
@@ -115,6 +115,57 @@ class PostgreSQLDatabase(service.MultiService):
                 log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
                 self.pool_proxy.reconnect()
                 yield self.insertJobUsageRecords(usagerecord_docs, retry=True)
+            if retry:
+                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
+                raise error.DatabaseUnavailableError(str(e))
+
+        except Exception, e:
+            log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
+            log.err(e, system='sgas.PostgreSQLDatabase')
+            raise
+
+
+    @defer.inlineCallbacks
+    def insertStorageUsageRecords(self, storagerecord_docs, retry=False):
+
+        arg_list = srconverter.createInsertArguments(storagerecord_docs)
+
+        try:
+            id_dict = {}
+            conn = adbapi.Connection(self.pool_proxy.dbpool)
+            try:
+                trans = adbapi.Transaction(self, conn)
+
+                for args in arg_list:
+                    yield trans.callproc('srcreate', args)
+                    r = yield trans.fetchall()
+                    record_id, row_id = r[0][0]
+                    id_dict[record_id] = str(row_id)
+
+                trans.close()
+                conn.commit()
+                log.msg('Database: %i storage usage records inserted' % len(id_dict), system='sgas.PostgreSQLDatabase')
+                #self.updater.updateNotification()
+                defer.returnValue(id_dict)
+            except psycopg2.InterfaceError:
+                # this usually implies that the connection is closed (can't rollback)
+                raise
+            except:
+                conn.rollback()
+                raise
+
+        except psycopg2.OperationalError, e:
+            if 'Connection refused' in str(e):
+                raise error.DatabaseUnavailableError(str(e))
+            raise # re-raise current exception
+        except psycopg2.InterfaceError, e:
+            # this usually happens if the database was restarted,
+            # and the existing connection to the database was closed
+            if not retry:
+                log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
+                log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
+                self.pool_proxy.reconnect()
+                yield self.insertJobUsageRecords(storagerecord_docs, retry=True)
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
