@@ -29,6 +29,11 @@ function add_xticks(vis, x, x_ticks) {
         .textAlign("center")
         .text(function(d) { return d; } );
 
+    vis.add(pv.Rule)
+        .strokeStyle("rgba(000, 000, 000, 1)")
+        .left(0)
+        .bottom(-1);
+
 }
 
 
@@ -36,16 +41,18 @@ function add_yticks(vis, y, width) {
 
     vis.add(pv.Rule)
         .data(y.ticks())
-        .bottom(function(d) { return Math.round(y(d)) - .5; } )
-        .strokeStyle(function(d) { d ? "rgba(255,255,255,.0)" : "#000"; } )
+        .strokeStyle("rgba(000, 000, 000, .05)")
+        .bottom(y)
         .width(width)
-      .add(pv.Rule)
-        .left(0)
-        .width(5)
-        .strokeStyle("#000")
         .anchor("left")
-      .add(pv.Label)
-        .text(function(d) { return parseInt(d.toFixed(1)); } );
+    .add(pv.Label)
+        .text(y.tickFormat);
+
+    vis.add(pv.Rule)
+        .strokeStyle("rgba(000, 000, 000, 1)")
+        .bottom(-0.5)
+        .width(width)
+        .anchor("left");
 
 }
 
