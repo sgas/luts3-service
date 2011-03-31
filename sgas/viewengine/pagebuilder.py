@@ -54,7 +54,7 @@ def buildRowAggregates(rows, view):
     else:
         groups = None
 
-    dict_list = dataprocess.buildDictList(rows, viewcore.VIEW_TYPES[view.view_type][viewcore.DATA_TRANSFORM])
+    dict_list = dataprocess.buildDictList(rows, view_cfg[viewcore.DATA_TRANSFORM])
 
     return batches, groups, dict_list
 
