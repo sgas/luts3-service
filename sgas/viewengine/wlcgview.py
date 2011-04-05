@@ -122,7 +122,8 @@ class WLCGBaseView(baseview.BaseView):
         start_date, end_date = dateform.parseStartEndDates(request)
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date)
-        d.addCallbacks(self.renderWLCGViewPage, self.renderErrorPage, callbackArgs=(request, start_date, end_date, t_query_start), errbackArgs=(request,))
+        d.addCallback(self.renderWLCGViewPage, request, start_date, end_date, t_query_start)
+        d.addErrback(self.renderErrorPage, request)
         return server.NOT_DONE_YET
 
 
@@ -307,8 +308,8 @@ class WLCGOversightView(baseview.BaseView):
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date)
-        d.addCallbacks(self.renderWLCGViewPage, self.renderErrorPage,
-                       callbackArgs=(request, start_date, end_date, unit, t_query_start), errbackArgs=(request,))
+        d.addCallback(self.renderWLCGViewPage, request, start_date, end_date, unit, t_query_start)
+        d.addErrback(self.renderErrorPage, request)
         return server.NOT_DONE_YET
 
 
