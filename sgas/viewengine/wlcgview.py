@@ -61,7 +61,8 @@ class WLCGView(baseview.BaseView):
             'tier'      : ('WLCG tier view',    WLCGTierView(self.urdb, self.authorizer, self.manifest, 'tier')),
             'fulltier'  : ('WLCG full tier view', WLCGFullTierView(self.urdb, self.authorizer, self.manifest, 'fulltier')),
             'tiersplit' : ('WLCG tier-machine split view', WLCGTierMachineSplitView(self.urdb, self.authorizer, self.manifest, 'tiersplit')),
-            'oversight' : ('WLCG Oversight view', WLCGOversightView(self.urdb, self.authorizer, self.manifest, 'oversight'))
+            'oversight' : ('WLCG Oversight view', WLCGOversightView(self.urdb, self.authorizer, self.manifest, 'oversight')),
+            'storage'   : ('WLCG Storage view', WLCGStorageView(self.urdb, self.authorizer, self.manifest, 'storage'))
         }
 
     def getChild(self, path, request):
@@ -459,6 +460,202 @@ class WLCGOversightView(baseview.BaseView):
         request.write( html.createParagraph(selector_form) )
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph(range_text) )
+        request.write( table_content )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
+        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
+        request.write( html.HTML_VIEWBASE_FOOTER )
+
+        request.finish()
+        return server.NOT_DONE_YET
+
+
+
+## STORAGE STUFF
+
+
+
+class WLCGStorageView(baseview.BaseView):
+
+    WLCG_STORAGE_QUERY = """
+        SELECT storage_share, group_identity, (sum(r) / 1099511627776)::integer FROM (
+            SELECT
+                DISTINCT ON (t.sample, storage_system, storage_share, storage_media, storage_class, sg.group_identity)
+                ss.storage_share, sg.group_identity, COALESCE(resource_capacity_used, 0) as r
+            FROM
+                (SELECT %s::date AS sample) AS t
+                CROSS JOIN (SELECT DISTINCT storage_share FROM storagerecords WHERE measure_time::date = %s::date) AS ss
+                CROSS JOIN (SELECT DISTINCT group_identity FROM storagerecords WHERE storage_system = 'dcache.ndgf.org' AND measure_time::date = %s) AS sg
+                LEFT OUTER JOIN storagerecords ON (measure_time <= t.sample AND measure_time + valid_duration * interval '1 seconds' >= t.sample AND
+                                                   ss.storage_share = storagerecords.storage_share AND
+                                                   sg.group_identity = storagerecords.group_identity)
+            ORDER BY t.sample, storage_system, storage_share, storage_media, storage_class, sg.group_identity, measure_time DESC) as s
+        GROUP BY s.storage_share, s.group_identity
+        ORDER BY s.storage_share, s.group_identity;
+    """
+
+    def __init__(self, urdb, authorizer, mfst, path):
+        self.path = path
+        baseview.BaseView.__init__(self, urdb, authorizer, mfst)
+
+        wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
+        self.default_tier = wlcg_config['default-tier']
+
+    def render_GET(self, request):
+        subject = resourceutil.getSubject(request)
+
+        # authz check
+        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
+        if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
+            return self.renderAuthzErrorPage(request, 'WLCG Storage View' % self.path, subject)
+
+        # access allowed
+        date = dateform.parseDate(request)
+        media = request.args.get('media',['all'])[0]
+
+        t_query_start = time.time()
+        d = self.retrieveWLCGData(date)
+        d.addCallback(self.renderWLCGViewPage, request, date, media, t_query_start)
+        d.addErrback(self.renderErrorPage, request)
+        return server.NOT_DONE_YET
+
+
+    def retrieveWLCGData(self, date):
+
+        d = self.urdb.query(self.WLCG_STORAGE_QUERY, (date, date, date))
+        return d
+
+
+    def buildRecords(self, db_rows):
+
+        records = []
+        for row in db_rows:
+            site, group, rcu = row
+            site = site.replace('_', '.')
+            records.append( {'site':site, 'group':group, 'rcu': rcu } )
+        return records
+
+
+    def renderWLCGViewPage(self, db_rows, request, date, media, t_query_start):
+
+        t_query = time.time() - t_query_start
+        t_dataprocess_start = time.time()
+
+        records = self.buildRecords(db_rows)
+
+        # remove infomration from certain groups, add they not add any value
+        records = [ rec for rec in records if rec['group'] not in ('dteam', 'behrmann') ]
+        if media == 'disk':
+            records = [ rec for rec in records if not rec['site'].startswith('osm://') ]
+        elif media == 'tape':
+            records = [ rec for rec in records if rec['site'].startswith('osm://') ]
+        elif media == 'all':
+            pass
+        else:
+            return self.renderErrorPage('Invalid media selection', request)
+
+        # get top level domains and sites per country
+        hosts = set( [ rec['site'] for rec in records ] )
+        tld_groups = {}
+        country_sites = {}
+        for host in hosts:
+            tld = host.split('.')[-1].upper()
+            tld_groups.setdefault(tld, []).append(host)
+
+        # get groups
+        groups = set( [ rec['group'] for rec in records ] )
+
+        TOTAL = 'Total'
+        TIER_TOTAL = self.default_tier.split('-')[0].upper()
+
+        # calculate total per site
+        site_totals = {}
+        for rec in records:
+            site, rcu = rec['site'], rec['rcu']
+            site_totals[site] = site_totals.get(site,0) + rcu
+
+        # calculate total per group / country
+        group_country_totals = {}
+        for rec in records:
+            country = rec['site'].split('.')[-1].upper() + '-TOTAL'
+            key = (country, rec['group'])
+            group_country_totals[key] = group_country_totals.get(key, 0) + rec['rcu']
+
+        # calculate total per country
+        country_totals = {}
+        for rec in records:
+            country = rec['site'].split('.')[-1].upper() + '-TOTAL'
+            country_totals[country] = country_totals.get(country,0) + rec['rcu']
+
+        # calculate total per group
+        group_totals = {}
+        for rec in records:
+            group_totals[rec['group']] = group_totals.get(rec['group'],0) + rec['rcu']
+
+        # calculate total
+        total = sum( [ rec['rcu'] for rec in records ] )
+
+        # put all calculated records together and add equivalents
+        for site, rcu in site_totals.items():
+            records.append( { 'site': site, 'group': TOTAL, 'rcu': rcu } )
+        for (country, group), rcu in group_country_totals.items():
+            records.append( { 'site': country, 'group': group, 'rcu': rcu } )
+        for country, rcu in country_totals.items():
+            records.append( { 'site': country, 'group': TOTAL, 'rcu': rcu } )
+        for group, rcu in group_totals.items():
+            records.append( { 'site': TIER_TOTAL, 'group': group, 'rcu': rcu } )
+        records.append( { 'site': TIER_TOTAL, 'group': TOTAL, 'rcu': total } )
+
+        # create table
+        columns = sorted(groups)
+        columns.append(TOTAL)
+
+        row_names = []
+        for tld in sorted(tld_groups):
+            row_names += sorted(tld_groups[tld])
+            row_names.append(tld + '-TOTAL')
+        row_names.append(TIER_TOTAL)
+
+        elements = []
+        for row in row_names:
+            for col in columns:
+                for rec in records:
+                    if rec['site'] == row and rec['group'] == col:
+                        value = rec['rcu']
+                        # hurrah for formatting
+                        if row == TIER_TOTAL and col == TOTAL:
+                            value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
+                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == TIER_TOTAL:
+                            value = htmltable.StyledTableValue(value, bold=True, underlined=True)
+                        elif row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
+                            value = htmltable.StyledTableValue(value, bold=True)
+                        elements.append( ((col,row), value))
+                        break
+                else:
+                    elements.append( ((col,row), '') )
+
+        matrix = dict(elements)
+        t_dataprocess = time.time() - t_dataprocess_start
+        table_content = htmltable.createHTMLTable(matrix, columns, row_names, column_labels=COLUMN_NAMES)
+
+        # render page
+        date_option   = request.args.get('date', [''])[0]
+
+        title = 'WLCG storage view'
+        media_options = [ ( 'all', 'Disk and Tape') , ( 'disk', 'Disk only' ), ( 'tape', 'Tape only' ) ]
+
+        media_buttons = html.createRadioButtons('media', media_options, checked_value=media)
+        month_options = dateform.generateMonthFormOptions()
+        selector = html.createSelector('Month', 'date', month_options, date)
+        selector_form = html.createSelectorForm(self.path, [ selector ], media_buttons )
+
+        date_text = html.createParagraph('Date: %s' % (date))
+
+        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
+        request.write( html.createTitle(title) )
+        request.write( html.createParagraph(selector_form) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(date_text) )
         request.write( table_content )
         request.write( html.SECTION_BREAK )
         request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )

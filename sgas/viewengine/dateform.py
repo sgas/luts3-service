@@ -14,23 +14,47 @@ from sgas.viewengine import baseview, html
 
 
 
+def _currentMonthStartDate():
+    gmtime = time.gmtime()
+    startdate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, '01')
+    return startdate
+
+
+
+def _currentMonthEndDate():
+    gmtime = time.gmtime()
+    last_month_day = str(calendar.monthrange(gmtime.tm_year, gmtime.tm_mon)[1])
+    enddate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, last_month_day)
+    return enddate
+
+
+
+def parseDate(request):
+
+    if 'date' in request.args:
+        date = request.args['date'][0].replace('-', '')
+        if date == '':
+            date = _currentMonthStartDate().replace('-', '')
+        elif len(date) == 8:
+            pass
+        elif len(date) == 6:
+            date += '01'
+        else: 
+            raise baseview.ViewError('Invalid date parameter: %s' % request.args['date'][0])
+        date = date[0:4] + '-' + date[4:6] + '-' + date[6:8]
+    else:
+        date = _currentMonthStartDate()
+
+    return date
+
+
+
 def parseStartEndDates(request):
-
-    def currentMonthStartDate():
-        gmtime = time.gmtime()
-        startdate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, '01')
-        return startdate
-
-    def currentMonthEndDate():
-        gmtime = time.gmtime()
-        last_month_day = str(calendar.monthrange(gmtime.tm_year, gmtime.tm_mon)[1])
-        enddate = '%s-%02d-%s' % (gmtime.tm_year, gmtime.tm_mon, last_month_day)
-        return enddate
 
     if 'startdate' in request.args:
         startdate = request.args['startdate'][0].replace('-', '')
         if startdate == '':
-            startdate = currentMonthStartDate().replace('-', '')
+            startdate = _currentMonthStartDate().replace('-', '')
         elif len(startdate) == 8:
             pass
         elif len(startdate) == 6:
@@ -39,12 +63,12 @@ def parseStartEndDates(request):
             raise baseview.ViewError('Invalid startdate parameter: %s' % request.args['startdate'][0])
         startdate = startdate[0:4] + '-' + startdate[4:6] + '-' + startdate[6:8]
     else:
-        startdate = currentMonthStartDate()
+        startdate = _currentMonthStartDate()
 
     if 'enddate' in request.args:
         enddate = request.args['enddate'][0].replace('-', '')
         if enddate == '':
-            enddate = currentMonthEndDate().replace('-', '')
+            enddate = _currentMonthEndDate().replace('-', '')
         elif len(enddate) == 8:
             pass
         elif len(enddate) == 6:
@@ -53,7 +77,7 @@ def parseStartEndDates(request):
             raise baseview.ViewError('Invalid enddate parameter: %s' % request.args['enddate'][0])
         enddate = enddate[0:4] + '-' + enddate[4:6] + '-' + enddate[6:8]
     else:
-        enddate = currentMonthEndDate()
+        enddate = _currentMonthEndDate()
 
     return startdate, enddate
 
