@@ -50,7 +50,7 @@ CREATE TABLE submithost (
 
 CREATE TABLE host (
     id                      serial          NOT NULL PRIMARY KEY,
-    host                    varchar(3000)   NOT NULL UNIQUE
+    host                    varchar(7000)   NOT NULL UNIQUE
 );
 
 CREATE TABLE insertidentity (

@@ -7,7 +7,7 @@ DROP VIEW usagerecords;
 DROP VIEW transfers;
 DROP VIEW uraggregated;
 
-ALTER TABLE host ALTER COLUMN host TYPE varchar(3000);
+ALTER TABLE host ALTER COLUMN host TYPE varchar(7000);
 
 
 -- new storage record schema
