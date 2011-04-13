@@ -81,6 +81,10 @@ def createRadioButtons(name, values, checked_value=None):
 def createSelector(title, name, options, current_option=None):
 
     selector = _INDENT + title + '\n' + _INDENT + ' <select name=%s>' % name
+
+    if not current_option in options:
+        selector += _INDENT * 2 + '<option selected>%s</option>\n' % current_option
+
     for o in options:
         assert type(o) is str, 'Selector option must be a string'
         if current_option == o:

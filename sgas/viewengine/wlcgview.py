@@ -638,9 +638,6 @@ class WLCGStorageView(baseview.BaseView):
         t_dataprocess = time.time() - t_dataprocess_start
         table_content = htmltable.createHTMLTable(matrix, columns, row_names, column_labels=COLUMN_NAMES)
 
-        # render page
-        date_option   = request.args.get('date', [''])[0]
-
         title = 'WLCG storage view'
         media_options = [ ( 'all', 'Disk and Tape') , ( 'disk', 'Disk only' ), ( 'tape', 'Tape only' ) ]
 
