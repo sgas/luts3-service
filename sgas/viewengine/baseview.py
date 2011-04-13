@@ -6,7 +6,7 @@ Copyright: Nordic Data Grid Facility (2011)
 """
 
 
-from twisted.python import failure
+from twisted.python import failure, log
 from twisted.web import server, resource
 
 from sgas.viewengine import html
@@ -47,6 +47,7 @@ class BaseView(resource.Resource):
         else:
             error_msg = str(error)
 
+        log.err(error)
         request.write('Error rendering page: %s' % error_msg)
         request.finish()
         return server.NOT_DONE_YET
