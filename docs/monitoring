@@ -1,0 +1,40 @@
+=== Monitoring Registration ===
+
+SGAS provides a simple mechanism which can be used to monitor if a machine has
+made any regstrations in a certain interval. SGAS exposes a simple HTTP
+interface, which will reply with the number of seconds since the last
+registration for a given hostname.
+
+To pull SGAS for information on registration status construct a URL for the
+machine that should be checked. For a cluster with the host name
+"cluster.example.org", the URL will look like this:
+
+http://accounting.example.org:6143/sgas/monitor/cluster.example.org
+
+Perform a GET on the URL with curl, wget, or similar. Assuming records have
+been registered for the host, the response will have code 200 (OK), and have a
+JSON payload, like the following:
+
+{"registration_epoch": 43717}
+
+The registration epoch value is the seconds since last registration. It is then
+up to the client to decide if this number is big enough to issue a warning.
+
+If there are no registrations for the specified hostname, the response will
+have code 404 (NOT FOUND), and have a string describing the error. If an error
+occurs in the service, a response with code 500 (INTERNAL SERVER ERROR) is
+returned along with a string describing the problem.
+
+
+Monitoring works both for usage and storage records. For usage records the
+machine name property is for resource name, and for storage records the storage
+system property is used for resources. If a machine is registering both usage
+and storage records it is not possible to distinguish between the two. The
+newest registration will be used.
+
+As with any other access to SGAS, the client needs to be permitted accessing
+SGAS. For monotoring this in done in sgas.authz with the the "monitor" stanze,
+e.g.:
+
+"/O=Grid/O=NorduGrid/OU=ndgf.org/CN=ROBOT: Nagios"               monitor
+
