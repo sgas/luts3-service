@@ -23,11 +23,10 @@ HTTP_HEADER_CONTENT_TYPE   = 'content-type'
 REGISTRATION_EPOCH = 'registration_epoch'
 
 STATUS_QUERY = """
-SELECT
-    extract(EPOCH from current_timestamp - generate_time)::integer AS registration_epoch
-FROM uraggregated
-WHERE machine_name = %s
-ORDER BY generate_time DESC LIMIT 1;
+SELECT extract(EPOCH from (current_timestamp - greatest(ur.last_registration, sr.last_registration)))::integer AS registration_epoch FROM 
+  (SELECT max(insert_time) AS last_registration FROM storagerecords where storage_system = %s) AS ur,
+  (SELECT max(generate_time) AS last_registration FROM uraggregated WHERE machine_name = %s) AS sr
+;
 """
 
 
@@ -44,7 +43,7 @@ class MonitorResource(resource.Resource):
 
     def queryStatus(self, machine_name):
 
-        d = self.db.query(STATUS_QUERY, (machine_name,))
+        d = self.db.query(STATUS_QUERY, (machine_name,machine_name))
         return d
 
 
