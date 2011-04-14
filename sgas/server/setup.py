@@ -8,7 +8,7 @@ from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.authz import engine
-from sgas.server import config, messages, manifest, topresource, insertresource, queryresource
+from sgas.server import config, messages, manifest, topresource, insertresource, monitorresource, queryresource
 from sgas.database.postgresql import database as pgdatabase, hostscale
 from sgas.viewengine import viewdefinition, viewresource
 
@@ -33,12 +33,14 @@ def createSite(db, authorizer, views, mfst):
     rr = insertresource.JobUsageRecordInsertResource(db, authorizer)
     sr = insertresource.StorageUsageRecordInsertResource(db, authorizer)
     vr = viewresource.ViewTopResource(db, authorizer, views, mfst)
+    mr = monitorresource.MonitorResource(db, authorizer)
     qr = queryresource.QueryResource(db, authorizer)
 
     tr = topresource.TopResource(authorizer)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
     tr.registerService(sr, 'sr', (('StorageRegistration', 'sr'),) )
     tr.registerService(vr, 'view', (('View', 'view'),))
+    tr.registerService(mr, 'monitor', (('Monitor', 'monitor'),) )
     tr.registerService(qr, 'query', (('Query', 'query'),))
 
     root = resource.Resource()
