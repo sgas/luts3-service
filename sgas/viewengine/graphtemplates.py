@@ -197,11 +197,12 @@ add_yticks(vis, y, w-150);
 add_legend(vis, groups);
 
 /* lines */
+/* offset by 1/2 x band so it aligns properly with the ticks set by add_xticks */
 vis.add(pv.Panel)
     .data(groups)
   .add(pv.Line)
     .data(batches)
-    .left(function(b, g) x(b))
+    .left(function(b, g) x(b) + ( x.range().band / 2 )  )
     .bottom(function(b, g) y(count[b][g]))
     .strokeStyle(function(b, g) c(g))
     .interpolate('basis')
