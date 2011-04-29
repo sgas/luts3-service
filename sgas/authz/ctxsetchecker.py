@@ -42,7 +42,14 @@ class SetChecker:
 
 
 
+class EmptyContextChecker:
+    # used when contexts aren't really used
+    def contextCheck(self, subject_identity, subject_rights, action_context):
+        return True
+
+
 AnySetChecker = SetChecker(any)
 AllSetChecker = SetChecker(all)
+AlwaysAllowedContextChecker = EmptyContextChecker()
 
 

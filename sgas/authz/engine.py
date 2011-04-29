@@ -46,7 +46,8 @@ class AuthorizationEngine:
             rights.ACTION_JOB_INSERT        : ctxinsertchecker.JobInsertChecker(insert_check_depth),
             rights.ACTION_STORAGE_INSERT    : ctxinsertchecker.StorageInsertChecker(insert_check_depth),
             rights.ACTION_VIEW              : ctxsetchecker.AnySetChecker,
-            rights.ACTION_QUERY             : ctxsetchecker.AllSetChecker
+            rights.ACTION_QUERY             : ctxsetchecker.AllSetChecker,
+            rights.ACTION_MONITOR           : ctxsetchecker.AlwaysAllowedContextChecker
         }
 
 
