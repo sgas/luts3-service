@@ -4,7 +4,7 @@
 # options:
 # -H host           # host to monitor for (machine name in the record). Mandatory
 # -m monitorurl     # sgas monitor url to get information from. Mandatory
-# -c hostcert       # file with host certificate
+# -e hostcert       # file with host certificate
 # -k hostkey        # file with host key
 # -a cafile         # file with certificate authority
 # -w warntime       # warning time period
@@ -34,31 +34,43 @@ do
     esac
 done
 
+if [ -z $HOST ]
+then
+    echo "Host parameter not specified";
+    exit 3;
+fi
+
+if [ -z $MONITOR_URL ]
+then
+    echo "Monitor URL parameter not specified";
+    exit 3;
+fi
+
 #echo  $HOST $MONITOR_URL $HOSTCERT $HOSTKEY $CADIR $WARNTIME $CRITTIME
 
-PAYLOAD=`curl -s -f --capath $CADIR --cert $HOSTCERT --key $HOSTKEY $MONITOR_URL/$HOST` || (echo "Error retrieving monitoring data." ; exit 3)
+PAYLOAD=`curl -s -f --capath $CADIR --cert $HOSTCERT --key $HOSTKEY $MONITOR_URL/$HOST` || { echo "Error retrieving monitoring data." ; exit 3; }
 
 # read value, exit code 3 is unknown
-SECONDS=`echo $PAYLOAD | python -c "import sys;import json; print json.load(sys.stdin)['registration_epoch']" 2>/dev/null` || (echo "Error parsing JSON payload" ; exit 3)
+SECONDS=`echo $PAYLOAD | python -c "import sys;import json; print json.load(sys.stdin)['registration_epoch']" 2>/dev/null` || { echo "Error parsing JSON payload" ; exit 3; }
 
 if [ "$SECONDS" = "None" ]
 then
-    echo "No registrations for host: $HOST is not registering records"
-    exit 1 # nagios warning
+    echo "No registrations for host: $HOST is not registering records";
+    exit 1; # nagios warning
 fi
 
 if [ "$SECONDS" -gt "$CRITTIME" ]
 then
-    echo "Registration epoch exceeded critical period: $HOST is not registering records."
-    exit 2 # nagios critial
+    echo "Registration epoch exceeded critical period: $HOST is not registering records.";
+    exit 2; # nagios critial
 fi
 
 if [ "$SECONDS" -gt "$WARNTIME" ]
 then
-    echo "Registration epoch exceeded warning period: $HOST is not registering records."
-    exit 1 # nagios warning
+    echo "Registration epoch exceeded warning period: $HOST is not registering records.";
+    exit 1; # nagios warning
 fi
 
 # oll' correct
-exit 0
+exit 0;
 
