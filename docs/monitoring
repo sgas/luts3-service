@@ -38,3 +38,12 @@ e.g.:
 
 "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=ROBOT: Nagios"               monitor
 
+SGAS provides a Nagios check script, called check_sgas-registration.sh. There
+are two mandatory arguments: machine name (-H) and monitor url (-m), e.g.:
+
+./sgas-registration-monitor.sh -H cluster.example.org -m https://sgas.example.org:8143/sgas/monitor
+
+The default times for warning is 2 days, and 4 days for critical. There are
+options for specifying warning and critical time (both are in seconds) and
+setting CA directory and host cert and key.
+
