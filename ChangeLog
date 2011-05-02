@@ -1,5 +1,25 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+
+3.6.0
+
+Support for the EMI StAR storage accounting format (v7). This support is still
+experimental is likely to be subject to change. See docs/storage for details.
+
+Support for extracting time since last registration for a host, enabling Nagios
+monitoring of registration. See docs/monitoring for details.
+
+Extend database host field to support large hosts set.
+
+Better error reporting in view engine.
+
+Some small changes to graph layout to make them nicer looking and easier to
+compare y-axis values.
+
+Log insert rejection, when rejection is done in pre-check (before reading usage
+records).
+
+
 3.5.2
 
 Increase error verbosity increase maximum client body size in nginx sample

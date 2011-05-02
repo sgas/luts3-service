@@ -1,0 +1,28 @@
+=== Storage Accounting ===
+
+As of 3.6.0, SGAS LUTS supports storage accounting using the EMI StAR record
+format (v7). Note that the format is not yet finalized, and the implementation
+may therefore be subject to changes.
+
+A copy of the EMI StAR format specification can be retrieved from the project
+page: https://twiki.cern.ch/twiki/bin/view/EMI/StorageAccounting
+Direct link for the V7 version:
+https://twiki.cern.ch/twiki/pub/EMI/StorageAccounting/StAR-EMI-tech-doc-v7.pdf
+
+
+The setup for storage accounting is quite similar to usage records. A client
+must be create the storage records to be produced and write them into an SGAS
+spool directory. The directory should have the following format:
+
+sgasspool
+ |- archive     # registered records are transferred to here
+ |- records     # new records should be written here
+ |- state       # used for storing persistent information about registrations
+
+When written, the records must be registered with a client. Such a client is
+distributed in the LUTS3 client (sgas-sr-registrant). See the client for
+documentation on using the client.
+
+If working directly with SGAS, the URL for the storage record resource is
+(typically) /sgas/sr.
+
