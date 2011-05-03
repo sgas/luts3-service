@@ -51,7 +51,7 @@ class MonitorResource(resource.Resource):
 
         #print request.postpath
         subject = resourceutil.getSubject(request)
-        if not self.authorizer.isAllowed(subject, rights.ACTION_MONITOR):
+        if not self.authorizer.isAllowed(subject, rights.ACTION_MONITOR, () ):
             request.setResponseCode(403) # forbidden
             return "Monitoring not allowed for %s" % subject
         # request allowed, continue
