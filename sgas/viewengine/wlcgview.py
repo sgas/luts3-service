@@ -480,16 +480,16 @@ class WLCGStorageView(baseview.BaseView):
     WLCG_STORAGE_QUERY = """
         SELECT storage_share, group_identity, (sum(r) / 1099511627776)::integer FROM (
             SELECT
-                DISTINCT ON (t.sample, storage_system, storage_share, storage_media, storage_class, sg.group_identity)
+                DISTINCT ON (t.sample, storage_system, ss.storage_share, storage_media, storage_class, sg.group_identity)
                 ss.storage_share, sg.group_identity, COALESCE(resource_capacity_used, 0) as r
             FROM
-                (SELECT %s::date AS sample) AS t
-                CROSS JOIN (SELECT DISTINCT storage_share FROM storagerecords WHERE measure_time::date = %s::date) AS ss
-                CROSS JOIN (SELECT DISTINCT group_identity FROM storagerecords WHERE storage_system = 'dcache.ndgf.org' AND measure_time::date = %s) AS sg
+                (SELECT %(timestamp)s::timestamp  AS sample) AS t
+                CROSS JOIN (SELECT DISTINCT storage_share  FROM storagerecords WHERE measure_time <= %(timestamp)s AND (measure_time + valid_duration * interval '1 seconds') >= %(timestamp)s) AS ss
+                CROSS JOIN (SELECT DISTINCT group_identity FROM storagerecords WHERE storage_system = 'dcache.ndgf.org' AND measure_time <= %(timestamp)s AND (measure_time + valid_duration * interval '1 seconds') >= %(timestamp)s) AS sg
                 LEFT OUTER JOIN storagerecords ON (measure_time <= t.sample AND measure_time + valid_duration * interval '1 seconds' >= t.sample AND
                                                    ss.storage_share = storagerecords.storage_share AND
                                                    sg.group_identity = storagerecords.group_identity)
-            ORDER BY t.sample, storage_system, storage_share, storage_media, storage_class, sg.group_identity, measure_time DESC) as s
+            ORDER BY t.sample, storage_system, ss.storage_share, storage_media, storage_class, sg.group_identity, measure_time DESC) as s
         GROUP BY s.storage_share, s.group_identity
         ORDER BY s.storage_share, s.group_identity;
     """
@@ -522,7 +522,7 @@ class WLCGStorageView(baseview.BaseView):
 
     def retrieveWLCGData(self, date):
 
-        d = self.urdb.query(self.WLCG_STORAGE_QUERY, (date, date, date))
+        d = self.urdb.query(self.WLCG_STORAGE_QUERY, {'timestamp': date } )
         return d
 
 
