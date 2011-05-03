@@ -170,3 +170,26 @@ $ pg_dump sgas > sgas-db-backup.sql
 
 $ sudo /etc/init.d/sgas start
 
+
+Upgrading from SGAS 3.5.x to 3.6.0
+
+1. Stop SGAS
+
+$ sudo /etc/init.d/sgas stop
+
+2. Install new SGAS
+
+$ tar xzf sgas-luts-service-3.6.0.tar.gz
+$ cd sgas-luts-service-3.6.0
+$ python setup.py build
+$ sudo python setup.py install
+
+3. Backup database
+
+$sudo su - sgas                 # Or whatever user SGAS is running at
+$ pg_dump sgas > sgas-db-backup.sql
+
+4. Start SGAS
+
+$ sudo /etc/init.d/sgas start
+
