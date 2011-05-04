@@ -292,7 +292,7 @@ class WLCGOversightView(baseview.BaseView):
         # authz check
         ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
-            return self.renderAuthzErrorPage(request, 'WLCG Querterly view' % self.path, subject)
+            return self.renderAuthzErrorPage(request, 'WLCG oversight view', subject)
 
         # access allowed
         start_date, end_date = dateform.parseStartEndDates(request)
@@ -507,7 +507,7 @@ class WLCGStorageView(baseview.BaseView):
         # authz check
         ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
-            return self.renderAuthzErrorPage(request, 'WLCG Storage View' % self.path, subject)
+            return self.renderAuthzErrorPage(request, 'WLCG Storage View', subject)
 
         # access allowed
         date = dateform.parseDate(request)
