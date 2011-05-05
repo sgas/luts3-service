@@ -38,8 +38,13 @@ LEFT OUTER JOIN
     ON (ur_insert.dates = sr_insert.dates);
 """
 
-MACHINES_INSERTED_TODAY = """
-SELECT DISTINCT machine_name FROM uraggregated WHERE insert_time = current_date;
+MACHINES_UR_INSERTED_RECENT = """
+SELECT DISTINCT machine_name FROM uraggregated WHERE (insert_time = current_date OR insert_time = current_date-1) AND
+                                                     generate_time AT TIME ZONE 'UTC'  > current_timestamp - interval '24 hours';
+"""
+
+MACHINES_SR_INSERTED_RECENT = """
+SELECT DISTINCT storage_system FROM storagerecords WHERE insert_time AT TIME ZONE 'UTC' > current_timestamp - interval '24 hours';
 """
 
 STALE_MACHINES_TWO_MONTHS = """
@@ -70,7 +75,7 @@ class AdminManifestResource(baseview.BaseView):
         defs = []
 
         # get database info and schedule future rendering
-        for query in [ DB_STATS_QUERY, INSERTS_PER_DAY, MACHINES_INSERTED_TODAY, STALE_MACHINES_TWO_MONTHS ]:
+        for query in [ DB_STATS_QUERY, INSERTS_PER_DAY, MACHINES_UR_INSERTED_RECENT, MACHINES_SR_INSERTED_RECENT, STALE_MACHINES_TWO_MONTHS ]:
             d = self.urdb.query(query)
             defs.append(d)
 
@@ -92,10 +97,11 @@ class AdminManifestResource(baseview.BaseView):
     def renderAdminManifestPage(self, results, request):
 
         #print "rAM", results
-        db_stats                = results[0]
-        inserts_per_day         = results[1]
-        machines_inserted_today = [ r[0] for r in results[2] ]
-        stale_machines          = [ r[0] for r in results[3] ]
+        db_stats            = results[0]
+        inserts_per_day     = results[1]
+        machines_ur_insert  = [ r[0] for r in results[2] ]
+        machines_sr_insert  = [ r[0] for r in results[3] ]
+        stale_machines      = [ r[0] for r in results[4] ]
 
         #print db_stats
         n_ur_recs, n_sr_recs, db_size = db_stats[0]
@@ -132,21 +138,32 @@ class AdminManifestResource(baseview.BaseView):
         # registration info
         request.write('<h4>Registrations</h4>\n')
 
-        request.write('<h5>Registrations over the last 8 days:</h5>\n')
+        request.write('<h5>Registrations over the last 8 days</h5>\n')
         request.write(inserts_table)
         request.write('<p> &nbsp; <p>\n\n')
 
-        request.write('<h5>Machines which has registered records today:</h5>\n')
+        request.write('<h5>Machines which has registered usage records in the last 24 hours</h5>\n')
         request.write('<p>\n')
-        for mn in machines_inserted_today:
+        for mn in machines_ur_insert:
             request.write('%s\n' % mn)
             request.write('<p>\n')
-        if not machines_inserted_today:
+        if not machines_ur_insert:
             request.write('(none)\n')
             request.write('<p>\n')
         request.write('<p> &nbsp; <p>\n\n')
 
-        request.write('<h5>Machines which has registered records within the last two months, but not in the last three days:</h5>\n')
+        request.write('<h5>Machines which has registered storage records in the last 24 hours</h5>\n')
+        request.write('<p>\n')
+        for mn in machines_sr_insert:
+            request.write('%s\n' % mn)
+            request.write('<p>\n')
+        if not machines_sr_insert:
+            request.write('(none)\n')
+            request.write('<p>\n')
+        request.write('<p> &nbsp; <p>\n\n')
+
+        request.write('<h5>Machines which has registered records within the last two months, but NOT in the last three days</h5>\n')
+        request.write('<h5>This is a list of "potentially" problematic machines</h5>\n')
         request.write('<p>\n')
         for mn in stale_machines:
             request.write('%s\n' % mn)
@@ -154,7 +171,7 @@ class AdminManifestResource(baseview.BaseView):
         if not stale_machines:
             request.write('(none)\n')
             request.write('<p>\n')
-        request.write('<p>\n')
+        request.write('<p> &nbsp; <p>\n\n')
 
         request.write(html.HTML_VIEWBASE_FOOTER)
 
