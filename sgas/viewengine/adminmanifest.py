@@ -18,17 +18,24 @@ from sgas.viewengine import html, htmltable, baseview
 # Various stat queries
 
 DB_STATS_QUERY = """
-SELECT sum(n_jobs) as count,
-       pg_size_pretty(pg_database_size(current_database()))
-FROM uraggregated, pg_class
-WHERE relname = 'usagedata' group by relpages;
+SELECT * FROM
+    (SELECT sum(n_jobs) FROM uraggregated_data) as urcount,
+    (SELECT count(*) FROM storagedata) as srcount,
+    (SELECT pg_size_pretty(pg_database_size(current_database()))) AS dbsize;
 """
 
 INSERTS_PER_DAY = """
-SELECT d.dates, sum(n_jobs)
-  FROM (SELECT current_date - s as dates FROM generate_series(0,8) as s) as d
-    LEFT OUTER JOIN uraggregated ON (d.dates = uraggregated.insert_time::date)
-GROUP BY d.dates ORDER BY d.dates;
+SELECT ur_insert.dates, ur_insert.sum, NULLIF( sr_insert.count, 0) FROM
+  ( SELECT d.dates, sum(n_jobs)
+    FROM (SELECT current_date - s as dates FROM generate_series(0,8) as s) as d
+    LEFT OUTER JOIN uraggregated_data ON (d.dates = uraggregated_data.insert_time::date)
+    GROUP BY d.dates ORDER BY d.dates) AS ur_insert
+LEFT OUTER JOIN
+  ( SELECT d.dates, count(storagedata.*)
+    FROM (SELECT current_date - s as dates FROM generate_series(0,8) as s) as d
+    LEFT OUTER JOIN storagedata ON (d.dates = storagedata.insert_time::date)
+    GROUP BY d.dates ORDER BY d.dates) AS sr_insert
+    ON (ur_insert.dates = sr_insert.dates);
 """
 
 MACHINES_INSERTED_TODAY = """
@@ -91,12 +98,13 @@ class AdminManifestResource(baseview.BaseView):
         stale_machines          = [ r[0] for r in results[3] ]
 
         #print db_stats
-        n_jobs, db_size = db_stats[0]
+        n_ur_recs, n_sr_recs, db_size = db_stats[0]
 
         # create table over insertions/date
         batches = [ i[0] for i in inserts_per_day ]
-        groups = [ 'records' ]
-        matrix = dict( [ ((i[0], groups[0]), i[1]) for i in inserts_per_day ] )
+        groups = [ 'Usage records', 'Storage records' ]
+        matrix = dict( [ ((i[0], groups[0]), i[1]) for i in inserts_per_day ] +
+                       [ ((i[0], groups[1]), i[2]) for i in inserts_per_day ] )
         inserts_table = htmltable.createHTMLTable(matrix, batches, groups)
 
         manifest_props = self.manifest.getAllProperties()
@@ -114,7 +122,9 @@ class AdminManifestResource(baseview.BaseView):
 
         # database info
         request.write('<h4>Database</h4>\n')
-        request.write('Number of usage records: %s\n' % n_jobs)
+        request.write('Number of usage records: %s\n' % n_ur_recs)
+        request.write('<p>\n')
+        request.write('Number of storage records: %s\n' % n_sr_recs)
         request.write('<p>\n')
         request.write('Database size: %s\n' % db_size)
         request.write('<p> &nbsp; <p>\n\n')
