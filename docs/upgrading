@@ -189,6 +189,14 @@ $ sudo python setup.py install
 $sudo su - sgas                 # Or whatever user SGAS is running at
 $ pg_dump sgas > sgas-db-backup.sql
 
+5. Upgrade database schema
+
+$ sudo su - sgas                # Or whatever user SGAS is running as
+$ psql sgas                     # Or whatever the database is called
+$ \i /usr/local/share/sgas/postgres/sgas-postgres-3.5.x-3.6.0-upgrade.sql
+$ \i /usr/local/share/sgas/postgres/sgas-postgres-view.sql
+(and logout of postgres)
+
 4. Start SGAS
 
 $ sudo /etc/init.d/sgas start
