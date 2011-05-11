@@ -478,10 +478,10 @@ class WLCGOversightView(baseview.BaseView):
 class WLCGStorageView(baseview.BaseView):
 
     WLCG_STORAGE_QUERY = """
-        SELECT storage_share, group_identity, (sum(r) / 1099511627776)::integer FROM (
+        SELECT storage_share, group_identity, storage_media, (sum(r) / 1099511627776)::integer FROM (
             SELECT
                 DISTINCT ON (t.sample, storage_system, ss.storage_share, storage_media, storage_class, sg.group_identity)
-                ss.storage_share, sg.group_identity, COALESCE(resource_capacity_used, 0) as r
+                ss.storage_share, sg.group_identity, storage_media, COALESCE(resource_capacity_used, 0) as r
             FROM
                 (SELECT %(timestamp)s::timestamp  AS sample) AS t
                 CROSS JOIN (SELECT DISTINCT storage_share  FROM storagerecords WHERE measure_time <= %(timestamp)s AND (measure_time + valid_duration * interval '1 seconds') >= %(timestamp)s) AS ss
@@ -489,9 +489,10 @@ class WLCGStorageView(baseview.BaseView):
                 LEFT OUTER JOIN storagerecords ON (measure_time <= t.sample AND measure_time + valid_duration * interval '1 seconds' >= t.sample AND
                                                    ss.storage_share = storagerecords.storage_share AND
                                                    sg.group_identity = storagerecords.group_identity)
+            WHERE resource_capacity_used IS NOT NULL
             ORDER BY t.sample, storage_system, ss.storage_share, storage_media, storage_class, sg.group_identity, measure_time DESC) as s
-        GROUP BY s.storage_share, s.group_identity
-        ORDER BY s.storage_share, s.group_identity;
+        GROUP BY s.storage_share, s.group_identity, storage_media
+        ORDER BY s.storage_share, s.group_identity, storage_media;
     """
 
     def __init__(self, urdb, authorizer, mfst, path):
@@ -530,9 +531,9 @@ class WLCGStorageView(baseview.BaseView):
 
         records = []
         for row in db_rows:
-            site, group, rcu = row
+            site, group, media, rcu = row
             site = site.replace('_', '.')
-            records.append( {'site':site, 'group':group, 'rcu': rcu } )
+            records.append( {'site':site, 'group':group, 'media':media, 'rcu': rcu } )
         return records
 
 
@@ -546,9 +547,9 @@ class WLCGStorageView(baseview.BaseView):
         # remove infomration from certain groups, add they not add any value
         records = [ rec for rec in records if rec['group'] not in ('dteam', 'behrmann') ]
         if media == 'disk':
-            records = [ rec for rec in records if not rec['site'].startswith('osm://') ]
+            records = [ rec for rec in records if rec['media'] == 'disk' ]
         elif media == 'tape':
-            records = [ rec for rec in records if rec['site'].startswith('osm://') ]
+            records = [ rec for rec in records if rec['media'] == 'tape' ]
         elif media == 'all':
             pass
         else:
