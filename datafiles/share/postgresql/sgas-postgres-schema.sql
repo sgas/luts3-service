@@ -150,6 +150,7 @@ CREATE TABLE uraggregated_data (
     project_name_id         integer,
     runtime_environments_id integer[],
     status_id               integer,
+    insert_host_id          integer,
     n_jobs                  integer,
     cputime                 bigint,
     walltime                bigint,

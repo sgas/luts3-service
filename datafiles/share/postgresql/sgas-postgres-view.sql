@@ -113,6 +113,7 @@ SELECT
         ELSE NULL
     END                                                                             AS runtime_environments,
     jobstatus.status                                                                AS status,
+    inserthost.insert_host                                                          AS insert_host,
     n_jobs                                                                          AS n_jobs,
     ROUND(cputime  / 3600.0, 2)                                                     AS cputime,
     ROUND(walltime / 3600.0, 2)                                                     AS walltime,
@@ -130,6 +131,7 @@ LEFT OUTER JOIN localuser           ON (uraggregated_data.local_user_id       = 
 LEFT OUTER JOIN voinformation       ON (uraggregated_data.vo_information_id   = voinformation.id)
 LEFT OUTER JOIN projectname         ON (uraggregated_data.project_name_id     = projectname.id)
 LEFT OUTER JOIN jobstatus           ON (uraggregated_data.status_id           = jobstatus.id)
+LEFT OUTER JOIN inserthost          ON (uraggregated_data.insert_host_id      = inserthost.id)
 ;
 
 

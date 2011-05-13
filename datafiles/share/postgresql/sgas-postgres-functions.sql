@@ -372,6 +372,9 @@ BEGIN
     DELETE FROM uraggregated_data WHERE insert_time = q_insert_date AND machine_name_id = q_machine_name_id;
 
     INSERT INTO uraggregated_data
+        (execution_time, insert_time, machine_name_id, queue_id,
+         global_user_name_id, local_user_id, vo_information_id, project_name_id,
+         runtime_environments_id, status_id, insert_host_id, n_jobs, cputime, walltime, generate_time)
     SELECT
         COALESCE(end_time::DATE, create_time::DATE)                             AS s_execute_time,
         insert_time::DATE                                                       AS s_insert_time,
@@ -385,6 +388,7 @@ BEGIN
               FROM runtimeenvironment_usagedata
               WHERE usagedata.id = runtimeenvironment_usagedata.usagedata_id)   AS s_runtime_environments,
         status_id                                                               AS s_status_id,
+        insert_host_id                                                          AS s_insert_host_id,
         count(*)                                                                AS s_n_jobs,
         SUM(COALESCE(cpu_duration,0))                                           AS s_cputime,
         SUM(COALESCE(wall_duration,0) * COALESCE(processors,1))                 AS s_walltime,
