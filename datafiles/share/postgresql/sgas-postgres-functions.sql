@@ -400,7 +400,7 @@ BEGIN
     GROUP BY
         s_execute_time, s_insert_time, s_machine_name_id, s_queue_id,
         s_global_user_name_id, s_local_user_id, s_vo_information_id, s_project_name_id,
-        s_runtime_environments, s_status_id;
+        s_runtime_environments, s_status_id, s_insert_host_id;
 
     result[0] = q_insert_date::varchar;
     result[1] = q_machine_name_id;
