@@ -2,8 +2,9 @@
 
 # nagios script for monitoring registration of records into SGAS.
 # options:
-# -H host           # host to monitor for (machine name in the record). Mandatory
 # -m monitorurl     # sgas monitor url to get information from. Mandatory
+# -H host           # host to monitor for (machine name in the record). Mandatory
+# -I inserthost     # host from which insertion came (not necessarely the same as the hos to monitor)
 # -e hostcert       # file with host certificate
 # -k hostkey        # file with host key
 # -a cafile         # file with certificate authority
@@ -16,16 +17,17 @@ HOSTCERT=/etc/grid-security/hostcert.pem
 HOSTKEY=/etc/grid-security/hostkey.pem
 CADIR=/etc/grid-security/certificates/
 
-WARNTIME=172800 # 2 days
-CRITTIME=345600 # 4 days
+WARNTIME=259200 # 3 days
+CRITTIME=432000 # 5 days
 
 # read command line params
 #while getopts "H:m:e:k:a:w:c" option
-while getopts "H:m:e:k:a:w:c:" option
+while getopts "m:H:I:e:k:a:w:c:" option
 do
     case $option in
-        H) HOST=$OPTARG ;;
         m) MONITOR_URL=$OPTARG ;;
+        H) HOST=$OPTARG ;;
+        I) INSERT_HOST=$OPTARG ;;
         e) HOSTCERT=$OPTARG ;;
         k) HOSTKEY=$OPTARG ;;
         a) CADIR=$OPTARG ;;
@@ -46,9 +48,16 @@ then
     exit 3;
 fi
 
-#echo  $HOST $MONITOR_URL $HOSTCERT $HOSTKEY $CADIR $WARNTIME $CRITTIME
+#echo  $MONITOR_URL $HOST $INSERT_HOST $HOSTCERT $HOSTKEY $CADIR $WARNTIME $CRITTIME
 
-PAYLOAD=`curl -s -f --capath $CADIR --cert $HOSTCERT --key $HOSTKEY $MONITOR_URL/$HOST` || { echo "Error retrieving monitoring data." ; exit 3; }
+URL=$MONITOR_URL/$HOST
+
+if [ -n $INSERT_HOST ]
+then
+    URL=$URL/$INSERT_HOST
+fi
+
+PAYLOAD=`curl -s -f --capath $CADIR --cert $HOSTCERT --key $HOSTKEY $URL` || { echo "Error retrieving monitoring data." ; exit 3; }
 
 # read value, exit code 3 is unknown
 SECONDS=`echo $PAYLOAD | python -c "import sys;import json; print json.load(sys.stdin)['registration_epoch']" 2>/dev/null` || { echo "Error parsing JSON payload" ; exit 3; }

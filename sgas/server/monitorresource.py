@@ -13,7 +13,6 @@ from twisted.web import resource, server
 from sgas.ext.python import json
 from sgas.authz import rights
 from sgas.server import resourceutil
-from sgas.queryengine import parser as queryparser, builder as querybuilder, rowrp as queryrowrp
 
 
 
@@ -24,8 +23,15 @@ REGISTRATION_EPOCH = 'registration_epoch'
 
 STATUS_QUERY = """
 SELECT extract(EPOCH from (current_timestamp - greatest(ur.last_registration, sr.last_registration)))::integer AS registration_epoch FROM 
-  (SELECT max(insert_time) AS last_registration FROM storagerecords where storage_system = %s) AS ur,
-  (SELECT max(generate_time) AS last_registration FROM uraggregated WHERE machine_name = %s) AS sr
+  (SELECT max(insert_time) AS last_registration FROM storagerecords WHERE storage_system = %(resource)s AND insert_host = %(inserthost)s ) AS ur,
+  (SELECT max(generate_time) AS last_registration FROM uraggregated WHERE machine_name = %(resource)s AND insert_host = %(inserthost)s ) AS sr
+;
+"""
+
+STATUS_QUERY_RESOURCE_ONLY = """
+SELECT extract(EPOCH from (current_timestamp - greatest(ur.last_registration, sr.last_registration)))::integer AS registration_epoch FROM 
+  (SELECT max(insert_time) AS last_registration FROM storagerecords WHERE storage_system = %(resource)s ) AS ur,
+  (SELECT max(generate_time) AS last_registration FROM uraggregated WHERE machine_name = %(resource)s ) AS sr
 ;
 """
 
@@ -41,9 +47,12 @@ class MonitorResource(resource.Resource):
         self.authorizer = authorizer
 
 
-    def queryStatus(self, machine_name):
+    def queryStatus(self, resource_name, insert_host=None):
 
-        d = self.db.query(STATUS_QUERY, (machine_name,machine_name))
+        if insert_host:
+            d = self.db.query(STATUS_QUERY, {'resource': resource_name, 'inserthost': insert_host} )
+        else:
+            d = self.db.query(STATUS_QUERY_RESOURCE_ONLY, { 'resource': resource_name} )
         return d
 
 
@@ -56,12 +65,15 @@ class MonitorResource(resource.Resource):
             return "Monitoring not allowed for %s" % subject
         # request allowed, continue
 
-        if len(request.postpath) != 1:
+        if not len(request.postpath) in (1,2):
             return self.renderErrorPage('Invalid machine specification', request)
 
         machine_name = request.postpath[0]
+        insert_host = None
+        if len(request.postpath) == 2:
+            insert_host = request.postpath[1]
 
-        d = self.queryStatus(machine_name)
+        d = self.queryStatus(machine_name, insert_host)
         d.addCallback(self.renderMonitorStatus, machine_name, request)
         d.addErrback(self.renderErrorPage, request)
         return server.NOT_DONE_YET
@@ -76,7 +88,8 @@ class MonitorResource(resource.Resource):
 
         elif len(db_result) == 1:
             reg_epoch = db_result[0][0]
-            payload = json.dumps( { 'registration_epoch' : reg_epoch } )
+            payload = json.dumps( { REGISTRATION_EPOCH : reg_epoch } )
+            request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
             request.write(payload)
             request.finish()
 
