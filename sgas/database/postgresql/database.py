@@ -194,12 +194,12 @@ class PostgreSQLDatabase(service.MultiService):
             for row in query_result:
                 results.append( [ buildValue(e) for e in row ] )
             defer.returnValue(results)
-        except psycopg2.InterfaceError, e:
+        except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if not retry:
                 log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e), system='sgas.PostgreSQLDatabase')
-                self.dbpool = self._setupPool(self.connect_info)
+                self.pool_proxy.reconnect()
                 yield self.query(query, query_args, retry=True)
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
