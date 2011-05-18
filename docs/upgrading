@@ -195,6 +195,8 @@ $ sudo su - sgas                # Or whatever user SGAS is running as
 $ psql sgas                     # Or whatever the database is called
 $ \i /usr/local/share/sgas/postgres/sgas-postgres-3.5.x-3.6.0-upgrade.sql
 $ \i /usr/local/share/sgas/postgres/sgas-postgres-view.sql
+$ \i /usr/local/share/sgas/postgres/sgas-postgres-functions.sql
+$ \i /usr/local/share/sgas/postgres/sgas-postgres-aggregation-rebuild.sql
 (and logout of postgres)
 
 4. Start SGAS

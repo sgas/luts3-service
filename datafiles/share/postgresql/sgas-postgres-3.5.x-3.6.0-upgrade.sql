@@ -102,4 +102,5 @@ CREATE TABLE storagedata (
 
 
 SELECT 'Views and functions dropped, you should reload them' AS Message;
+SELECT 'Aggregation data changed, aggregation table should be rebuild.' AS Message;
 
