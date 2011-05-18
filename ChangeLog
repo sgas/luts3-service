@@ -11,7 +11,13 @@ monitoring of registration. See docs/monitoring for details.
 
 Extend database host field to support large hosts set.
 
+Include insert host in aggregated data (required for Nagios monitoring).
+
+Better handling of database restarts/unavailability.
+
 Better error reporting in view engine.
+
+Perform reverse lookup of inserter ip to provide host name for provenence.
 
 Some small changes to graph layout to make them nicer looking and easier to
 compare y-axis values.
