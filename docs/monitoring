@@ -1,9 +1,35 @@
-=== Monitoring Registration ===
+=== Nagios Monitoring of SGAS ==
 
-SGAS provides a simple mechanism which can be used to monitor if a machine has
-made any regstrations in a certain interval. SGAS exposes a simple HTTP
-interface, which will reply with the number of seconds since the last
-registration for a given hostname.
+This document describes how to enable Nagios monitoring of SGAS, associated
+services, and registration records as well.
+
+
+== SGAS Service, NginX, PostgreSQL Monitoring ==
+
+The LUTS, along with NginX and PostgreSQL constitute the three services
+necessary for a running SGAS.
+
+For monitoring of SGAS LUTS and NginX use a standard http(s) checker. The
+checker should return a fault if the HTTP request is a non 200-series reply.
+
+For NginX monitoring, use the base URL. Fx: www.example.org:6143/
+
+For SGAS LUTS monitoring, use the SGAS service URL.
+Fx: www.example.org.org:6143/sgas
+
+For PostgreSQL, a standard PostgreSQL Nagios monitoring script should be
+sufficient.
+
+
+== Monitoring Registration ==
+
+Besides monitoring the services, it can be a good idea to monitor that records
+are being registered, such that a misconfiguration or problems can be detected.
+
+SGAS provides a simple mechanism which can be used to monitor if a machine (and
+possibly from a certain insert host) has made any regstrations in a certain
+interval. SGAS exposes a simple HTTP interface, which will reply with the
+number of seconds since the last registration for a given hostname.
 
 To pull SGAS for information on registration status construct a URL for the
 machine that should be checked. For a cluster with the host name
@@ -20,11 +46,20 @@ JSON payload, like the following:
 The registration epoch value is the seconds since last registration. It is then
 up to the client to decide if this number is big enough to issue a warning.
 
-If there are no registrations for the specified hostname, the response will
-have code 404 (NOT FOUND), and have a string describing the error. If an error
-occurs in the service, a response with code 500 (INTERNAL SERVER ERROR) is
-returned along with a string describing the problem.
+However a machine can have several hosts inserting records for that machine,
+e.g., both ce01.titan.uio.no and ce02.titan.uio.no registers records for the
+machine titan.uio.no. To monitor registrations from both host for the same
+machine, append the URL with the inserter host name as a child resources:
 
+http://accounting.example.org:6143/sgas/monitor/cluster.example.org/gw01.cluster.example.org
+
+This URL will respond with a payload similar to a machine only request.
+
+If there are no registrations for the specified machine name, or machine name +
+inserter host combination, the response will have code 404 (NOT FOUND), and
+have a string describing the error. If an error occurs in the service, a
+response with code 500 (INTERNAL SERVER ERROR) is returned along with a string
+describing the problem.
 
 Monitoring works both for usage and storage records. For usage records the
 machine name property is for resource name, and for storage records the storage
@@ -43,7 +78,9 @@ are two mandatory arguments: machine name (-H) and monitor url (-m), e.g.:
 
 ./sgas-registration-monitor.sh -H cluster.example.org -m https://sgas.example.org:8143/sgas/monitor
 
-The default times for warning is 2 days, and 4 days for critical. There are
+An inserter host can be specified with -I.
+
+The default times for warning is 3 days, and 5 days for critical. There are
 options for specifying warning and critical time (both are in seconds) and
 setting CA directory and host cert and key.
 
