@@ -18,7 +18,7 @@ DROP FUNCTION urcreate (character varying, timestamp without time zone, characte
 
 DROP FUNCTION update_uraggregate();
 
-ALTER TABLE host ALTER COLUMN host TYPE varchar(7000);
+ALTER TABLE host ALTER COLUMN host TYPE varchar(2710);
 
 ALTER TABLE uraggregated_data ADD COLUMN insert_host_id integer;
 
