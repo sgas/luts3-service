@@ -84,6 +84,9 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
         if 'exit_code' in ur_doc:
             ur_doc['exit_code'] = ur_doc['exit_code'] & 0377 # equivalent to modulus 256
 
+        if 'host' in ur_doc and len(ur_doc['host']) > 2700:
+            ur_doc['host'] = ur_doc['host'][:2699] + '$' # dollar marks that the string has been chopped
+
         # convert vo attributes into arrays (adaption is done by psycopg2)
         if 'vo_attrs' in ur_doc:
             vo_attrs = [ [ e.get('group'), e.get('role') ] for e in ur_doc['vo_attrs'] ]

@@ -66,6 +66,14 @@ class GenericDatabaseTest:
             self.failUnlessEqual(doc.get('record_id', None), ur_id)
 
 
+    @defer.inlineCallbacks
+    def testLongHostInsert(self):
+
+        doc_ids = yield self.db.insertJobUsageRecords(ursampledata.UR_LONGHOST)
+        self.failUnlessEqual(len(doc_ids), 1)
+
+
+
 class QueryDatabaseTest:
 
     def triggerAggregateUpdate(self):
