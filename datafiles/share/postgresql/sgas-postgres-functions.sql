@@ -1,6 +1,6 @@
 -- SGAS PostgreSQL functions
 
-CREATE OR REPLACE FUNCTION urcreate (
+CREATE FUNCTION urcreate (
     in_record_id               varchar,
     in_create_time             timestamp,
     in_global_job_id           varchar,
@@ -345,7 +345,7 @@ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION update_uraggregate ( )
+CREATE FUNCTION update_uraggregate ( )
 RETURNS varchar[] AS $insertdate_machinename$
 
 DECLARE
