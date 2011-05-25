@@ -569,6 +569,13 @@ class WLCGStorageView(baseview.BaseView):
         TOTAL = 'Total'
         TIER_TOTAL = self.default_tier.split('-')[0].upper()
 
+        # calculate totals per site / group
+        site_group_totals = {}
+        for rec in records:
+            site, group, rcu = rec['site'], rec['group'], rec['rcu']
+            key = (site, group)
+            site_group_totals[key] = site_group_totals.get(key, 0) + rcu
+
         # calculate total per site
         site_totals = {}
         for rec in records:
@@ -596,16 +603,20 @@ class WLCGStorageView(baseview.BaseView):
         # calculate total
         total = sum( [ rec['rcu'] for rec in records ] )
 
+        totals = []
+
         # put all calculated records together and add equivalents
+        for (site, group), rcu in site_group_totals.items():
+            totals.append( { 'site': site, 'group': group, 'rcu': rcu } )
         for site, rcu in site_totals.items():
-            records.append( { 'site': site, 'group': TOTAL, 'rcu': rcu } )
+            totals.append( { 'site': site, 'group': TOTAL, 'rcu': rcu } )
         for (country, group), rcu in group_country_totals.items():
-            records.append( { 'site': country, 'group': group, 'rcu': rcu } )
+            totals.append( { 'site': country, 'group': group, 'rcu': rcu } )
         for country, rcu in country_totals.items():
-            records.append( { 'site': country, 'group': TOTAL, 'rcu': rcu } )
+            totals.append( { 'site': country, 'group': TOTAL, 'rcu': rcu } )
         for group, rcu in group_totals.items():
-            records.append( { 'site': TIER_TOTAL, 'group': group, 'rcu': rcu } )
-        records.append( { 'site': TIER_TOTAL, 'group': TOTAL, 'rcu': total } )
+            totals.append( { 'site': TIER_TOTAL, 'group': group, 'rcu': rcu } )
+        totals.append( { 'site': TIER_TOTAL, 'group': TOTAL, 'rcu': total } )
 
         # create table
         columns = sorted(groups)
@@ -620,7 +631,7 @@ class WLCGStorageView(baseview.BaseView):
         elements = []
         for row in row_names:
             for col in columns:
-                for rec in records:
+                for rec in totals:
                     if rec['site'] == row and rec['group'] == col:
                         value = rec['rcu']
                         # hurrah for formatting
