@@ -25,6 +25,9 @@ compare y-axis values.
 Log insert rejection, when rejection is done in pre-check (before reading usage
 records).
 
+Fix a case in record overwriting in urcreate which would cause the function to
+error out.
+
 
 3.5.2
 
