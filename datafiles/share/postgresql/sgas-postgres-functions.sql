@@ -56,7 +56,7 @@ DECLARE
 
     ur_id                   integer;
     ur_global_job_id        varchar;
-    ur_machine_name_id      varchar;
+    ur_machine_name_id      integer;
     ur_insert_time          date;
 
     result                  varchar[];
