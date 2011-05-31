@@ -161,11 +161,13 @@ description=Total Job Walltime Days, Last 50 days
 query=SELECT execution_time, (sum(walltime) / 24.0)::integer FROM uraggregated \
       WHERE execution_time > current_date - interval '50 days' GROUP BY execution_time ORDER BY execution_time;
 
+
 [view:vo_walltime]
 type=stacked_columns
 description=Aggregated walltime days per VO
 query=SELECT execution_time, COALESCE(vo_name, 'N/A'), (sum(walltime) / 24.0)::integer FROM uraggregated \
       WHERE execution_time > (current_date - interval '200 days') GROUP BY execution_time, COALESCE(vo_name, 'N/A');
+
 
 [view:vo_efficiency]
 type=grouped_columns
@@ -181,5 +183,26 @@ viewgroup=projstats
 type=scatterplot
 description=Walltime/Usertime/Jobcount per project.
 query=SELECT vo_name, sum(walltime), sum(cputime), sum(n_jobs) FROM uraggregated GROUP BY vo_name, execution_time::DATE;
+
+
+[view:storage_usage]
+type=lines
+description=Storage usage (terabytes).
+query=SELECT sample, storage_system, (sum(r) / 1099511627776)::integer FROM ( \
+SELECT  \
+    DISTINCT ON (t.sample, sg.storage_system, storage_share, storage_media, storage_class, group_identity)  \
+    t.sample::date, sg.storage_system, COALESCE(resource_capacity_used, 0) as r \
+FROM \
+    (SELECT ((current_date+1) - s)::timestamp as sample FROM generate_series(0,11) as s) AS t  \
+    CROSS JOIN (SELECT DISTINCT storage_system FROM storagerecords WHERE measure_time > (current_date+1) - interval '12 days') AS sg  \
+    LEFT OUTER JOIN storagerecords ON (measure_time <= t.sample AND \
+                                       measure_time + valid_duration * interval '1 seconds' >= t.sample AND \
+                                       sg.storage_system = storagerecords.storage_system)  \
+ORDER BY t.sample, sg.storage_system, storage_share, storage_media, storage_class, group_identity, measure_time DESC ) as s \
+GROUP BY s.sample, s.storage_system \
+ORDER BY s.sample, s.storage_system;
+
+
+
 
 
