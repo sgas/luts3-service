@@ -1,6 +1,9 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 
+Add sgas_cert_update script for updating certs, CRLs, and restarting NginX
+(forces cert/CRL reread). Contributed by Ulf Tigerstedt.
+
 3.6.0
 
 Support for the EMI StAR storage accounting format (v7). This support is still
