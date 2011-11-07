@@ -15,6 +15,7 @@ server {
 
     ssl_client_certificate /etc/grid-security/certificates/1f0e8352.0;
     ssl_verify_client on;
+    ssl_verify_depth 3;
 
     ssl_protocols  TLSv1;
 
