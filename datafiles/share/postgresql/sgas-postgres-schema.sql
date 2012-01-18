@@ -224,7 +224,7 @@ CREATE TABLE storagedata (
     storage_system_id       integer         NOT NULL REFERENCES storagesystem(id),
     storage_share_id        integer         REFERENCES storageshare(id),
     storage_media_id        integer         REFERENCES storagemedia(id),
-    storage_class_id        integer         REFERENCES storageshare(id),
+    storage_class_id        integer         REFERENCES storageclass(id),
     file_count              integer,
     directory_path_id       integer         REFERENCES directorypath(id),
     local_user_id           integer         REFERENCES localuser(id),
