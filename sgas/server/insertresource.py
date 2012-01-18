@@ -44,6 +44,7 @@ class GenericInsertResource(resource.Resource):
         def insertError(error):
             #log.msg("Error during insert: %s" % error.getErrorMessage(), system='sgas.InsertResource')
             log.msg(self.insert_error_msg % error.getErrorMessage(), system='sgas.InsertResource')
+            log.err(error)
 
             error_msg = error.getErrorMessage()
             if error.check(dberror.DatabaseUnavailableError):
