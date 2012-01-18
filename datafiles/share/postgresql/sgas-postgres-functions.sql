@@ -390,8 +390,8 @@ BEGIN
         status_id                                                               AS s_status_id,
         insert_host_id                                                          AS s_insert_host_id,
         count(*)                                                                AS s_n_jobs,
-        SUM(COALESCE(cpu_duration,0))                                           AS s_cputime,
-        SUM(COALESCE(wall_duration,0) * COALESCE(processors,1))                 AS s_walltime,
+        SUM(COALESCE(cpu_duration::bigint,0))                                   AS s_cputime,
+        SUM(COALESCE(wall_duration::bigint,0) * COALESCE(processors,1))         AS s_walltime,
         now()                                                                   AS s_generate_time
     FROM
         usagedata
