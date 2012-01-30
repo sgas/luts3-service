@@ -1,6 +1,17 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
 
+3.6.1
+
+Cast durations integers into bigint when summing to prevent overflow errors.
+
+Log full stack trace of insertion errors to easy debugging.
+
+Fix foreign key reference in storagedata table.
+
+Set ssl_verify_depth 3; in NginX default configuration to make deep certificate
+infrastructures work out of the box.
+
 Add sgas_cert_update script for updating certs, CRLs, and restarting NginX
 (forces cert/CRL reread). Contributed by Ulf Tigerstedt.
 
