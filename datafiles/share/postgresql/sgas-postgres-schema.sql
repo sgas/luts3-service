@@ -79,7 +79,7 @@ CREATE TABLE usagedata (
     queue_id                integer         REFERENCES jobqueue(id),
     host_id                 integer         REFERENCES host(id),
     node_count              smallint,
-    processors              smallint,
+    processors              integer,
     project_name_id         integer         REFERENCES projectname(id),
     submit_host_id          integer         REFERENCES submithost(id),
     start_time              timestamp,
@@ -137,6 +137,7 @@ CREATE TABLE jobtransferdata (
     retrieved_from_cache    boolean
 );
 
+CREATE INDEX jobtransferdata_usage_data_id_idx ON jobtransferdata (usage_data_id);
 
 -- this is the table used for storing aggregated usage information in
 CREATE TABLE uraggregated_data (
