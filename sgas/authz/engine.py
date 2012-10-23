@@ -83,12 +83,12 @@ class AuthorizationEngine:
 
             authz_rights = AuthzRights()
 
-             # some backwards compat
+            # some backwards compat
             if action == rights.ACTION_INSERT:
                 log.msg("Changing 'insert' stanza to 'jobinsert'. Consider changing this in the authz file.", system='sgas.Authorizer')
                 action = rights.ACTION_JOB_INSERT
 
-             # more (older) backwards compat
+            # more (older) backwards compat
             if action == rights.ACTION_VIEW:
                 log.msg("Expanding 'view' stanza to 'view:all'. Please change to 'view:all'. This behaviour might change in the future", system='sgas.Authorizer')
                 authz_rights.options.append(rights.OPTION_ALL)
