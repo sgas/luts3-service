@@ -7,6 +7,9 @@ Added index jobtransferdata_usage_data_id_idx on jobtransferdata(usage_data_id) 
 Changed type of processors in usagedata table to integer (from smallint)
 for large clusters with more then 32k cores.
 
+Update of date range functions in query interface.
+From date is now inclusive (>=) and end date is still exclusive (<).
+
 3.6.1
 
 Cast durations integers into bigint when summing to prevent overflow errors.
