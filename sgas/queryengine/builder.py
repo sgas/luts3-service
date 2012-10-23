@@ -29,7 +29,7 @@ def buildQuery(query_args):
 
     query += "sum(n_jobs), sum(cputime), sum(walltime) "
     query += "FROM uraggregated "
-    query += "WHERE execution_time > %s AND execution_time < %s "
+    query += "WHERE execution_time >= %s AND execution_time < %s "
     query_args.append(start_date)
     query_args.append(end_date)
 

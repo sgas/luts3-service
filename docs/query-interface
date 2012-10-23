@@ -78,7 +78,8 @@ resolution for the query using the following elements:
  - end_date
  - time_resolution
 
-Stand and end date must be specified in YYYY-MM-DD format, .e.g., 2010-10-15.
+Start and end date must be specified in YYYY-MM-DD format, .e.g., 2010-10-15.
+Start date is inclusive (>=) and end date is exclusive (<).
 Time resolution value must be one of "collapse", "month", or "day". If not
 specified "collapse" is used.
 
