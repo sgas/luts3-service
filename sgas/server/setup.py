@@ -11,6 +11,7 @@ from sgas.authz import engine
 from sgas.server import config, messages, manifest, topresource, insertresource, monitorresource, queryresource
 from sgas.database.postgresql import database as pgdatabase, hostscale
 from sgas.viewengine import viewdefinition, viewresource
+from sgas.customqueryengine import querydefinition as querydefinition, customqueryresource
 
 
 # -- constants
@@ -28,13 +29,16 @@ class ConfigurationError(Exception):
 
 
 
-def createSite(db, authorizer, views, mfst):
+def createSite(db, authorizer, cfg, mfst):
 
     rr = insertresource.JobUsageRecordInsertResource(db, authorizer)
     sr = insertresource.StorageUsageRecordInsertResource(db, authorizer)
+    views = viewdefinition.buildViewList(cfg)
     vr = viewresource.ViewTopResource(db, authorizer, views, mfst)
     mr = monitorresource.MonitorResource(db, authorizer)
     qr = queryresource.QueryResource(db, authorizer)
+    queries = querydefinition.buildQueryList(cfg)
+    cqr = customqueryresource.QueryResource(db, authorizer, queries)
 
     tr = topresource.TopResource(authorizer)
     tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
@@ -42,6 +46,7 @@ def createSite(db, authorizer, views, mfst):
     tr.registerService(vr, 'view', (('View', 'view'),))
     tr.registerService(mr, 'monitor', (('Monitor', 'monitor'),) )
     tr.registerService(qr, 'query', (('Query', 'query'),))
+    tr.registerService(cqr, 'customquery', (('CustomQuery', 'customquery'),))
 
     root = resource.Resource()
     root.putChild('sgas', tr)
@@ -90,7 +95,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
         authorizer = utils.FakeAuthorizer()
     else:
         authorizer = engine.AuthorizationEngine(check_depth, cfg.get(config.SERVER_BLOCK, config.AUTHZ_FILE))
-
+        
     # database
     db_url = cfg.get(config.SERVER_BLOCK, config.DB)
     if db_url.startswith('http'):
@@ -108,9 +113,8 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
     hs = hostscale.HostScaleFactorUpdater(db, scale_factors)
     hs.setServiceParent(db)
 
-    # http site
-    views = viewdefinition.buildViewList(cfg)
-    site = createSite(db, authorizer, views, mfst)
+    # http site    
+    site = createSite(db, authorizer, cfg, mfst)
 
     # application
     application = service.Application("sgas")

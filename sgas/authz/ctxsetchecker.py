@@ -21,7 +21,6 @@ class SetChecker:
         for ctx in subject_rights:
             ctx_allow = []
             for cak, cav in ctx.items():
-                #print "CAK", cak, cav, action_context
                 found_match = False
                 for cik, civ in action_context:
                     if cak == cik:

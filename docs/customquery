@@ -1,0 +1,137 @@
+=== SGAS Custom Query Engine ===
+
+As of version 3.6.X, SGAS LUTS features a small, but usefull custom query engine. 
+However queries had to be manually defined.
+
+The custom query engine is capable of generating JSON lists from standard 
+SQL queries and passing arguments to the query using url-arguments.
+
+The SGAS custom query interface is found at the URL path /sgas/customquery,
+e.g.,: https://host.example.org:6443/sgas/customquery. 
+
+== Custom queries ==
+
+Custom queries can report arbitraty data from the database.
+The cost of this flexibility, is complexity in defining the query, 
+which is done in the configure file.
+
+* Short overview of all configuration options:
+
+Option              Descrpition
+
+querygroup      Comma seperated list of groups which can access the query.
+query           The query send to the database for data retrieval.
+params			Comma seperated list of required params in query. 
+                
+
+* Explanatory, In-depth Custom Query Configuration
+
+[query:lastinsert]
+querygroup=admin,nagios
+query=SELECT machine_name,max(generate_time) as updated \
+      FROM uraggregated GROUP BY machine_name
+
+Here the query name is "lastinsert", and are in the query groups admin and nagios
+(comma seperated list). The querygroup is used for authorization, will be
+explained later. The query will return a list of machine_name and last time the 
+machine got any data inserted (note that it is possible to have long
+entries split across several lines by using \). They query is stock SQL, and is
+send to the database as is. This provides great freedom for information
+retrieval.
+
+Each row of the result will be presented as a hash table with the 
+column name as key for easy reading and usage of the data.
+
+The result of this query will look something like this:
+
+[
+    {
+        "updated": "2012-06-01 13:35:17.092364",
+        "machine_name": "hostname.example.com"
+    },
+    {
+        "updated": "2012-06-01 13:01:22.386829",
+        "machine_name": "cluster.example.com"
+    },
+    {
+        "updated": "2012-01-14 00:37:21.252743",
+        "machine_name": "grid.example.com"
+    }
+]
+
+An URL for this query might look like:
+
+https://host.example.org:6443/sgas/customquery/lastinsert
+
+
+* Parameters in the query
+
+[query:lastinsert-machine]
+querygroup=admin,nagios
+query=SELECT machine_name,max(generate_time) as updated \
+      FROM uraggregated where machine_name = <<machine_name>> GROUP BY machine_name
+params=machine_name
+
+In this example we only query for one specific machine ("machine_name").
+The URL param of "machine_name" is replaced with the occurance of <<machine_name>>
+in the SQL query.
+
+An URL for this query might look like:
+
+https://host.example.org:6443/sgas/customquery/lastinsert-machine?machine_name=hostname.example.com
+
+
+* Authorization
+
+Authorization can specified per query or an all-access pass can be granted. To
+grant access to a specific query, make an in sgas.authz similar to this:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     customquery:query=lastinsert
+
+To specify two (or more) queries at once do like this:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     customquery:query=lastinsert+query=lastinsert-machine
+
+To specify access rights to a query group:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     customquery:querygroup=nagios
+
+It is also possible to specify multiple queries/groups by comma seperating the entries:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     customquery:query=lastinsert-machine,customquery:querygroup=admin
+    
+To grant a person access to all queries, just specify query or query:all, e.g.:
+
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               query
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               query:all
+
+Note that SGAS must be restarted in order for any configuration or
+authorization changes to take place.
+
+
+* Index in the database
+
+Please note that for some queries index in the database might be needed and/or required for good performance.
+
+More index might also slow down the process of creating new records. Use with care wheres needed.
+
+More information about index are available at http://www.postgresql.org/ in the documentation for your current version.
+
+
+* Example query
+
+[query:lastinsert-machine]
+querygroup=admin,nagios
+query=SELECT machine_name,max(generate_time) as updated \
+      FROM uraggregated where machine_name = <<machine_name>> GROUP BY machine_name
+params=machine_name
+
+URL: https://host.example.org:6443/sgas/customquery/lastinsert-machine?machine_name=hostname.example.com
+
+
+[query:lastinsert]
+querygroup=admin,nagios
+query=SELECT machine_name,max(generate_time) as updated \
+      FROM uraggregated GROUP BY machine_name
+
+URL: https://host.example.org:6443/sgas/customquery/lastinsert
