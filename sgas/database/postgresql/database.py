@@ -10,7 +10,7 @@ import decimal
 
 import psycopg2
 import psycopg2.extensions # not used, but enables tuple adaption
-import psycopg2.extras # not used, but enables tuple adaption
+import psycopg2.extras
 
 from twisted.python import log
 from twisted.internet import defer
@@ -192,9 +192,7 @@ class PostgreSQLDatabase(service.MultiService):
         try:
             query_result = yield self.pool_proxy.dbpool.runQuery(query, query_args)
             results = []
-            log.msg("qr: %s" % query_result)
             for row in query_result:
-                log.msg("row: %s" % row)
                 results.append( [ buildValue(e) for e in row ] )
             defer.returnValue(results)
         except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
