@@ -47,7 +47,8 @@ class AuthorizationEngine:
             rights.ACTION_STORAGE_INSERT    : ctxinsertchecker.StorageInsertChecker(insert_check_depth),
             rights.ACTION_VIEW              : ctxsetchecker.AnySetChecker,
             rights.ACTION_QUERY             : ctxsetchecker.AllSetChecker,
-            rights.ACTION_MONITOR           : ctxsetchecker.AlwaysAllowedContextChecker
+            rights.ACTION_MONITOR           : ctxsetchecker.AlwaysAllowedContextChecker,
+            rights.ACTION_CUSTOMQUERY       : ctxsetchecker.AnySetChecker
         }
 
 
@@ -127,7 +128,7 @@ class AuthorizationEngine:
                         action_rights.addOption(option)
 
         else:
-            log.warning('Invalid authz group: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
+            log.msg('Invalid authz group: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
 
 
     def hasRelevantRight(self, subject, action):

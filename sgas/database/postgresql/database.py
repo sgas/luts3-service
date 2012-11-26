@@ -10,6 +10,7 @@ import decimal
 
 import psycopg2
 import psycopg2.extensions # not used, but enables tuple adaption
+import psycopg2.extras # not used, but enables tuple adaption
 
 from twisted.python import log
 from twisted.internet import defer
@@ -191,8 +192,44 @@ class PostgreSQLDatabase(service.MultiService):
         try:
             query_result = yield self.pool_proxy.dbpool.runQuery(query, query_args)
             results = []
+            log.msg("qr: %s" % query_result)
             for row in query_result:
+                log.msg("row: %s" % row)
                 results.append( [ buildValue(e) for e in row ] )
+            defer.returnValue(results)
+        except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
+            # this usually happens if the database was restarted,
+            # and the existing connection to the database was closed
+            if not retry:
+                log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e), system='sgas.PostgreSQLDatabase')
+                self.pool_proxy.reconnect()
+                yield self.query(query, query_args, retry=True)
+            if retry:
+                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
+                raise error.DatabaseUnavailableError(str(e))
+
+    @defer.inlineCallbacks
+    def dictquery(self, query, query_args=None, retry=False):
+
+        def buildValue(value):
+            if type(value) in (unicode, str, int, long, float, bool, types.NoneType):
+                return value
+            if isinstance(value, decimal.Decimal):
+                sv = str(value)
+                return int(sv) if sv.isalnum() else float(sv)
+            # bad catch-all
+            return str(value)
+
+        def conn(conn, query, query_args):            
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(query,query_args)
+            return cur.fetchall()           
+        
+        try:
+            query_result = yield self.pool_proxy.dbpool.runWithConnection(conn, query, query_args)
+            results = []
+            for row in query_result:
+                results.append(dict([(k,buildValue(row[k])) for k in row]))
             defer.returnValue(results)
         except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
             # this usually happens if the database was restarted,

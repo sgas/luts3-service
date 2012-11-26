@@ -10,8 +10,9 @@ ACTION_STORAGE_INSERT   = 'storageinsert'
 ACTION_VIEW             = 'view'
 ACTION_MONITOR          = 'monitor'
 ACTION_QUERY            = 'query'
+ACTION_CUSTOMQUERY      = 'customquery'
 
-ACTIONS = [ ACTION_INSERT, ACTION_JOB_INSERT, ACTION_STORAGE_INSERT, ACTION_VIEW, ACTION_QUERY, ACTION_MONITOR ]
+ACTIONS = [ ACTION_INSERT, ACTION_JOB_INSERT, ACTION_STORAGE_INSERT, ACTION_VIEW, ACTION_QUERY, ACTION_MONITOR, ACTION_CUSTOMQUERY ]
 
 # options
 OPTION_ALL = 'all'
@@ -22,7 +23,8 @@ OPTIONS = {
     ACTION_STORAGE_INSERT   : [ OPTION_ALL ],
     ACTION_VIEW             : [ OPTION_ALL ],
     ACTION_MONITOR          : [ ],
-    ACTION_QUERY            : [ OPTION_ALL ]
+    ACTION_QUERY            : [ OPTION_ALL ],
+    ACTION_CUSTOMQUERY      : [ OPTION_ALL ]
 }
 
 # contexts
@@ -32,6 +34,8 @@ CTX_VIEW            = 'view'
 CTX_VIEWGROUP       = 'viewgroup'
 CTX_USER_IDENTITY   = 'user_identity'
 CTX_VO_NAME         = 'vo_name'
+CTX_QUERY           = 'query'
+CTX_QUERYGROUP      = 'querygroup'
 
 # allowed context names per actions
 CONTEXTS = {
@@ -39,7 +43,8 @@ CONTEXTS = {
     ACTION_STORAGE_INSERT   : [ CTX_STORAGE_SYSTEM ],
     ACTION_VIEW             : [ CTX_VIEW, CTX_VIEWGROUP ],
     ACTION_MONITOR          : [ ],
-    ACTION_QUERY            : [ CTX_MACHINE_NAME, CTX_USER_IDENTITY, CTX_VO_NAME ]
+    ACTION_QUERY            : [ CTX_MACHINE_NAME, CTX_USER_IDENTITY, CTX_VO_NAME ],
+    ACTION_CUSTOMQUERY      : [ ]
 }
 
 
