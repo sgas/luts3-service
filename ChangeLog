@@ -1,5 +1,10 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+=======
+3.6.3
+
+Fix for empty <host> tag. Patch from Erik Edelmann <edelmann@csc.fi>
+
 3.6.2
 
 Added index jobtransferdata_usage_data_id_idx on jobtransferdata(usage_data_id) to speed up delete on entries in usagedata table.
