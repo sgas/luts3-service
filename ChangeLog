@@ -1,5 +1,9 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.6.3
+
+Added a custom query interface. See: docs/customquery for more information on usage.
+
 3.6.2
 
 Added index jobtransferdata_usage_data_id_idx on jobtransferdata(usage_data_id) to speed up delete on entries in usagedata table.
