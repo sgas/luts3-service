@@ -85,7 +85,7 @@ CREATE TABLE usagedata (
     start_time              timestamp,
     end_time                timestamp,
     submit_time             timestamp,
-    cpu_duration            integer,
+    cpu_duration            bigint,
     wall_duration           integer,
     user_time               integer,
     kernel_time             integer,
