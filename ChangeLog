@@ -1,7 +1,8 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
-=======
 3.6.3
+
+Fixes #1 (GitHub Issue) Problem with long running, large jobs
 
 Fix for empty <host> tag. Patch from Erik Edelmann <edelmann@csc.fi>
 
