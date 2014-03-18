@@ -126,7 +126,11 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         elif element.tag == ur.STATUS:         r['status']         = element.text
         elif element.tag == ur.CHARGE:         r['charge']         = parseFloat(element.text)
         elif element.tag == ur.WALL_DURATION:  r['wall_duration']  = parseISODuration(element.text)
-        elif element.tag == ur.CPU_DURATION:   r['cpu_duration']   = parseISODuration(element.text)
+        elif element.tag == ur.CPU_DURATION:   
+            if 'cpu_duration' in r:
+                r['cpu_duration'] += parseISODuration(element.text)
+            else:
+                r['cpu_duration'] = parseISODuration(element.text)
         elif element.tag == ur.NODE_COUNT:     r['node_count']     = parseInt(element.text)
         elif element.tag == ur.PROCESSORS:     r['processors']     = parseInt(element.text)
         elif element.tag == ur.START_TIME:     r['start_time']     = parseISODateTime(element.text)
