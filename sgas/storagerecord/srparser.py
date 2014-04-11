@@ -103,6 +103,7 @@ def xmlToDict(sr_doc, insert_identity=None, insert_hostname=None, insert_time=No
         elif element.tag == sr.STORAGE_SHARE:           r['storage_share']  = element.text
         elif element.tag == sr.STORAGE_MEDIA:           r['storage_media']  = element.text
         elif element.tag == sr.STORAGE_CLASS:           r['storage_class']  = element.text
+        elif element.tag == sr.SITE:                    r['site']           = element.text
 
         elif element.tag == sr.FILE_COUNT:              r['file_count']     = parseInt(element.text)
         elif element.tag == sr.DIRECTORY_PATH:          r['directory_path'] = element.text
@@ -118,8 +119,8 @@ def xmlToDict(sr_doc, insert_identity=None, insert_hostname=None, insert_time=No
                     attr_type = subele.get(sr.ATTRIBUTE_TYPE)
                     r.setdefault('group_attribute', []).append( (attr_type, group_attr) )
 
-        elif element.tag == sr.MEASURE_TIME:            r['measure_time']   = parseISODateTime(element.text)
-        elif element.tag == sr.VALID_DURATION:          r['valid_duration'] = parseISODuration(element.text)
+        elif element.tag == sr.START_TIME:              r['start_time']     = parseISODateTime(element.text)
+        elif element.tag == sr.END_TIME:                r['end_time']       = parseISODateTime(element.text)
         elif element.tag == sr.RESOURCE_CAPACITY_USED:  r['resource_capacity_used'] = parseInt(element.text)
         elif element.tag == sr.LOGICAL_CAPACITY_USED:   r['logical_capacity_used']  = parseInt(element.text)
 

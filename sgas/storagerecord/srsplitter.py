@@ -29,11 +29,19 @@ def splitSRDocument(sr_data):
     except Exception, e:
         raise ParseError("Error parsing storage record data (%s)" % str(e))
 
-    if tree.tag == sr.STORAGE_USAGE_RECORDS:
+    if tree.tag == sr.STORAGE_USAGE_RECORDS:        
         for sr_element in tree:
-            if not sr_element.tag == sr.STORAGE_USAGE_RECORD:
-                raise ParseError("Subelement in StoragUsageeRecords doc not a StorageUsageRecord")
-            storage_records.append(sr_element)
+            if sr_element.tag == sr.STORAGE_USAGE_RECORDS:
+                for sr_element2 in sr_element:
+                    if not sr_element2.tag == sr.STORAGE_USAGE_RECORD:
+                        raise ParseError("Subelement in StoragUsageRecords doc not a StorageUsageRecord: " + 
+                                    sr_element2.tag)
+                    storage_records.append(sr_element2)
+            else:
+                if not sr_element.tag == sr.STORAGE_USAGE_RECORD:
+                    raise ParseError("Subelement in StoragUsageRecords doc not a StorageUsageRecord: " + 
+                                sr_element.tag)
+                storage_records.append(sr_element)
 
     elif tree.tag == sr.STORAGE_USAGE_RECORD:
         storage_records.append(tree)

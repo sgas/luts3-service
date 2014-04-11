@@ -304,3 +304,35 @@ The upgrade script may take a while depending on the size of your database.
 
 $ sudo /etc/init.d/sgas start
 
+
+Upgrading from SGAS 3.6.3 to 3.7.0
+
+1. Stop SGAS
+
+$ sudo /etc/init.d/sgas stop
+
+2. Install new SGAS
+
+$ tar xzf sgas-luts-service-3.7.0.tar.gz
+$ cd sgas-luts-service-3.7.0
+$ python setup.py build
+$ sudo python setup.py install
+
+3. Backup database
+
+$ sudo su - sgas                 # Or whatever user SGAS is running at
+$ pg_dump sgas > sgas-db-backup.sql
+
+4. Upgrade Database Schema
+
+$ sudo su - sgas                # Or whatever user SGAS is running as
+$ psql sgas                     # Or whatever the database is called
+$ \i /usr/local/share/sgas/postgres/sgas-postgres-3.6.3-3.7.0-upgrade.sql
+(and logout of postgres)
+
+The upgrade script may take a while depending on the size of your database.
+
+5. Start SGAS
+
+$ sudo /etc/init.d/sgas start
+

@@ -20,6 +20,7 @@ RECORD_ID               = QName("{%s}recordId"              % SR_NAMESPACE)
 CREATE_TIME             = QName("{%s}createTime"            % SR_NAMESPACE)
 
 # storage system
+SITE                    = QName("{%s}Site"                  % SR_NAMESPACE)
 STORAGE_SYSTEM          = QName("{%s}StorageSystem"         % SR_NAMESPACE)
 STORAGE_SHARE           = QName("{%s}StorageShare"          % SR_NAMESPACE)
 STORAGE_MEDIA           = QName("{%s}StorageMedia"          % SR_NAMESPACE)
@@ -39,8 +40,8 @@ GROUP_ATTRIBUTE         = QName("{%s}GroupAttribute"        % SR_NAMESPACE)
 ATTRIBUTE_TYPE          = QName("{%s}attributeType"         % SR_NAMESPACE)
 
 # recource consumption
-MEASURE_TIME            = QName("{%s}MeasureTime"           % SR_NAMESPACE)
-VALID_DURATION          = QName("{%s}ValidDuration"         % SR_NAMESPACE)
+START_TIME              = QName("{%s}StartTime"             % SR_NAMESPACE)
+END_TIME                = QName("{%s}EndTime"               % SR_NAMESPACE)
 RESOURCE_CAPACITY_USED  = QName("{%s}ResourceCapacityUsed"  % SR_NAMESPACE)
 LOGICAL_CAPACITY_USED   = QName("{%s}LogicalCapacityUsed"   % SR_NAMESPACE)
 

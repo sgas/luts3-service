@@ -217,6 +217,10 @@ CREATE TABLE groupidentity (
     group_attribute         varchar(100)[][]
 );
 
+CREATE TABLE site (
+    id                      serial          NOT NULL UNIQUE PRIMARY KEY,
+    site                    varchar(1000)   NOT NULL
+);
 
 CREATE TABLE storagedata (
     id                      serial          NOT NULL UNIQUE PRIMARY KEY,
@@ -232,8 +236,9 @@ CREATE TABLE storagedata (
     local_group_id          integer         REFERENCES localgroup(id),
     user_identity_id        integer         REFERENCES useridentity(id),
     group_identity_id       integer         REFERENCES groupidentity(id),
-    measure_time            timestamp       NOT NULL,
-    valid_duration          integer,        -- seconds
+    site_id                 integer         REFERENCES site(id),
+    start_time              timestamp       NOT NULL,
+    end_time                timestamp       NOT NULL,
     resource_capacity_used  bigint          NOT NULL,
     logical_capacity_used   bigint,
     insert_host_id          integer         REFERENCES inserthost (id),

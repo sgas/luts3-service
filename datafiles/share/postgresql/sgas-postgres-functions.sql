@@ -425,9 +425,10 @@ CREATE OR REPLACE FUNCTION srcreate (
     in_local_group          varchar,
     in_user_identity        varchar,
     in_group_identity       varchar,
-    in_group_attribute     varchar[][],
-    in_measure_time         timestamp,
-    in_valid_duration       integer,
+    in_group_attribute      varchar[][],
+    in_site                 varchar,
+    in_start_time           timestamp,
+    in_end_time             timestamp,
     in_resource_capacity_used   bigint,
     in_logical_capacity_used    bigint,
     in_insert_host          varchar,
@@ -448,6 +449,7 @@ DECLARE
     group_identity_key      integer;
     insert_host_key         integer;
     insert_identity_key     integer;
+    site_key                integer;
 
     sr_key                  integer;
     result                  varchar[];
@@ -573,6 +575,16 @@ BEGIN
         END IF;
     END IF;
 
+    -- insert identity
+    IF in_site IS NULL THEN
+        site_key = NULL;
+    ELSE
+        SELECT INTO site_key id FROM site WHERE site = in_site;
+        IF NOT FOUND THEN
+            INSERT INTO site (site) VALUES (in_site) RETURNING id INTO site_key;
+        END IF;
+    END IF;
+
     INSERT INTO storagedata (
                     record_id,
                     create_time,
@@ -586,8 +598,9 @@ BEGIN
                     local_group_id,
                     user_identity_id,
                     group_identity_id,
-                    measure_time,
-                    valid_duration,
+                    site_id,
+                    start_time,
+                    end_time,
                     resource_capacity_used,
                     logical_capacity_used,
                     insert_host_id,
@@ -607,8 +620,9 @@ BEGIN
                     local_group_key,
                     user_identity_key,
                     group_identity_key,
-                    in_measure_time,
-                    in_valid_duration,
+                    site_key,
+                    in_start_time,
+                    in_end_time,
                     in_resource_capacity_used,
                     in_logical_capacity_used,
                     insert_host_key,

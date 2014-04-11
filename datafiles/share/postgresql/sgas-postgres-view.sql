@@ -150,8 +150,9 @@ SELECT
         useridentity.user_identity      AS user_identity,
         groupidentity.group_identity    AS group_identity,
         groupidentity.group_attribute   AS group_attribute,
-        measure_time                    AS measure_time,
-        valid_duration                  AS valid_duration,
+	site.site			AS site,
+        start_time                      AS start_time,
+        end_time                        AS end_time,
         resource_capacity_used          AS resource_capacity_used,
         logical_capacity_used           AS logical_capacity_used,
         inserthost.insert_host          AS insert_host,
@@ -170,6 +171,7 @@ LEFT OUTER JOIN useridentity    ON (storagedata.user_identity_id    = useridenti
 LEFT OUTER JOIN groupidentity   ON (storagedata.group_identity_id   = groupidentity.id)
 LEFT OUTER JOIN inserthost      ON (storagedata.insert_host_id      = inserthost.id)
 LEFT OUTER JOIN insertidentity  ON (storagedata.insert_identity_id  = insertidentity.id)
+LEFT OUTER JOIN site  ON (storagedata.site_id  = site.id)
 ;
 
 
