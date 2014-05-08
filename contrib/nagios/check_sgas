@@ -1,0 +1,130 @@
+#!/usr/bin/perl -w
+#
+# Nagios check for SGAS Monitor service
+# Author: Magnus Jonsson <magnus@hpc2n.umu.se>
+#
+use Nagios::Plugin;
+use JSON;
+use LWP;
+
+# use Nagios::Plugin::Getopt to process the @ARGV command line options:
+#   --verbose, --help, --usage, --timeout and --host are defined automatically.
+my $np = Nagios::Plugin->new(
+	usage => "Usage: %s [ -v|--verbose ] [-H <host>] [ -u|--url=<url> ] [-t <timeout>] "
+	. "[ -c|--critical=<threshold> ] [ -w|--warning=<threshold> ] "
+	. "[ --key=<client-key.pem> ] [ --cert=<client-cert.pem> ] "
+	. "[ --ca_path=<ca-path> ] [ --ca_file=<ca-file.pem> ]",
+	version => "1.0",
+);
+
+$np->add_arg(
+	spec => 'host|H=s',
+	help => 'Host to check in SGAS',
+	required => 1,
+);
+$np->add_arg(
+	spec => 'url|u=s',
+	help => 'URL to the SGAS server',
+	required => 1,
+);
+$np->add_arg(
+	spec => 'warning|w=i',
+	help => 'Exit with WARNING status if more than INTEGER seconds since laste update.',
+);
+$np->add_arg(
+	spec => 'critical|c=i',
+	help => 'Exit with CRITICAL status if more than INTEGER seconds since laste update.',
+);
+$np->add_arg(
+	spec => 'cert=s',
+	help => 'Path to x509 client cert (pem format)',
+);
+$np->add_arg(
+	spec => 'key=s',
+	help => 'Path to x509 client key (pem format)',
+);
+$np->add_arg(
+	spec => 'ca_path=s',
+	help => 'Path to ca directory',
+);
+$np->add_arg(
+	spec => 'ca_file=s',
+	help => 'Path to ca file (pem format)',
+);
+
+# Parse arguments and process standard ones (e.g. usage, help, version)
+$np->getopts;
+
+if(defined $np->opts->warning && defined $np->opts->critical 
+	&& $np->opts->warning > $np->opts->critical) {
+	$np->nagios_die("WARNING can't be larger then CRITICAL");
+}
+ 
+# Setup LWP.
+my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+# set timeout
+$ua->timeout($np->opts->timeout);
+if(defined $np->opts->key) {
+	$ua->ssl_opts( 'SSL_use_cert'  => 1 );
+	$ua->ssl_opts( 'SSL_key_file'  => $np->opts->key );
+	unless(-f $np->opts->key) {
+		$np->nagios_die("Can't read client key: " . $np->opts->key);
+	}
+}
+if(defined $np->opts->cert) {
+	$ua->ssl_opts( 'SSL_use_cert'  => 1 );
+	$ua->ssl_opts( 'SSL_cert_file' => $np->opts->cert );
+	unless(-f $np->opts->cert) {
+		$np->nagios_die("Can't read client cert: " . $np->opts->cert);
+	}
+}
+if(defined $np->opts->ca_path) {
+	$ua->ssl_opts( 'verify_hostname' => 1 );
+	$ua->ssl_opts( 'SSL_ca_path'     => $np->opts->ca_path );
+	unless(-d $np->opts->ca_path) {
+		$np->nagios_die("ca_path is not a directory: " . $np->opts->ca_path);
+	}
+}
+if(defined $np->opts->ca_file) {
+	$ua->ssl_opts( 'verify_hostname' => 1 );
+	$ua->ssl_opts( 'SSL_ca_file'   => $np->opts->ca_file );
+	unless(-f $np->opts->ca_file) {
+		$np->nagios_die("Can't read ca_file: " . $np->opts->ca_file);
+	}
+}
+
+# Create URL to call
+my $url = $np->opts->url;
+$url =~ s,/+$,,;
+$url .= "/" . $np->opts->host;
+
+# Call URL
+my $res = $ua->get($url);
+
+if($res->is_success()) {
+	# decode result
+	my $json = decode_json($res->content);
+	if(!defined $json) {
+		$np->nagios_exit( CRITICAL, "Can't parse data: ".$res->content);
+	}
+	if(!exists $json->{'registration_epoch'}) {
+		$np->nagios_exit( CRITICAL, "Can't parse data (missing 'registration_epoch'): ".$res->content);
+	}
+	if(!defined $json->{'registration_epoch'}) {
+		$np->nagios_exit( CRITICAL, "registration_epoch is null, wrong host?: ".$res->content);
+	}
+	if($json->{'registration_epoch'} !~ /^\d+$/) {
+		$np->nagios_exit( CRITICAL, "Can't parse data (not a number in 'registration_epoch'): ".$res->content);
+	}
+
+	# Check threshold values
+	my $re = int($json->{'registration_epoch'});
+	if(defined $np->opts->critical && $re > $np->opts->critical) {
+		$np->nagios_exit( CRITICAL, "${re}s since last update - over threshold " . $np->opts->critical );
+	}
+	if(defined $np->opts->warning && $re > $np->opts->warning) {
+		$np->nagios_exit( WARNING, "${re}s since last update - over threshold " . $np->opts->warning );
+	}
+	$np->nagios_exit( OK, "${re}s since last update" );
+} 
+$np->nagios_exit( CRITICAL, "Can't fetch data: ".$res->status_line);
