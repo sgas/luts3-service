@@ -1,5 +1,12 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.7.0
+
+Fixes #7 added nagois plugin.
+
+Fixes #3 Added support for Star v1.2 final. Requires updated database.
+See upgrade instructions for more information.
+
 3.6.3
 
 Fixes #2 (GitHub Issue) UTF Multi byte chars are rejected
