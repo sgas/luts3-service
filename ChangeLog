@@ -6,6 +6,8 @@ Fixes #12 CPUDuration
 
 Fixes a missed DROP FUNCTION in upgrade from 3.6.2.
 
+Fixes missing files in setup.py.
+
 3.7.0
 
 Fixes #7 added nagois plugin.
