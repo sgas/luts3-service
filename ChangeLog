@@ -1,5 +1,9 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.7.1
+
+Fixes #12 CPUDuration
+
 3.7.0
 
 Fixes #7 added nagois plugin.
