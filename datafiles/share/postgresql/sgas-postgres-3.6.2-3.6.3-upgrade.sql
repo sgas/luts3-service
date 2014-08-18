@@ -65,6 +65,7 @@ LEFT OUTER JOIN insertidentity  ON (usagedata.insert_identity_id  = insertidenti
 ;
 
 -- Update functions
+DROP FUNCTION urcreate;
 CREATE OR REPLACE FUNCTION urcreate (
     in_record_id               varchar,
     in_create_time             timestamp,
