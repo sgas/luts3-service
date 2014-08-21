@@ -336,3 +336,21 @@ The upgrade script may take a while depending on the size of your database.
 
 $ sudo /etc/init.d/sgas start
 
+
+Upgrading from SGAS 3.7.0 to 3.7.1
+
+1. Stop SGAS
+
+$ sudo /etc/init.d/sgas stop
+
+2. Install new SGAS
+
+$ tar xzf sgas-luts-service-3.7.1.tar.gz
+$ cd sgas-luts-service-3.7.1
+$ python setup.py build
+$ sudo python setup.py install
+
+3. Start SGAS
+
+$ sudo /etc/init.d/sgas start
+
