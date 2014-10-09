@@ -149,8 +149,10 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         elif element.tag == ur.KERNEL_TIME:         r['kernel_time']         = parseISODuration(element.text)
         elif element.tag == ur.EXIT_CODE:           r['exit_code']           = parseInt(element.text)
         elif element.tag == ur.MAJOR_PAGE_FAULTS:   r['major_page_faults']   = parseInt(element.text)
-        elif element.tag == ur.RUNTIME_ENVIRONMENT: r.setdefault('runtime_environments', []).append(element.text)
-
+        elif element.tag == ur.SGAS_RUNTIME_ENVIRONMENT: r.setdefault('runtime_environments', []).append(element.text)
+        elif element.tag == ur.ARC_RUNTIME_ENVIRONMENT: r.setdefault('runtime_environments', []).append(element.text)
+        elif element.tag == ur.MEMORY:
+            pass
         elif element.tag == ur.LOGGER_NAME:
             pass # in the future this can be used to implement special handling for broken loggers, etc
 

@@ -16,6 +16,7 @@ SGAS_VO_NAMESPACE   = "http://www.sgas.se/namespaces/2009/05/ur/vo"
 SGAS_UR_NAMESPACE   = "http://www.sgas.se/namespaces/2009/07/ur"
 LOGGER_NAMESPACE    = "http://www.sgas.se/namespaces/2010/08/logger"
 TRANSFER_NAMESPACE  = "http://www.sgas.se/namespaces/2010/10/filetransfer"
+ARC_UR_NAMESPACE    = "http://www.nordugrid.org/ws/schemas/ur-arc"
 
 # usage record tag names
 USAGE_RECORDS       = QName("{%s}UsageRecords"   % OGF_UR_NAMESPACE)
@@ -43,6 +44,7 @@ SUBMIT_HOST         = QName("{%s}SubmitHost"     % OGF_UR_NAMESPACE)
 MACHINE_NAME        = QName("{%s}MachineName"    % OGF_UR_NAMESPACE)
 HOST                = QName("{%s}Host"           % OGF_UR_NAMESPACE)
 QUEUE               = QName("{%s}Queue"          % OGF_UR_NAMESPACE)
+MEMORY              = QName("{%s}Memory"         % OGF_UR_NAMESPACE)
 
 
 # third party tag names from here on
@@ -66,10 +68,13 @@ USER_TIME           = QName("{%s}UserTime"           % SGAS_UR_NAMESPACE)
 KERNEL_TIME         = QName("{%s}KernelTime"         % SGAS_UR_NAMESPACE)
 EXIT_CODE           = QName("{%s}ExitCode"           % SGAS_UR_NAMESPACE)
 MAJOR_PAGE_FAULTS   = QName("{%s}MajorPageFaults"    % SGAS_UR_NAMESPACE)
-RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % SGAS_UR_NAMESPACE)
+SGAS_RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % SGAS_UR_NAMESPACE)
 # ksi2k* are now deprecated, but we have them here so we can recognize them and log about it
 KSI2K_WALL_DURATION = QName("{%s}KSI2KWallDuration"  % SGAS_UR_NAMESPACE)
 KSI2K_CPU_DURATION  = QName("{%s}KSI2KCpuDuration"   % SGAS_UR_NAMESPACE)
+
+# arc auxillary extensions
+ARC_RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % ARC_UR_NAMESPACE)
 
 # logger elements and attributes
 LOGGER_NAME         = QName("{%s}LoggerName"         % LOGGER_NAMESPACE)
