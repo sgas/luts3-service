@@ -45,6 +45,9 @@ MACHINE_NAME        = QName("{%s}MachineName"    % OGF_UR_NAMESPACE)
 HOST                = QName("{%s}Host"           % OGF_UR_NAMESPACE)
 QUEUE               = QName("{%s}Queue"          % OGF_UR_NAMESPACE)
 MEMORY              = QName("{%s}Memory"         % OGF_UR_NAMESPACE)
+MEMORY_METRIC       = QName("{%s}metric"         % OGF_UR_NAMESPACE)
+MEMORY_TYPE         = QName("{%s}type"           % OGF_UR_NAMESPACE)
+MEMORY_STORAGE_UNIT = QName("{%s}storageUnit"    % OGF_UR_NAMESPACE)
 
 
 # third party tag names from here on

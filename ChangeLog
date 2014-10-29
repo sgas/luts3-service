@@ -1,5 +1,11 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.7.2
+
+Add support for Memory tag in UR.
+
+Fixes issues with XML schema from ARC-Jura
+
 3.7.1
 
 Fixes #12 CPUDuration

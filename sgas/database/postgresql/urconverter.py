@@ -45,7 +45,8 @@ ARG_LIST = [
     'uploads',
     'insert_hostname',
     'insert_identity',
-    'insert_time'
+    'insert_time',
+    'memory'
 ]
 
 

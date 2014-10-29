@@ -63,6 +63,8 @@ CREATE TABLE inserthost (
     insert_host             varchar(1024)   NOT NULL UNIQUE
 );
 
+CREATE TYPE sgas_memory AS ( memory BIGINT, metric TEXT, type TEXT );
+
 CREATE TABLE usagedata (
     id                      serial          NOT NULL PRIMARY KEY,
     record_id               varchar(1000)   NOT NULL UNIQUE,
@@ -93,7 +95,8 @@ CREATE TABLE usagedata (
     exit_code               smallint,
     insert_host_id          integer         REFERENCES inserthost (id),
     insert_identity_id      integer         REFERENCES insertidentity (id),
-    insert_time             timestamp
+    insert_time             timestamp,
+    memory                  sgas_memory[]
 );
 
 CREATE TABLE runtimeenvironment (

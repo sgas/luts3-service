@@ -12,6 +12,7 @@ from twisted.python import log
 
 from sgas.ext import isodate
 from sgas.usagerecord import urelements as ur
+from sgas.usagerecord.memory import SgasMemory
 
 
 # date constants
@@ -152,7 +153,9 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
         elif element.tag == ur.SGAS_RUNTIME_ENVIRONMENT: r.setdefault('runtime_environments', []).append(element.text)
         elif element.tag == ur.ARC_RUNTIME_ENVIRONMENT: r.setdefault('runtime_environments', []).append(element.text)
         elif element.tag == ur.MEMORY:
-            pass
+            if not 'memory' in r:
+                r['memory'] = []
+            r['memory'].append(SgasMemory(parseInt(element.text),element.attrib.get(ur.MEMORY_STORAGE_UNIT),element.attrib.get(ur.MEMORY_METRIC),element.attrib.get(ur.MEMORY_TYPE)))
         elif element.tag == ur.LOGGER_NAME:
             pass # in the future this can be used to implement special handling for broken loggers, etc
 
