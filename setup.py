@@ -56,7 +56,7 @@ setup(name='sgas-luts-service',
       author_email='magnus@hpc2n.umu.se',
       url='http://www.sgas.se/',
       packages=['sgas', 'sgas/authz', 'sgas/database', 'sgas/database/postgresql',
-                'sgas/ext', 'sgas/ext/isodate', 'sgas/ext/python',
+                'sgas/ext', 'sgas/ext/isodate', 'sgas/ext/python','sgas/customqueryengine',
                 'sgas/queryengine', 'sgas/server', 'sgas/usagerecord', 'sgas/storagerecord', 'sgas/viewengine'],
 
       cmdclass = cmdclasses,
