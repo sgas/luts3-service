@@ -42,7 +42,6 @@ class SgasMemory(object):
         return res
                
     def parseUnit(self,unit):
-        log.msg("Unit: %s" % unit)
         if unit in self.units:
             return self.units[unit]            
         return 1
