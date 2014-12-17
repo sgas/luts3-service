@@ -8,7 +8,7 @@ from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.authz import engine
-from sgas.server import config, messages, manifest, topresource, insertresource, monitorresource, queryresource
+from sgas.server import config, messages, manifest, topresource
 from sgas.database.postgresql import database as pgdatabase, hostscale
 from sgas.viewengine import viewdefinition, viewresource
 
@@ -28,20 +28,42 @@ class ConfigurationError(Exception):
 
 
 
-def createSite(db, authorizer, views, mfst):
-
-    rr = insertresource.JobUsageRecordInsertResource(db, authorizer)
-    sr = insertresource.StorageUsageRecordInsertResource(db, authorizer)
-    vr = viewresource.ViewTopResource(db, authorizer, views, mfst)
-    mr = monitorresource.MonitorResource(db, authorizer)
-    qr = queryresource.QueryResource(db, authorizer)
+def createSite(cfg, log, db, authorizer, views, mfst):
 
     tr = topresource.TopResource(authorizer)
-    tr.registerService(rr, 'ur', (('Registration', 'ur'),) )
-    tr.registerService(sr, 'sr', (('StorageRegistration', 'sr'),) )
+    
+    for plugin in cfg.options(config.PLUGINS):
+        section = "plugin:%s" % plugin
+        if not section in cfg.sections(): 
+            log.msg("Plugin: %s can't be loaded :-( section %s is missing" % (plugin, section))
+            continue
+        if not config.PLUGIN_PACKAGE in cfg.options(section):
+            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_PACKAGE, section))
+            continue
+        if not config.PLUGIN_CLASS in cfg.options(section):
+            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_PACKAGE, section))
+            continue
+        if not config.PLUGIN_NAME in cfg.options(section):
+            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_NAME, section))
+            continue
+        if not config.PLUGIN_ID in cfg.options(section):
+            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_ID, section))
+            continue
+        
+        log.msg("Loading %s.%s" % (cfg.get(section,config.PLUGIN_PACKAGE),cfg.get(section,config.PLUGIN_CLASS)))
+              
+        # import module
+        pluginModule = __import__(cfg.get(section,config.PLUGIN_PACKAGE),globals(),locals(),[cfg.get(section,config.PLUGIN_CLASS)])
+        # Create class
+        pluginClass = getattr(pluginModule,cfg.get(section,config.PLUGIN_CLASS))
+        # Instansiate object 
+        pluginObj = pluginClass(db, authorizer)
+        # register
+        tr.registerService(pluginObj, cfg.get(section,config.PLUGIN_ID), ((cfg.get(section,config.PLUGIN_NAME), cfg.get(section,config.PLUGIN_ID)),) )
+        
+
+    vr = viewresource.ViewTopResource(db, authorizer, views, mfst)   
     tr.registerService(vr, 'view', (('View', 'view'),))
-    tr.registerService(mr, 'monitor', (('Monitor', 'monitor'),) )
-    tr.registerService(qr, 'query', (('Query', 'query'),))
 
     root = resource.Resource()
     root.putChild('sgas', tr)
@@ -110,7 +132,7 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
 
     # http site
     views = viewdefinition.buildViewList(cfg)
-    site = createSite(db, authorizer, views, mfst)
+    site = createSite(cfg, log, db, authorizer, views, mfst)
 
     # application
     application = service.Application("sgas")

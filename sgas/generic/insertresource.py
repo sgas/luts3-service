@@ -1,9 +1,10 @@
 """
 Insertion resources for SGAS.
 
-Used for inserting usage and storage records into database.
+Used for inserting records into database.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
+        Magnus Jonsson <magnus@hpc2n.umu.se>
 Copyright: NorduNET / Nordic Data Grid Facility (2009, 2010, 2011)
 """
 
@@ -33,8 +34,7 @@ class GenericInsertResource(resource.Resource):
 
     def insertRecords(self, data, subject, hostname):
         raise NotImplementedError('This method should have been overridden in subclass')
-
-
+    
     def render_POST(self, request):
 
         def insertDone(result):
@@ -79,29 +79,4 @@ class GenericInsertResource(resource.Resource):
         d = self.insertRecords(data, subject, hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
-
-
-
-class JobUsageRecordInsertResource(GenericInsertResource):
-
-    authz_right = rights.ACTION_JOB_INSERT
-    insert_error_msg = 'Error during job usage insert: %s'
-    insert_authz_reject_msg = 'Rejecting job usage insert for %s. No insert rights.'
-
-
-    def insertRecords(self, data, subject, hostname):
-        d = inserter.insertJobUsageRecords(data, self.db, self.authorizer, subject, hostname)
-        return d
-
-
-
-class StorageUsageRecordInsertResource(GenericInsertResource):
-
-    authz_right = rights.ACTION_STORAGE_INSERT
-    insert_error_msg = 'Error during storage usage insert: %s'
-    insert_authz_reject_msg = 'Rejecting storage usage insert for %s. No insert rights.'
-
-    def insertRecords(self, data, subject, hostname):
-        d = inserter.insertStorageUsageRecords(data, self.db, self.authorizer, subject, hostname)
-        return d
 

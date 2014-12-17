@@ -57,7 +57,8 @@ setup(name='sgas-luts-service',
       url='http://www.sgas.se/',
       packages=['sgas', 'sgas/authz', 'sgas/database', 'sgas/database/postgresql',
                 'sgas/ext', 'sgas/ext/isodate', 'sgas/ext/python',
-                'sgas/queryengine', 'sgas/server', 'sgas/usagerecord', 'sgas/storagerecord', 'sgas/viewengine'],
+                'sgas/queryengine', 'sgas/server', 'sgas/usagerecord', 
+                'sgas/storagerecord', 'sgas/viewengine', 'sgas/generic'],
 
       cmdclass = cmdclasses,
 

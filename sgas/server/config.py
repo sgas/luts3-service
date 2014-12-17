@@ -41,6 +41,13 @@ VIEW_DESCRIPTION = 'description'
 VIEW_DRAWTABLE   = 'drawtable'
 VIEW_DRAWGRAPH   = 'drawgraph'
 
+# plugins
+PLUGINS          = 'plugins'
+PLUGIN_CLASS     = 'class'
+PLUGIN_PACKAGE   = 'package'
+PLUGIN_NAME      = 'name'
+PLUGIN_ID        = 'id'
+
 
 
 class ConfigurationError(Exception):
