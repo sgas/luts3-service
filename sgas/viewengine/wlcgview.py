@@ -12,9 +12,8 @@ from wlcgsgas import query as wlcgquery, dataprocess
 
 from twisted.web import server
 
-from sgas.authz import rights
 from sgas.server import resourceutil
-from sgas.viewengine import html, htmltable, dateform, baseview
+from sgas.viewengine import html, htmltable, dateform, baseview, rights
 
 
 # Mapping for more readable column names

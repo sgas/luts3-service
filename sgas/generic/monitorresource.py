@@ -11,7 +11,7 @@ from twisted.python import log, failure
 from twisted.web import resource, server
 
 from sgas.ext.python import json
-from sgas.authz import rights
+from sgas.authz import rights, ctxsetchecker
 from sgas.server import resourceutil
 
 
@@ -35,16 +35,20 @@ SELECT extract(EPOCH from (current_timestamp - greatest(ur.last_registration, sr
 ;
 """
 
-
+ACTION_MONITOR          = 'monitor'
 
 class MonitorResource(resource.Resource):
 
     isLeaf = True
 
-    def __init__(self, db, authorizer):
+    def __init__(self, db, authorizer,views,mfst):
         resource.Resource.__init__(self)
         self.db = db
         self.authorizer = authorizer
+        authorizer.addChecker(ACTION_MONITOR, ctxsetchecker.AlwaysAllowedContextChecker)
+        authorizer.rights.addActions(ACTION_MONITOR)
+        authorizer.rights.addOptions(ACTION_MONITOR,[])
+        authorizer.rights.addContexts(ACTION_MONITOR,[])
 
 
     def queryStatus(self, resource_name, insert_host=None):
@@ -60,7 +64,7 @@ class MonitorResource(resource.Resource):
 
         #print request.postpath
         subject = resourceutil.getSubject(request)
-        if not self.authorizer.isAllowed(subject, rights.ACTION_MONITOR, () ):
+        if not self.authorizer.isAllowed(subject, ACTION_MONITOR, () ):
             request.setResponseCode(403) # forbidden
             return "Monitoring not allowed for %s" % subject
         # request allowed, continue

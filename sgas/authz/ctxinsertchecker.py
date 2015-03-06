@@ -71,19 +71,6 @@ class InsertChecker:
         return all(allowed)
 
 
-
-class JobInsertChecker(InsertChecker):
-
-    CONTEXT_KEY = rights.CTX_MACHINE_NAME
-
-
-
-class StorageInsertChecker(InsertChecker):
-
-    CONTEXT_KEY = rights.CTX_STORAGE_SYSTEM
-
-
-
 def extractFQDNfromX509Identity(identity):
     """
     Givens strings like:

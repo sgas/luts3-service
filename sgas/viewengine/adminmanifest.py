@@ -10,9 +10,8 @@ from twisted.internet import defer
 from twisted.web import server
 
 from sgas import __version__ as sgas_version
-from sgas.authz import rights
 from sgas.server import resourceutil
-from sgas.viewengine import html, htmltable, baseview
+from sgas.viewengine import html, htmltable, baseview, rights
 
 
 # Various stat queries

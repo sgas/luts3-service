@@ -9,11 +9,8 @@ from twisted.python import log
 from sgas.authz import rights, ctxinsertchecker, ctxsetchecker
 
 
-
-
 # regular expression for matching authz lines
 AUTHZ_RX = re.compile("""\s*"(.*)"\s*(.*)""")
-
 
 
 class AuthzRights:
@@ -38,18 +35,18 @@ class AuthorizationEngine:
 
     def __init__(self, insert_check_depth, authz_file=None):
         self.authz_rights = {}  # subject -> [action : AuthzRights ]
-        if authz_file is not None:
-            authz_data = open(authz_file).read()
-            self.parseAuthzData(authz_data)
+        self.context_checkers = {}
+        self.authz_file = authz_file
+        self.insert_check_depth = insert_check_depth
+        self.rights = rights.Rights()
 
-        self.context_checkers = {
-            rights.ACTION_JOB_INSERT        : ctxinsertchecker.JobInsertChecker(insert_check_depth),
-            rights.ACTION_STORAGE_INSERT    : ctxinsertchecker.StorageInsertChecker(insert_check_depth),
-            rights.ACTION_VIEW              : ctxsetchecker.AnySetChecker,
-            rights.ACTION_QUERY             : ctxsetchecker.AllSetChecker,
-            rights.ACTION_MONITOR           : ctxsetchecker.AlwaysAllowedContextChecker
-        }
+    def initAuthzFile(self):
+        if self.authz_file is not None:
+            authz_data = open(self.authz_file).read()
+            self.parseAuthzData(authz_data)        
 
+    def addChecker(self, action, checker):
+        self.context_checkers[action] = checker;
 
     def parseAuthzData(self, authz_data):
         # parse authorization data given as input string
@@ -83,28 +80,14 @@ class AuthorizationEngine:
 
             authz_rights = AuthzRights()
 
-            # some backwards compat
-            if action == rights.ACTION_INSERT:
-                log.msg("Changing 'insert' stanza to 'jobinsert'. Consider changing this in the authz file.", system='sgas.Authorizer')
-                action = rights.ACTION_JOB_INSERT
-
-            # more (older) backwards compat
-            if action == rights.ACTION_VIEW:
-                log.msg("Expanding 'view' stanza to 'view:all'. Please change to 'view:all'. This behaviour might change in the future", system='sgas.Authorizer')
-                authz_rights.options.append(rights.OPTION_ALL)
-
             # add rights
             user_authz_rights.setdefault(action, authz_rights)
 
         elif len(action_authzgroup) == 2:
             action, authzgroup = action_authzgroup
-            if not action in rights.ACTIONS:
+            if not action in self.rights.actions:
                 log.msg('Invalid authz action: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
                 return
-
-            if action == rights.ACTION_INSERT:
-                log.msg("Changing 'insert' stanza to 'jobinsert'. Consider changing this in the authz file.", system='sgas.Authorizer')
-                action = rights.ACTION_JOB_INSERT
 
             for authz in authzgroup.split(','):
                 if '=' in authz: # context
@@ -120,7 +103,7 @@ class AuthorizationEngine:
                             log.msg('Invalid authz context: %s, skipping entry.' % action_desc, system='sgas.Authorizer')
                 else: # option
                     for option in authz.split('+'):
-                        if not option in rights.OPTIONS.get(action, []):
+                        if not option in self.rights.options.get(action, []):
                             log.msg('Invalid authz option: %s, skipping entry.' % action_desc, system='sgas.Authorizer')
                             continue
                         action_rights = user_authz_rights.setdefault(action, AuthzRights())

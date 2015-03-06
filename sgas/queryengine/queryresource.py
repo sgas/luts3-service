@@ -11,7 +11,7 @@ from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.ext.python import json
-from sgas.authz import rights
+from sgas.authz import rights, ctxsetchecker
 from sgas.server import resourceutil
 from sgas.queryengine import parser as queryparser, builder as querybuilder, rowrp as queryrowrp
 
@@ -20,28 +20,33 @@ from sgas.queryengine import parser as queryparser, builder as querybuilder, row
 JSON_MIME_TYPE = 'application/json'
 HTTP_HEADER_CONTENT_TYPE   = 'content-type'
 
-
+ACTION_QUERY        = 'query'
+CTX_MACHINE_NAME    = 'machine_name'
+CTX_USER_IDENTITY   = 'user_identity'
+CTX_VO_NAME         = 'vo_name'
 
 class QueryResource(resource.Resource):
 
     isLeaf = True
 
-    def __init__(self, db, authorizer):
+    def __init__(self, db, authorizer,views,mfst):
         resource.Resource.__init__(self)
         self.db = db
         self.authorizer = authorizer
+        
+        authorizer.addChecker(ACTION_QUERY, ctxsetchecker.AllSetChecker)
+        authorizer.rights.addActions(ACTION_QUERY)
+        authorizer.rights.addOptions(ACTION_QUERY,[rights.OPTION_ALL])
+        authorizer.rights.addContexts(ACTION_QUERY,[CTX_MACHINE_NAME, CTX_USER_IDENTITY, CTX_VO_NAME])
 
 
     def queryDatabase(self, query_args):
-
         query, query_args = querybuilder.buildQuery(query_args)
         d = self.db.query(query, query_args)
         return d
 
 
     def render_GET(self, request):
-
-        #print request.path, request.args
         try:
             query_args = queryparser.parseURLArguments(request.args)
         except queryparser.QueryParseError, e:

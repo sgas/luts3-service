@@ -57,13 +57,10 @@ def createSite(cfg, log, db, authorizer, views, mfst):
         # Create class
         pluginClass = getattr(pluginModule,cfg.get(section,config.PLUGIN_CLASS))
         # Instansiate object 
-        pluginObj = pluginClass(db, authorizer)
+        pluginObj = pluginClass(db, authorizer, views, mfst)
         # register
         tr.registerService(pluginObj, cfg.get(section,config.PLUGIN_ID), ((cfg.get(section,config.PLUGIN_NAME), cfg.get(section,config.PLUGIN_ID)),) )
         
-
-    vr = viewresource.ViewTopResource(db, authorizer, views, mfst)   
-    tr.registerService(vr, 'view', (('View', 'view'),))
 
     root = resource.Resource()
     root.putChild('sgas', tr)
@@ -133,6 +130,9 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
     # http site
     views = viewdefinition.buildViewList(cfg)
     site = createSite(cfg, log, db, authorizer, views, mfst)
+    
+    # read auth file.
+    authorizer.initAuthzFile()
 
     # application
     application = service.Application("sgas")

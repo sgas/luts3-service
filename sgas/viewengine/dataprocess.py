@@ -26,7 +26,7 @@ def buildDictList(rows, keys):
     entries = []
 
     for r in rows:
-        assert len(r) == len(keys), 'Row length does not match key length'
+        assert len(r) == len(keys), 'Row length does not match key length %d != %d' % (len(r),len(keys))
         entries.append( dict( zip(keys, r)) )
     return entries
 

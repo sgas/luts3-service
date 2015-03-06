@@ -17,12 +17,12 @@ from twisted.enterprise import adbapi
 from twisted.application import service
 
 from sgas.database import error
-from sgas.database.postgresql import urconverter, srconverter, updater
-
+#from sgas.database.postgresql import updater
 
 
 DEFAULT_POSTGRESQL_PORT = 5432
 
+SQL_SERIALIZABLE_TRANSACTION = '''SET TRANSACTION ISOLATION LEVEL SERIALIZABLE'''
 
 
 class _DatabasePoolProxy:
@@ -58,122 +58,25 @@ class _DatabasePoolProxy:
 
 class PostgreSQLDatabase(service.MultiService):
 
+    service = []
+    
     def __init__(self, connect_info):
         service.MultiService.__init__(self)
         self.pool_proxy = _DatabasePoolProxy(connect_info)
-        self.updater = updater.AggregationUpdater(self.pool_proxy)
 
 
     def startService(self):
         service.MultiService.startService(self)
-        return self.updater.startService()
+        return defer.DeferredList(map(lambda s: s.startService(),self.service))        
 
 
     def stopService(self):
         service.MultiService.stopService(self)
-        return self.updater.stopService()
+        return defer.DeferredList(map(lambda s: s.stopService(),self.service))
 
 
-    @defer.inlineCallbacks
-    def insertJobUsageRecords(self, usagerecord_docs, retry=False):
-
-        arg_list = urconverter.createInsertArguments(usagerecord_docs)
-
-        try:
-            id_dict = {}
-            conn = adbapi.Connection(self.pool_proxy.dbpool)
-            try:
-                trans = adbapi.Transaction(self, conn)
-
-                for args in arg_list:
-                    yield trans.callproc('urcreate', args)
-                    r = yield trans.fetchall()
-                    record_id, row_id = r[0][0]
-                    id_dict[record_id] = str(row_id)
-
-                trans.close()
-                conn.commit()
-                log.msg('Database: %i job usage records inserted' % len(id_dict), system='sgas.PostgreSQLDatabase')
-                self.updater.updateNotification()
-                defer.returnValue(id_dict)
-            except psycopg2.InterfaceError:
-                # this usually implies that the connection is closed (can't rollback)
-                raise
-            except:
-                conn.rollback()
-                raise
-
-        except psycopg2.OperationalError, e:
-            if 'Connection refused' in str(e):
-                raise error.DatabaseUnavailableError(str(e))
-            raise # re-raise current exception
-        except psycopg2.InterfaceError, e:
-            # this usually happens if the database was restarted,
-            # and the existing connection to the database was closed
-            if not retry:
-                log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
-                log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
-                self.pool_proxy.reconnect()
-                yield self.insertJobUsageRecords(usagerecord_docs, retry=True)
-            if retry:
-                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
-                raise error.DatabaseUnavailableError(str(e))
-
-        except Exception, e:
-            log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
-            log.err(e, system='sgas.PostgreSQLDatabase')
-            raise
-
-
-    @defer.inlineCallbacks
-    def insertStorageUsageRecords(self, storagerecord_docs, retry=False):
-
-        arg_list = srconverter.createInsertArguments(storagerecord_docs)
-
-        try:
-            id_dict = {}
-            conn = adbapi.Connection(self.pool_proxy.dbpool)
-            try:
-                trans = adbapi.Transaction(self, conn)
-
-                for args in arg_list:
-                    yield trans.callproc('srcreate', args)
-                    r = yield trans.fetchall()
-                    record_id, row_id = r[0][0]
-                    id_dict[record_id] = str(row_id)
-
-                trans.close()
-                conn.commit()
-                log.msg('Database: %i storage usage records inserted' % len(id_dict), system='sgas.PostgreSQLDatabase')
-                #self.updater.updateNotification()
-                defer.returnValue(id_dict)
-            except psycopg2.InterfaceError:
-                # this usually implies that the connection is closed (can't rollback)
-                raise
-            except:
-                conn.rollback()
-                raise
-
-        except psycopg2.OperationalError, e:
-            if 'Connection refused' in str(e):
-                raise error.DatabaseUnavailableError(str(e))
-            raise # re-raise current exception
-        except psycopg2.InterfaceError, e:
-            # this usually happens if the database was restarted,
-            # and the existing connection to the database was closed
-            if not retry:
-                log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
-                log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
-                self.pool_proxy.reconnect()
-                yield self.insertJobUsageRecords(storagerecord_docs, retry=True)
-            if retry:
-                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
-                raise error.DatabaseUnavailableError(str(e))
-
-        except Exception, e:
-            log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
-            log.err(e, system='sgas.PostgreSQLDatabase')
-            raise
+    def attachService(self,service):
+        self.service += [service]
 
 
     @defer.inlineCallbacks
@@ -205,3 +108,92 @@ class PostgreSQLDatabase(service.MultiService):
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
 
+    @defer.inlineCallbacks
+    def recordInserter(self, type, proc, arg_list, retry=False):
+        try:
+            id_dict = {}
+            conn = adbapi.Connection(self.pool_proxy.dbpool)
+            try:
+                trans = adbapi.Transaction(self, conn)
+
+                for args in arg_list:
+                    yield trans.callproc(proc, args)
+                    r = yield trans.fetchall()
+                    record_id, row_id = r[0][0]
+                    id_dict[record_id] = str(row_id)
+
+                trans.close()
+                conn.commit()
+                log.msg('Database: %i %s records inserted' % (len(id_dict), type), system='sgas.PostgreSQLDatabase')
+                defer.returnValue(id_dict)
+            except psycopg2.InterfaceError:
+                # this usually implies that the connection is closed (can't rollback)
+                raise
+            except:
+                conn.rollback()
+                raise
+
+        except psycopg2.OperationalError, e:
+            if 'Connection refused' in str(e):
+                raise error.DatabaseUnavailableError(str(e))
+            raise # re-raise current exception
+        except psycopg2.InterfaceError, e:
+            # this usually happens if the database was restarted,
+            # and the existing connection to the database was closed
+            if not retry:
+                log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
+                log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
+                self.pool_proxy.reconnect()
+                yield self.insertJobUsageRecords(usagerecord_docs, retry=True)
+            if retry:
+                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
+                raise error.DatabaseUnavailableError(str(e))
+
+        except Exception, e:
+            log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
+            log.err(e, system='sgas.PostgreSQLDatabase')
+            raise
+
+    @defer.inlineCallbacks
+    def updateAggregator(self,aggregator,service=None,retry=False):
+        try:
+            conn = adbapi.Connection(self.pool_proxy.dbpool)
+            while True:
+                try:
+                    txn = adbapi.Transaction(self, conn)
+
+                    # the update_uraggregate function requires serializable isolation level
+                    # in order to execute correctly
+                    txn.execute(SQL_SERIALIZABLE_TRANSACTION)
+                    yield txn.callproc(aggregator)
+                    idmn = txn.fetchall()
+                    txn.close()
+                    conn.commit()
+
+                    if idmn in (None, [(None,)]): # empty array -> response when all done
+                        break
+                    else:
+                        insert_date, machine_name = idmn[0][0]
+                        log.msg('Aggregation(%s) updated: %s / %s' % (aggregator,insert_date, machine_name), system='sgas.AggregationUpdater')
+                    if service and service.stopping:
+                        break
+                except psycopg2.InterfaceError, e:
+                    # typically means we lost the connection due to a db restart
+                    if retry:
+                        log.msg('Reconnect in update failed, bailing out.', system='sgas.AggregationUpdater')
+                        raise
+                    else:
+                        log.msg('Got InterfaceError while attempting update: %s.' % str(e), system='sgas.AggregationUpdater')
+                        log.msg('Attempting reconnect.', system='sgas.AggregationUpdater')
+                        retry = True
+                        self.pool_proxy.reconnect()
+                except:
+                    conn.rollback()
+                    raise
+
+        except Exception, e:
+            log.err(e, system='sgas.AggregationUpdater')
+            raise
+
+        finally:
+            conn.close()

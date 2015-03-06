@@ -22,23 +22,17 @@ from twisted.application import service
 from twisted.enterprise import adbapi
 
 
-
-SQL_SERIALIZABLE_TRANSACTION = '''SET TRANSACTION ISOLATION LEVEL SERIALIZABLE'''
-
-
-
 class AggregationUpdater(service.Service):
 
-    def __init__(self, pool_proxy):
-
-        self.pool_proxy = pool_proxy
+    def __init__(self, db):
+        self.db          = db
 
         self.need_update = False
         self.updating    = False
         self.stopping    = False
         self.update_call = None
         self.update_def  = None
-
+        
 
     def startService(self):
         service.Service.startService(self)
@@ -81,62 +75,19 @@ class AggregationUpdater(service.Service):
             self.scheduleUpdate(delay=120)
             return defer.succeed(None)
         else:
-            d = self.update()
+            d = self.updateAggregator()
             self.update_def = d
             return d
 
     # -- end scheduling logic
 
-    @defer.inlineCallbacks
-    def update(self):
+    # @defer.inlineCallbacks
+    def updateAggregator(self):
         # will update the parts of the aggregated data table which has been
         # specified to need an update in the update table
-
         self.updating = True
-        self.has_reconnected = False
-
-        try:
-            conn = adbapi.Connection(self.pool_proxy.dbpool)
-            while True:
-                try:
-                    txn = adbapi.Transaction(self, conn)
-
-                    # the update_uraggregate function requires serializable isolation level
-                    # in order to execute correctly
-                    txn.execute(SQL_SERIALIZABLE_TRANSACTION)
-                    yield txn.callproc('update_uraggregate')
-                    idmn = txn.fetchall()
-                    txn.close()
-                    conn.commit()
-
-                    if idmn in (None, [(None,)]): # empty array -> response when all done
-                        break
-                    else:
-                        insert_date, machine_name = idmn[0][0]
-                        log.msg('Aggregation updated: %s / %s' % (insert_date, machine_name), system='sgas.AggregationUpdater')
-                    if self.stopping:
-                        break
-                except psycopg2.InterfaceError, e:
-                    # typically means we lost the connection due to a db restart
-                    if self.has_reconnected:
-                        log.msg('Reconnect in update failed, bailing out.', system='sgas.AggregationUpdater')
-                        raise
-                    else:
-                        log.msg('Got InterfaceError while attempting update: %s.' % str(e), system='sgas.AggregationUpdater')
-                        log.msg('Attempting reconnect.', system='sgas.AggregationUpdater')
-                        self.has_reconnected = True
-                        self.pool_proxy.reconnect()
-                except:
-                    conn.rollback()
-                    raise
-
-        except Exception, e:
-            log.err(e, system='sgas.AggregationUpdater')
-            raise
-
-        finally:
-            self.updating = False
-            conn.close()
+        self.db.updateAggregator('update_uraggregate',self)
+        self.updating = False
 
 
     def rebuild(self):

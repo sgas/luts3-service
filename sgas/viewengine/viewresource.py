@@ -9,11 +9,9 @@ from twisted.python import log
 from twisted.web import resource, server
 
 from sgas.database import error as dberror
-from sgas.authz import rights
+from sgas.authz import rights as authzrights, ctxsetchecker
 from sgas.server import config, resourceutil
-from sgas.viewengine import html, pagebuilder, adminmanifest, machineview
-
-
+from sgas.viewengine import html, pagebuilder, adminmanifest, machineview, rights
 
 # generic error handler
 def handleViewError(error, request, view_name):
@@ -38,6 +36,10 @@ class ViewTopResource(resource.Resource):
         resource.Resource.__init__(self)
         self.urdb = urdb
         self.authorizer = authorizer
+        authorizer.addChecker(rights.ACTION_VIEW, ctxsetchecker.AnySetChecker)
+        authorizer.rights.addActions(rights.ACTION_VIEW)
+        authorizer.rights.addOptions(rights.ACTION_VIEW,[ authzrights.OPTION_ALL ])
+        authorizer.rights.addContexts(rights.ACTION_VIEW,[ rights.CTX_VIEW, rights.CTX_VIEWGROUP ])
 
         self.views = views
 

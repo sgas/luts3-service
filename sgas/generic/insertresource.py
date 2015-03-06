@@ -75,7 +75,6 @@ class GenericInsertResource(resource.Resource):
 
         request.content.seek(0)
         data = request.content.read()
-        #d = inserter.insertJobUsageRecords(data, self.db, self.authorizer, subject, hostname)
         d = self.insertRecords(data, subject, hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
