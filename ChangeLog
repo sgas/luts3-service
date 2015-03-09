@@ -5,6 +5,8 @@ SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 Mostly refactorization of the code with added support for handling
 diffrent parts of SGAS/Luts as plugins loaded when needed.
 
+Added tool for basic UR/SR db maintainance.
+
 Some important upgrade notes:
 
 - Backward compatability view -> view:all and insert -> jobinsert in authz.conf are removed.

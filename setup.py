@@ -87,7 +87,8 @@ setup(name='sgas-luts-service',
           ('/etc/',                      ['datafiles/etc/sgas.conf']),
           ('/etc/',                      ['datafiles/etc/sgas.authz']),
           ('/etc/init.d',                ['datafiles/etc/sgas']),
-          ('/etc/nginx/sites-available', ['datafiles/etc/nginx/sites-available/sgas'])
+          ('/etc/nginx/sites-available', ['datafiles/etc/nginx/sites-available/sgas']),
+          ('bin',                        ['sgas-db-tool'])
       ]
 
 )
