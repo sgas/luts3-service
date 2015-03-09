@@ -11,6 +11,8 @@ Some important upgrade notes:
 
 - Loading of plugins must be done in sgas.conf (see docs/plugins for more information).
 
+- No changes to the database is done.
+
 3.7.2
 
 Add support for Memory tag in UR.
