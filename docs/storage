@@ -9,6 +9,7 @@ page: https://twiki.cern.ch/twiki/bin/view/EMI/StorageAccounting
 Direct link for the V7 version:
 https://twiki.cern.ch/twiki/pub/EMI/StorageAccounting/StAR-EMI-tech-doc-v7.pdf
 
+To enable the storage interface see docs/plugins for more information.
 
 The setup for storage accounting is quite similar to usage records. A client
 must be create the storage records to be produced and write them into an SGAS

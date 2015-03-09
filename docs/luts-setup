@@ -59,6 +59,10 @@ If you relocated SGAS, you may need to set
 
 authzfile=..    (SGAS authorization file)
 
+You also need to define which plugins to use. See the plugins documentation
+for more information.
+ 
+
 Hereafter edit sgas.authz to set which identities can perform which actions.
 Subject names must in "", so a line would look like this:
 

@@ -26,10 +26,13 @@ CTX_USER_IDENTITY   = 'user_identity'
 CTX_VO_NAME         = 'vo_name'
 
 class QueryResource(resource.Resource):
+    
+    PLUGIN_ID   = 'query'
+    PLUGIN_NAME = 'Query' 
 
     isLeaf = True
 
-    def __init__(self, db, authorizer,views,mfst):
+    def __init__(self, cfg, db, authorizer):
         resource.Resource.__init__(self)
         self.db = db
         self.authorizer = authorizer

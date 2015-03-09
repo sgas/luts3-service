@@ -11,6 +11,7 @@ The SGAS view frontpage is found at the URL path /sgas/view, e.g.,:
 https://host.example.org:6443/sgas/view. Here there are links to view, which
 are defined in sgas.conf. Be careful _NOT_ to add a / at the end of URLs.
 
+To enable the view interface see docs/plugins for more information.
 
 == Automatic view ==
 
@@ -138,7 +139,7 @@ It is also possible to specify multiple views/groups by comma seperating the ent
 
 To grant a person access to all views, just specify view, e.g.:
 
-    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               view
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               view:all
 
 Note that SGAS must be restarted in order for any configuration or
 authorization changes to take place.

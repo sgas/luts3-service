@@ -1,5 +1,16 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.8.0
+
+Mostly refactorization of the code with added support for handling
+diffrent parts of SGAS/Luts as plugins loaded when needed.
+
+Some important upgrade notes:
+
+- Backward compatability view -> view:all and insert -> jobinsert in authz.conf are removed.
+
+- Loading of plugins must be done in sgas.conf (see docs/plugins for more information).
+
 3.7.2
 
 Add support for Memory tag in UR.

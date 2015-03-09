@@ -33,3 +33,9 @@ it can be added in the query, like this:
 
 SELECT sum(walltime), COALESCE(scaled_walltime, walltime*1.23) FROM uraggregated;
 
+Enable Host Scale Factors as a plugin with the following section in the sgas.conf.
+
+[plugin:hostscalefactors]
+package=sgas.hostscalefactors.hostscale
+class=HostScaleFactorUpdater
+

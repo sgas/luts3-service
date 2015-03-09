@@ -38,10 +38,13 @@ SELECT extract(EPOCH from (current_timestamp - greatest(ur.last_registration, sr
 ACTION_MONITOR          = 'monitor'
 
 class MonitorResource(resource.Resource):
+    
+    PLUGIN_ID   = 'monitor'
+    PLUGIN_NAME = 'Monitor' 
 
     isLeaf = True
 
-    def __init__(self, db, authorizer,views,mfst):
+    def __init__(self, cfg, db, authorizer):
         resource.Resource.__init__(self)
         self.db = db
         self.authorizer = authorizer

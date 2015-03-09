@@ -34,12 +34,15 @@ class JobInsertChecker(ctxinsertchecker.InsertChecker):
     CONTEXT_KEY = CTX_MACHINE_NAME
 
 class JobUsageRecordInsertResource(GenericInsertResource):
+    
+    PLUGIN_ID   = 'ur'
+    PLUGIN_NAME = 'Registration' 
 
     authz_right = ACTION_JOB_INSERT
     insert_error_msg = 'Error during job usage insert: %s'
     insert_authz_reject_msg = 'Rejecting job usage insert for %s. No insert rights.'
 
-    def __init__(self, db, authorizer,views,mfst):
+    def __init__(self, cfg, db, authorizer):
         GenericInsertResource.__init__(self,db,authorizer)
         authorizer.addChecker(self.authz_right, JobInsertChecker(authorizer.insert_check_depth))
         authorizer.rights.addActions(ACTION_INSERT)

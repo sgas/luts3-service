@@ -1,0 +1,53 @@
+Starting from 3.8.0 SGAS has a plugin infrastructure for loading 
+diffrent parts of the service.
+
+Plugins are defined in "plugin:<pluginname>" blocks in the sgas.conf file.
+
+Example:
+
+[plugin:jobusagerecordinsert]
+class=sgas.usagerecord.jobinsertresource.JobUsageRecordInsertResource
+type=site
+
+The [plugin:<pluginname>] part defines a unique name to the plugin.
+
+'class' is the python package and class that are suppose to be loaded.
+
+'type' defines witch type of plugin this is ('site' or 'service').
+
+== Current available plugins ==
+
+# Query interface
+# See docs/quert-interface for more information.
+[plugin:query]
+class=sgas.queryengine.queryresource.QueryResource
+type=site
+
+# Monitor interface
+# See docs/monitoring for more information.
+[plugin:monitor]
+class=sgas.generic.monitorresource.MonitorResource
+type=site
+
+# UsageRecords record insert interface
+[plugin:jobusagerecordinsert]
+class=sgas.usagerecord.jobinsertresource.JobUsageRecordInsertResource
+type=site
+
+# Storage records insert interface
+# See docs/storage for more information.
+[plugin:storageusagerecordinsert]
+class=sgas.storagerecord.storageinsertresource.StorageUsageRecordInsertResource
+type=site
+
+# View interface
+# See docs/views for more information
+[plugin:view]
+class=sgas.viewengine.viewresource.ViewTopResource
+type=site
+
+# Host scale factors service
+# See docs/hostscaling for more information
+[plugin:hostscalefactors]
+class=sgas.hostscalefactors.hostscale.HostScaleFactorUpdater
+type=service

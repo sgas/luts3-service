@@ -8,9 +8,9 @@ from twisted.web import resource, server
 
 from sgas import __version__
 from sgas.authz import engine
-from sgas.server import config, messages, manifest, topresource
+from sgas.server import config, messages, topresource, loadclass
 from sgas.database.postgresql import database as pgdatabase, hostscale
-from sgas.viewengine import viewdefinition, viewresource
+
 
 
 # -- constants
@@ -26,42 +26,16 @@ class ConfigurationError(Exception):
     Raised when the server is configured wrong.
     """
 
-
-
-def createSite(cfg, log, db, authorizer, views, mfst):
-
+def createSite(cfg, log, db, authorizer):
     tr = topresource.TopResource(authorizer)
     
-    for plugin in cfg.options(config.PLUGINS):
-        section = "plugin:%s" % plugin
-        if not section in cfg.sections(): 
-            log.msg("Plugin: %s can't be loaded :-( section %s is missing" % (plugin, section))
-            continue
-        if not config.PLUGIN_PACKAGE in cfg.options(section):
-            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_PACKAGE, section))
-            continue
-        if not config.PLUGIN_CLASS in cfg.options(section):
-            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_PACKAGE, section))
-            continue
-        if not config.PLUGIN_NAME in cfg.options(section):
-            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_NAME, section))
-            continue
-        if not config.PLUGIN_ID in cfg.options(section):
-            log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_ID, section))
-            continue
+    for pluginClass in loadclass.loadClassType(cfg,log,'site'):
+        # instanciate        
+        obj = pluginClass(cfg, db, authorizer)
         
-        log.msg("Loading %s.%s" % (cfg.get(section,config.PLUGIN_PACKAGE),cfg.get(section,config.PLUGIN_CLASS)))
-              
-        # import module
-        pluginModule = __import__(cfg.get(section,config.PLUGIN_PACKAGE),globals(),locals(),[cfg.get(section,config.PLUGIN_CLASS)])
-        # Create class
-        pluginClass = getattr(pluginModule,cfg.get(section,config.PLUGIN_CLASS))
-        # Instansiate object 
-        pluginObj = pluginClass(db, authorizer, views, mfst)
         # register
-        tr.registerService(pluginObj, cfg.get(section,config.PLUGIN_ID), ((cfg.get(section,config.PLUGIN_NAME), cfg.get(section,config.PLUGIN_ID)),) )
-        
-
+        tr.registerService(obj, obj.PLUGIN_ID, ((obj.PLUGIN_NAME,obj.PLUGIN_ID),))
+                           
     root = resource.Resource()
     root.putChild('sgas', tr)
 
@@ -69,7 +43,13 @@ def createSite(cfg, log, db, authorizer, views, mfst):
     site.log = lambda *args : None
     return site
 
-
+def loadServices(cfg,log,db):
+    for pluginClass in loadclass.loadClassType(cfg,log,'service'):
+        # instanciate        
+        obj = pluginClass(cfg, db)
+        
+        # Attach services to DB (TODO: make own master service)
+        obj.setServiceParent(db)
 
 def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None):
 
@@ -98,11 +78,6 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
     except ValueError: # in case casting goes wrong
         raise ConfigurationError('Configured check depth is invalid')
 
-    mfst = manifest.Manifest()
-    mfst.setProperty('start_time', time.asctime())
-    if cfg.has_option(config.SERVER_BLOCK, config.WLCG_CONFIG_FILE):
-        mfst.setProperty('wlcg_config_file', cfg.get(config.SERVER_BLOCK, config.WLCG_CONFIG_FILE))
-
     # authz
     if no_authz:
         from test import utils
@@ -116,20 +91,13 @@ def createSGASServer(config_file=DEFAULT_CONFIG_FILE, no_authz=False, port=None)
         raise ConfigurationError('CouchDB no longer supported. Please upgrade to PostgreSQL')
     db = pgdatabase.PostgreSQLDatabase(db_url)
 
-    # get scale factors
-    scale_factors = {}
-    for hostname in cfg.options(config.SCALE_BLOCK):
-        try:
-            scale_factors[hostname] = cfg.getfloat(config.SCALE_BLOCK, hostname)
-        except ValueError:
-            log.msg('Invalid scale factor value for entry: %s' % hostname, system='sgas.Setup')
-
-    hs = hostscale.HostScaleFactorUpdater(db, scale_factors)
-    hs.setServiceParent(db)
+    # hs.setServiceParent(db)
 
     # http site
-    views = viewdefinition.buildViewList(cfg)
-    site = createSite(cfg, log, db, authorizer, views, mfst)
+    site = createSite(cfg, log, db, authorizer)
+    
+    # load generic services
+    loadServices(cfg,log,db)
     
     # read auth file.
     authorizer.initAuthzFile()

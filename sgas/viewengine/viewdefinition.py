@@ -12,7 +12,14 @@ from twisted.python import log
 from sgas.server import config
 from sgas.viewengine import viewcore
 
-
+# view options
+VIEW_PREFIX      = 'view:'
+VIEW_GROUP       = 'viewgroup'
+VIEW_TYPE        = 'type'
+VIEW_QUERY       = 'query'
+VIEW_DESCRIPTION = 'description'
+VIEW_DRAWTABLE   = 'drawtable'
+VIEW_DRAWGRAPH   = 'drawgraph'
 
 class ViewDefinition:
 
@@ -32,7 +39,7 @@ def buildViewList(cfg):
     views = []
 
     for block in cfg.sections():
-        if block.startswith(config.VIEW_PREFIX):
+        if block.startswith(VIEW_PREFIX):
             view_name = block.split(':',1)[-1]
             view_args = dict(cfg.items(block))
             view = createViewDefinition(view_name, view_args)
@@ -52,24 +59,24 @@ def createViewDefinition(view_name, view_config):
     drawgraph   = None
 
     for key, value in view_config.items():
-        if key == config.VIEW_TYPE:
+        if key == VIEW_TYPE:
             if not value in viewcore.VIEW_TYPES:
                 raise config.ConfigurationError('Invalid view type: %s' % value)
             view_type = value
 
-        elif key == config.VIEW_GROUP:
+        elif key == VIEW_GROUP:
             view_groups = [ group.strip() for group in value.split(',') ]
 
-        elif key == config.VIEW_QUERY:
+        elif key == VIEW_QUERY:
             query = value
 
-        elif key == config.VIEW_DESCRIPTION:
+        elif key == VIEW_DESCRIPTION:
             caption = value
 
-        elif key == config.VIEW_DRAWTABLE:
+        elif key == VIEW_DRAWTABLE:
             drawtable = readBoolean(value)
 
-        elif key == config.VIEW_DRAWGRAPH:
+        elif key == VIEW_DRAWGRAPH:
             drawgraph = readBoolean(value)
 
         else:

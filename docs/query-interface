@@ -4,6 +4,9 @@ the stored accounting data. Currently it is only possible to get aggregated
 data in rather specific, but quite generic format. This document describes the
 query interface in details.
 
+* Activating Query interface
+
+Enable the query interface see docs/plugins for more information.
 
 * Authorizing Query Access
 

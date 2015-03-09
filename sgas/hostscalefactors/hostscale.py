@@ -17,13 +17,25 @@ from twisted.application import service
 TRUNCATE_HOST_SCALE_FACTOR = '''TRUNCATE TABLE hostscalefactors'''
 INSERT_HOST_SCALE_FACTOR   = '''INSERT INTO hostscalefactors (machine_name, scale_factor) VALUES (%s, %s)'''
 
-
+# scale options
+SCALE_BLOCK      = 'hostscaling'
 
 class HostScaleFactorUpdater(service.Service):
 
-    def __init__(self, db, scale_factors):
+    def __init__(self, cfg, db):
         self.pool_proxy = db.pool_proxy
-        self.scale_factors = scale_factors
+
+        # get scale factors
+        self.scale_factors = {}
+        
+        if not SCALE_BLOCK in cfg.sections():
+            return
+        
+        for hostname in cfg.options(SCALE_BLOCK):
+            try:
+                scale_factors[hostname] = cfg.getfloat(SCALE_BLOCK, hostname)
+            except ValueError:
+                log.msg('Invalid scale factor value for entry: %s' % hostname, system='sgas.Setup')
 
 
     def startService(self):

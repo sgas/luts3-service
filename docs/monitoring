@@ -20,7 +20,6 @@ Fx: www.example.org.org:6143/sgas
 For PostgreSQL, a standard PostgreSQL Nagios monitoring script should be
 sufficient.
 
-
 == Monitoring Registration ==
 
 Besides monitoring the services, it can be a good idea to monitor that records
@@ -30,6 +29,8 @@ SGAS provides a simple mechanism which can be used to monitor if a machine (and
 possibly from a certain insert host) has made any regstrations in a certain
 interval. SGAS exposes a simple HTTP interface, which will reply with the
 number of seconds since the last registration for a given hostname.
+
+To enable the monitoring interface see docs/plugins for more information.
 
 To pull SGAS for information on registration status construct a URL for the
 machine that should be checked. For a cluster with the host name

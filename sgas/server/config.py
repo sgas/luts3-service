@@ -20,7 +20,6 @@ SERVER_BLOCK         = 'server'
 DB                   = 'db'
 AUTHZ_FILE           = 'authzfile'
 HOSTNAME_CHECK_DEPTH = 'check_depth'
-WLCG_CONFIG_FILE     = 'wlcg_config_file'
 
 # the following are no longer used, but are used to issue warnings
 HOSTKEY              = 'hostkey'
@@ -29,25 +28,10 @@ CERTDIR              = 'certdir'
 REVERSE_PROXY        = 'reverse_proxy'
 HOSTNAME_CHECK_WHITELIST = 'check_whitelist'
 
-# scale options
-SCALE_BLOCK      = 'hostscaling'
-
-# view options
-VIEW_PREFIX      = 'view:'
-VIEW_GROUP       = 'viewgroup'
-VIEW_TYPE        = 'type'
-VIEW_QUERY       = 'query'
-VIEW_DESCRIPTION = 'description'
-VIEW_DRAWTABLE   = 'drawtable'
-VIEW_DRAWGRAPH   = 'drawgraph'
-
 # plugins
 PLUGINS          = 'plugins'
 PLUGIN_CLASS     = 'class'
-PLUGIN_PACKAGE   = 'package'
-PLUGIN_NAME      = 'name'
-PLUGIN_ID        = 'id'
-
+PLUGIN_TYPE      = 'type'
 
 
 class ConfigurationError(Exception):
@@ -67,8 +51,6 @@ def readConfig(filename):
     cfg.add_section(SERVER_BLOCK)
     cfg.set(SERVER_BLOCK, AUTHZ_FILE,           DEFAULT_AUTHZ_FILE)
     cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_DEPTH, DEFAULT_HOSTNAME_CHECK_DEPTH)
-
-    cfg.add_section(SCALE_BLOCK)
 
     fp = open(filename)
     proxy_fp = MultiLineFileReader(fp)

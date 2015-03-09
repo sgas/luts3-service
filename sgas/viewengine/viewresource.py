@@ -13,6 +13,11 @@ from sgas.authz import rights as authzrights, ctxsetchecker
 from sgas.server import config, resourceutil
 from sgas.viewengine import html, pagebuilder, adminmanifest, machineview, rights
 
+from sgas.viewengine import viewdefinition
+from sgas.viewengine import manifest
+
+import time
+
 # generic error handler
 def handleViewError(error, request, view_name):
     error_msg = error.getErrorMessage()
@@ -28,25 +33,37 @@ def handleViewError(error, request, view_name):
     request.write(error_msg)
     request.finish()
 
+PLUGIN_CFG_BLOCK = "plugin:view"     
+WLCG_CONFIG_FILE = 'wlcg_config_file'
 
 
 class ViewTopResource(resource.Resource):
+    
+    PLUGIN_ID   = 'view'
+    PLUGIN_NAME = 'View'
 
-    def __init__(self, urdb, authorizer, views, mfst):
+    def __init__(self, cfg, db, authorizer):
         resource.Resource.__init__(self)
-        self.urdb = urdb
+        self.urdb = db
         self.authorizer = authorizer
         authorizer.addChecker(rights.ACTION_VIEW, ctxsetchecker.AnySetChecker)
         authorizer.rights.addActions(rights.ACTION_VIEW)
         authorizer.rights.addOptions(rights.ACTION_VIEW,[ authzrights.OPTION_ALL ])
         authorizer.rights.addContexts(rights.ACTION_VIEW,[ rights.CTX_VIEW, rights.CTX_VIEWGROUP ])
+        
+        self.views = viewdefinition.buildViewList(cfg)
+        
+        mfst = manifest.Manifest()
+        mfst.setProperty('start_time', time.asctime())
+    
+        if cfg.has_option(PLUGIN_CFG_BLOCK, WLCG_CONFIG_FILE):
+            mfst.setProperty('wlcg_config_file', cfg.get(PLUGIN_CFG_BLOCK, WLCG_CONFIG_FILE))
 
-        self.views = views
-
-        self.putChild('adminmanifest', adminmanifest.AdminManifestResource(urdb, authorizer, mfst))
-        self.putChild('machines', machineview.MachineListView(urdb, authorizer, mfst))
-        self.putChild('custom', CustomViewTopResource(urdb, authorizer, views))
-        if mfst.hasProperty(config.WLCG_CONFIG_FILE):
+        self.putChild('adminmanifest', adminmanifest.AdminManifestResource(self.urdb, authorizer, mfst))
+        self.putChild('machines', machineview.MachineListView(self.urdb, authorizer, mfst))
+        self.putChild('custom', CustomViewTopResource(self.urdb, authorizer, self.views))
+        
+        if mfst.hasProperty(WLCG_CONFIG_FILE):
             from sgas.viewengine import wlcgview
             self.putChild('wlcg', wlcgview.WLCGView(urdb, authorizer, mfst))
 

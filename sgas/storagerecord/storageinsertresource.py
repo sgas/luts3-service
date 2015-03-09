@@ -28,12 +28,15 @@ class StorageInsertChecker(ctxinsertchecker.InsertChecker):
     CONTEXT_KEY = CTX_STORAGE_SYSTEM
 
 class StorageUsageRecordInsertResource(GenericInsertResource):
+    
+    PLUGIN_ID   = 'sr'
+    PLUGIN_NAME = 'StorageRegistration'     
 
     authz_right = ACTION_STORAGE_INSERT
     insert_error_msg = 'Error during storage usage insert: %s'
     insert_authz_reject_msg = 'Rejecting storage usage insert for %s. No insert rights.'
     
-    def __init__(self, db, authorizer,views,mfst):
+    def __init__(self, cfg, db, authorizer):
         GenericInsertResource.__init__(self,db,authorizer)
         authorizer.addChecker(self.authz_right, StorageInsertChecker(authorizer.insert_check_depth))
         authorizer.rights.addActions(ACTION_STORAGE_INSERT)
