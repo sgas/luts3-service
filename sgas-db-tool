@@ -1,0 +1,385 @@
+#!/usr/bin/python
+
+"""
+Small tool for showing and removing entries in SGAS database.
+
+Author: Magnus Jonsson <magnus@hpc2n.umu.se>
+Copyright: NeIC 2015
+"""
+
+import types
+import decimal
+
+import psycopg2
+import psycopg2.extensions # not used, but enables tuple adaption
+# load the psycopg extras module
+import psycopg2.extras
+
+import sys, getopt
+
+from sgas.server import config
+
+DEFAULT_POSTGRESQL_PORT = 5432
+
+# Usage Records fields
+UR_FIELDS = ('record_id', 'create_time', 'global_user_name', 'vo_type', 'vo_issuer', 
+		    'vo_name', 'vo_attributes', 'machine_name', 'global_job_id', 'local_job_id', 
+		    'local_user', 'job_name', 'charge', 'status', 'queue', 'host', 'node_count', 
+		    'processors', 'project_name', 'submit_host', 'start_time', 'end_time', 
+		    'submit_time', 'cpu_duration', 'wall_duration', 'cpu_duration_scaled', 
+		    'wall_duration_scaled', 'user_time', 'kernel_time', 'major_page_faults', 
+		    'runtime_environments', 'exit_code', 'insert_host', 'insert_identity', 'insert_time')
+
+# Storage Records fields
+SR_FIELDS = ('record_id', 'create_time', 'storage_system', 'storage_share', 'storage_media',
+			'storage_class', 'file_count', 'directory_path', 'local_user', 'local_group',
+			'user_identity', 'group_identity', 'group_attribute', 'site', 'start_time',
+			'end_time', 'resource_capacity_used', 'logical_capacity_used', 'insert_host',
+			'insert_identity', 'insert_time')
+
+# defult location of sgas.conf (can be changed with -c option)
+conf = '/etc/sgas.conf'
+
+db   = None
+
+def options():
+	print "db-tool.py [options] <action> ..."
+	print "-h            help"
+	print "Available actions:"
+	print "   listur     list UR"
+	print "   showur     show UR"
+	print "   deleteur   delete UR"
+	print "   listsr     list SR"
+	print "   showsr     show SR"
+	print "   deletesr   delete SR"
+	print ""
+	print "Use <action> -h for more help"
+
+	
+def commandline(argv):
+	global conf
+
+	try:
+		opts, args = getopt.getopt(argv,"hc:",["conf="])
+	except getopt.GetoptError:
+		options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			options()
+			sys.exit()
+		elif opt in ("-c", "--conf"):
+			conf = arg
+	
+	return args
+
+
+def listsr_options():
+	print "listur options"
+	print "-h               help"
+	print "--output         output format. Standard python % output using field name for usagerecord view"
+	print "--start_time     starttime for record (will show SR within --start && --end) ISO-format"
+	print "--end_time       endtime for record (will show SR within --start && --end) ISO-format"
+	print "--storage_system name of storage system to list"
+	print "--site           site of project to list"
+
+    
+def listsr(argv):
+	output = "%(storage_system)-25s %(site)-15s %(start_time)-27s %(end_time)-27s %(record_id)-78s"
+	sql = 'SELECT * FROM storagerecords WHERE '
+	sqls = []
+	sqla = {}
+	try:
+		opts, args = getopt.getopt(argv,"h",["output=","start_time=","end_time=","machine_name=","project_name="])
+	except getopt.GetoptError:
+		listur_options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			listur_options()
+			sys.exit()
+		elif opt == '--output':
+			output = arg
+		elif opt == '--start_time':
+			sqls += ["end_time > %(endtime)s"]
+			sqla['endtime'] = arg
+		elif opt == '--end_time':
+			sqls += ["start_time > %(starttime)s"]
+			sqla['starttime'] = arg
+		elif out == '--storage_system':
+			sqls += ["storage_system = %(storage_system)s"]
+			sqla['storage_system'] = arg
+		elif out == '--site':
+			sqls += ["site = %(site)s"]
+			sqla['site'] = arg
+	
+	if not len(sqls):
+		print "No constraints given"
+		sys.exit(1)
+				
+	try:
+		cur = db.cursor()
+		cur.execute(sql + " AND ".join(sqls),sqla)
+	except psycopg2.Error as e:
+		print "DB Error: %s" % e
+		sys.exit(1)	
+	
+	map = {}
+	for t in SR_FIELDS:
+		map[t] = t
+	print output % map	
+	print "-" * len(output % map)
+			
+		
+	for row in cur.fetchall():
+		map= {}
+		for t in SR_FIELDS:
+			map[t] = row[0]
+			row = row[1:]
+		print output % map
+
+
+def showsr_options():
+	print "showur options <recordid(s)>"
+	print "-h               help"
+
+
+def showsr(argv):
+	output = "%(machine_name)-25s %(start_time)-27s %(end_time)-27s %(record_id)-78s"
+	sql = 'SELECT * FROM storagerecords WHERE '
+	try:
+		opts, args = getopt.getopt(argv,"h",[])
+	except getopt.GetoptError:
+		listur_options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			listur_options()
+			sys.exit()
+
+	for rid in args:
+		sqls = ["record_id = %(record_id)s"]
+		sqla = { 'record_id' : rid } 
+		try:
+			cur = db.cursor()
+			cur.execute(sql + " AND ".join(sqls),sqla)
+		except psycopg2.Error as e:
+			print "DB Error: %s" % e
+			sys.exit(1)
+	
+		for row in cur.fetchall():
+			for t in SR_FIELDS:
+				print "%-22s %s" % (t,row[0])
+				row = row[1:]				
+
+
+def deletesr_options():
+	print "deleteur options <recordid(s)>"
+	print "-h               help"
+
+
+def deletesr(argv):
+	sql = 'DELETE FROM storagedata WHERE '
+	try:
+		opts, args = getopt.getopt(argv,"h",[])
+	except getopt.GetoptError:
+		listur_options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			listur_options()
+			sys.exit()
+
+	for rid in args:
+		sqls = "record_id = %(record_id)s"
+		sqla = { 'record_id' : rid } 
+		try:
+			cur = db.cursor()
+			cur.execute("BEGIN")
+			cur.execute(sql + sqls,sqla)
+			if cur.rowcount == 0:
+				print "Record not found"
+				sys.exit(1)
+			cur.execute("ROLLBACK")
+		except psycopg2.Error as e:
+			print "DB Error: %s" % e
+			sys.exit(1)
+
+
+def listur_options():
+	print "listur options"
+	print "-h               help"
+	print "--output         output format. Standard python % output using field name for usagerecord view"
+	print "--start_time     starttime for record (will show UR within --start && --end) ISO-format"
+	print "--end_time       endtime for record (will show UR within --start && --end) ISO-format"
+	print "--machine_name   name of machine to show"
+	print "--project_name   name of project"
+
+
+def listur(argv):
+	output = "%(machine_name)-25s %(start_time)-27s %(end_time)-27s %(record_id)-78s"
+	sql = 'SELECT * FROM usagerecords WHERE '
+	sqls = []
+	sqla = {}
+	try:
+		opts, args = getopt.getopt(argv,"h",["output=","start_time=","end_time=","machine_name=","project_name="])
+	except getopt.GetoptError:
+		listur_options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			listur_options()
+			sys.exit()
+		elif opt == '--output':
+			output = arg
+		elif opt == '--start_time':
+			sqls += ["end_time > %(endtime)s"]
+			sqla['endtime'] = arg
+		elif opt == '--end_time':
+			sqls += ["start_time > %(starttime)s"]
+			sqla['starttime'] = arg
+		elif out == '--machine_name':
+			sqls += ["machine_name = %(machine_name)s"]
+			sqla['machinename'] = arg
+
+	if not len(sqls):
+		print "No constraints given"
+		sys.exit(1)
+			
+	try:
+		cur = db.cursor()
+		cur.execute(sql + " AND ".join(sqls),sqla)
+	except psycopg2.Error as e:
+		print "DB Error: %s" % e
+		sys.exit(1)
+		
+	map = {}
+	for t in UR_FIELDS:
+		map[t] = t
+	print output % map	
+	print "-" * len(output % map)
+				
+	for row in cur.fetchall():
+		map= {}
+		for t in UR_FIELDS:
+			map[t] = row[0]
+			row = row[1:]
+		print output % map
+
+
+def showur_options():
+	print "showur options <recordid(s)>"
+	print "-h               help"
+
+
+def showur(argv):
+	output = "%(machine_name)-25s %(start_time)-27s %(end_time)-27s %(record_id)-78s"
+	sql = 'SELECT * FROM usagerecords WHERE '
+	try:
+		opts, args = getopt.getopt(argv,"h",[])
+	except getopt.GetoptError:
+		listur_options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			listur_options()
+			sys.exit()
+
+	for rid in args:
+		sqls = ["record_id = %(record_id)s"]
+		sqla = { 'record_id' : rid } 
+		try:
+			cur = db.cursor()
+			cur.execute(sql + " AND ".join(sqls),sqla)
+		except psycopg2.Error as e:
+			print "DB Error: %s" % e
+			sys.exit(1)
+	
+		for row in cur.fetchall():
+			for t in UR_FIELDS:
+				print "%-20s %s" % (t,row[0])
+				row = row[1:]				
+
+
+def deleteur_options():
+	print "deleteur options <recordid(s)>"
+	print "-h               help"
+
+
+def deleteur(argv):
+	sql = 'DELETE FROM usagedata WHERE '
+	try:
+		opts, args = getopt.getopt(argv,"h",[])
+	except getopt.GetoptError:
+		listur_options()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			listur_options()
+			sys.exit()
+
+	for rid in args:
+		sqls = "record_id = %(record_id)s"
+		sqla = { 'record_id' : rid } 
+		try:
+			cur = db.cursor()
+			cur.execute("BEGIN")
+			cur.execute(sql + sqls,sqla)
+			if cur.rowcount == 0:
+				print "Record not found"
+				sys.exit(1)
+		except psycopg2.Error as e:
+			print "DB Error: %s" % e
+			sys.exit(1)			
+
+
+def actions(args):
+	
+	if not len(args):
+		print "No action given"
+		options()
+		sys.exit(1)
+		
+	action = args[0]
+	args = args[1:]
+	
+	if action == 'listur':
+		listur(args)
+	elif action == 'showur':
+		showur(args)
+	elif action == 'deleteur':
+		deleteur(args)
+	elif action == 'listsr':
+		listsr(args)
+	elif action == 'showsr':
+		showsr(args)
+	elif action == 'deletesr':
+		deletesr(args)
+	else:
+		print "Unknown action"
+		sys.exit(1)
+		
+	
+def connectDb(dbstring):
+	args = [ e or None for e in dbstring.split(':') ]
+	host, port, database, user, password = args[:5]
+    
+	if port is None:
+		port = DEFAULT_POSTGRESQL_PORT
+       
+	try:
+		return psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
+	except psycopg2.Error as e:
+		print "DB Error: %s" % e
+    	sys.exit(1)
+
+
+def main(argv):
+	global db
+	args = commandline(argv)
+	cfg = config.readConfig(conf)	
+	db = connectDb(cfg.get(config.SERVER_BLOCK,config.DB))
+	actions(args)
+
+if __name__ == "__main__":
+   main(sys.argv[1:])

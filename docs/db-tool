@@ -1,0 +1,6 @@
+sgas-db-tool is a simple command line utility to show and manage
+database entries (UR and SR records).
+
+Help how to use sgas-db-tool is best obtained using using:
+
+	sgas-db-tool -h
