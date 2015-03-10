@@ -17,7 +17,7 @@ import psycopg2.extensions # not used, but enables tuple adaption
 
 from sgas.authz import rights, ctxinsertchecker
 from sgas.generic.insertresource import GenericInsertResource
-from sgas.database import inserter, error as dberror
+from sgas.database import error as dberror
 from sgas.storagerecord import srsplitter, srparser, srconverter
 
 ACTION_STORAGE_INSERT   = 'storageinsert'
