@@ -60,7 +60,7 @@ class QueryResource(resource.Resource):
         authz_params = queryparser.filterAuthzParams(query_args)
 
         subject = resourceutil.getSubject(request)
-        if not self.authorizer.isAllowed(subject, rights.ACTION_QUERY, context=authz_params.items()):
+        if not self.authorizer.isAllowed(subject, ACTION_QUERY, context=authz_params.items()):
             request.setResponseCode(403) # forbidden
             return "Query not allowed for given context for identity %s" % subject
         # request allowed, continue
