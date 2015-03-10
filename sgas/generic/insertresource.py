@@ -14,7 +14,7 @@ from twisted.web import resource, server
 from sgas.ext.python import json
 from sgas.authz import rights
 from sgas.server import resourceutil
-from sgas.database import inserter, error as dberror
+from sgas.database import error as dberror
 
 
 
