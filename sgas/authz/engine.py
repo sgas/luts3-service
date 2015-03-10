@@ -74,7 +74,7 @@ class AuthorizationEngine:
         if len(action_authzgroup) == 1:
 
             action = action_authzgroup[0]
-            if not action in rights.ACTIONS:
+            if not action in self.rights.actions:
                 log.msg('Invalid authz action: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
                 return
 
