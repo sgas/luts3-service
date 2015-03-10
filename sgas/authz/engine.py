@@ -110,7 +110,7 @@ class AuthorizationEngine:
                         action_rights.addOption(option)
 
         else:
-            log.warning('Invalid authz group: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
+            log.msg('Invalid authz group: "%s", skipping entry.' % action_desc, system='sgas.Authorizer')
 
 
     def hasRelevantRight(self, subject, action):
