@@ -7,6 +7,8 @@ diffrent parts of SGAS/Luts as plugins loaded when needed.
 
 Added tool for basic UR/SR db maintainance.
 
+Added custom query interface from the SNIC/SAMS project.
+
 Some important upgrade notes:
 
 - Backward compatability view -> view:all and insert -> jobinsert in authz.conf are removed.

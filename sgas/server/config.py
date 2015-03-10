@@ -7,6 +7,8 @@ Copyright: Nordic Data Grid Facility (2009, 2010)
 
 import ConfigParser
 
+import re
+
 from sgas.ext.python import ConfigDict
 
 
@@ -66,6 +68,10 @@ class MultiLineFileReader:
     # implements the readline call for lines broken with \
     # readline is the only method called by configparser
     # so this is enough
+    # Also implements blocks for large queries
+    # If the option is "<<<" the parser will read until a
+    # line starting with "<<<" appears
+    # An exception is raised if
 
     def __init__(self, fp):
         self._fp = fp
@@ -74,6 +80,19 @@ class MultiLineFileReader:
 
         line = self._fp.readline()
 
+        # Multi line block
+        if line.rstrip().endswith('=<<<') and not line.lstrip().startswith("#"):
+            line = re.sub(r'<<<$',r'',line.rstrip())
+            while True:
+                cl = self._fp.readline().rstrip()
+                if not cl:
+                    raise ConfigurationError("ReadError: Reached end of file but found no <<<")
+                if cl.startswith("<<<"):
+                    break
+                line += cl + " "
+            return line.rstrip()
+
+        # Multi line
         while line.endswith('\\\n') or line.endswith('\\ \n'):
             if line.endswith('\\\n')  : i = -2
             if line.endswith('\\ \n') : i = -3
