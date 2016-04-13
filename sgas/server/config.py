@@ -86,7 +86,7 @@ class MultiLineFileReader:
             line = re.sub(r'<<<$',r'',line.rstrip())
             while True:
                 cl = self._fp.readline().rstrip()
-                if not cl:
+                if cl == None:
                     raise ConfigurationError("ReadError: Reached end of file but found no <<<")
                 if cl.startswith("<<<"):
                     break
