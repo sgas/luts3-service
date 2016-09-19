@@ -32,11 +32,15 @@ COLUMN_NAMES = {
     dataprocess.WALL_TIME               : 'Wall time',
     dataprocess.KSI2K_CPU_TIME          : 'KSI2K CPU time',
     dataprocess.KSI2K_WALL_TIME         : 'KSI2K wall time',
+    dataprocess.HS06_CPU_TIME           : 'HS06 CPU hours',
+    dataprocess.HS06_WALL_TIME          : 'HS06 wall hours',
     dataprocess.EFFICIENCY              : 'Job efficiency',
     dataprocess.CPU_EQUIVALENTS         : 'CPU node equivalents',
     dataprocess.WALL_EQUIVALENTS        : 'Wall node equivalents',
     dataprocess.KSI2K_CPU_EQUIVALENTS   : 'KSI2K CPU node equivalents',
-    dataprocess.KSI2K_WALL_EQUIVALENTS  : 'KSI2K Wall node equivalents'
+    dataprocess.KSI2K_WALL_EQUIVALENTS  : 'KSI2K Wall node equivalents',
+    dataprocess.HS06_CPU_EQUIVALENTS    : 'HS06 CPU node equivalents',
+    dataprocess.HS06_WALL_EQUIVALENTS   : 'HS06 Wall node equivalents'
 }
 
 
@@ -101,6 +105,7 @@ class WLCGBaseView(baseview.BaseView):
     split = None
     tier_based = False
     viewgroup = 'pub'
+    sort = staticmethod(sorted)
 
     def __init__(self, urdb, authorizer, mfst, path):
         self.path = path
@@ -109,6 +114,7 @@ class WLCGBaseView(baseview.BaseView):
         wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
         self.tier_mapping = wlcg_config['tier-mapping']
         self.tier_shares  = wlcg_config['tier-ratio']
+        self.hepspec06  = wlcg_config['hepspec06']
         self.default_tier = str(wlcg_config['default-tier'])
 
 
@@ -145,11 +151,11 @@ class WLCGBaseView(baseview.BaseView):
         #print "L1", len(wlcg_data)
         t_dataprocess_start = time.time()
         wlcg_records = dataprocess.rowsToDicts(wlcg_data)
-        wlcg_records = dataprocess.addMissingScaleValues(wlcg_records)
+        wlcg_records = dataprocess.addMissingScaleValues(wlcg_records, self.hepspec06)
         wlcg_records = dataprocess.collapseFields(wlcg_records, self.collapse)
         if self.tier_based:
             wlcg_records = dataprocess.tierMergeSplit(wlcg_records, self.tier_mapping, self.tier_shares, self.default_tier)
-            if self.split != dataprocess.TIER:
+            if not self.split:
                 wlcg_records = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, ) )
         # information on ops vo does not add any value
         wlcg_records = [ rec for rec in wlcg_records if rec[dataprocess.VO_NAME] != 'ops' ]
@@ -158,11 +164,11 @@ class WLCGBaseView(baseview.BaseView):
 
         sk = lambda key : dataprocess.sortKey(key, field_order=self.columns)
         if self.split is None:
-            wlcg_records = sorted(wlcg_records, key=sk)
+            wlcg_records = self.sort(wlcg_records, key=sk)
         else:
-            split_records = dataprocess.splitRecords(wlcg_records, dataprocess.TIER)
+            split_records = dataprocess.splitRecords(wlcg_records, self.split)
             for split_attr, records in split_records.items():
-                split_records[split_attr] = sorted(records, key=sk)
+                split_records[split_attr] = self.sort(records, key=sk)
 
         #print "L2", len(wlcg_records)
         t_dataprocess = time.time() - t_dataprocess_start
@@ -243,7 +249,7 @@ class WLCGTierMachineSplitView(WLCGBaseView):
 
     collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER )
     columns = [ dataprocess.HOST, dataprocess.VO_NAME, dataprocess.VO_ROLE,
-                dataprocess.N_JOBS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+                dataprocess.N_JOBS, dataprocess.HS06_WALL_TIME, dataprocess.HS06_CPU_TIME, dataprocess.HS06_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
     tier_based = True
     split = dataprocess.TIER
 
@@ -267,9 +273,11 @@ class WLCGUserView(WLCGBaseView):
 WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[dataprocess.KSI2K_WALL_EQUIVALENTS]
 WLCG_UNIT_MAPPING = {
     'ksi2k-ne' : WLCG_UNIT_MAPPING_DEFAULT,
-    'hs06-ne'  : lambda rec : rec[dataprocess.KSI2K_WALL_EQUIVALENTS] * 4,
+    'hs06-ne'  : lambda rec : rec[dataprocess.HS06_WALL_EQUIVALENTS],
+    'hs06-cpune'  : lambda rec : rec[dataprocess.HS06_CPU_EQUIVALENTS],
     'ksi2k-wallhours' : lambda rec : rec[dataprocess.KSI2K_WALL_TIME],
-    'hs06-wallhours'  : lambda rec : rec[dataprocess.KSI2K_WALL_TIME] * 4
+    'hs06-wallhours'  : lambda rec : rec[dataprocess.HS06_WALL_TIME],
+    'hs06-cpuhours'  : lambda rec : rec[dataprocess.HS06_CPU_TIME]
 }
 
 
@@ -287,6 +295,7 @@ class WLCGOversightView(baseview.BaseView):
         self.tier_mapping = wlcg_config['tier-mapping']
         self.tier_shares  = wlcg_config['tier-ratio']
         self.default_tier = wlcg_config['default-tier']
+        self.hepspec06  = wlcg_config['hepspec06']
 
 
     def render_GET(self, request):
@@ -334,7 +343,7 @@ class WLCGOversightView(baseview.BaseView):
         wlcg_records = [ rec for rec in wlcg_records if rec[dataprocess.VO_NAME] not in ('dteam', 'ops') ]
 
         # massage data
-        wlcg_records = dataprocess.addMissingScaleValues(wlcg_records)
+        wlcg_records = dataprocess.addMissingScaleValues(wlcg_records, self.hepspec06)
         wlcg_records = dataprocess.collapseFields(wlcg_records, self.collapse)
         wlcg_records = dataprocess.tierMergeSplit(wlcg_records, self.tier_mapping, self.tier_shares, self.default_tier)
         # role must be collapsed after split in order for the tier split to function
@@ -443,8 +452,8 @@ class WLCGOversightView(baseview.BaseView):
         end_date_option   = request.args.get('enddate', [''])[0]
 
         title = 'WLCG oversight view'
-        unit_options = [ ( 'ksi2k-ne', 'KSI2K Node Equivalents (default)') , ( 'hs06-ne', 'HS06 Node Equivalents' ),
-                         ( 'ksi2k-wallhours', 'KSI2K Walltime Hours' ) , ( 'hs06-wallhours', 'HS06 Walltime hours') ]
+        unit_options = [ ( 'hs06-cpuhours', 'HS06 CPUtime Hours' ), ( 'hs06-cpune', 'HS06 CPU node Equivalents' ),
+                         ( 'hs06-wallhours', 'HS06 Walltime hours'), ( 'hs06-ne', 'HS06 Wall Node Equivalents' )]
         unit_buttons = html.createRadioButtons('unit', unit_options, checked_value=unit)
         selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option, unit_buttons)
 
