@@ -77,7 +77,7 @@ class WLCGView(baseview.BaseView):
         subject = resourceutil.getSubject(request)
 
         # authz check
-        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
+        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg'), (rights.CTX_VIEWGROUP, 'pub') ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'WLCG view', subject)
 
@@ -99,6 +99,7 @@ class WLCGBaseView(baseview.BaseView):
     columns = []
     split = None
     tier_based = False
+    viewgroup = 'pub'
 
     def __init__(self, urdb, authorizer, mfst, path):
         self.path = path
@@ -114,7 +115,7 @@ class WLCGBaseView(baseview.BaseView):
         subject = resourceutil.getSubject(request)
 
         # authz check
-        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
+        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg'), (rights.CTX_VIEWGROUP, self.viewgroup) ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'WLCG %s view' % self.path, subject)
 
@@ -233,6 +234,7 @@ class WLCGFullTierView(WLCGBaseView):
     columns = [ dataprocess.TIER, dataprocess.VO_NAME, dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER,
                 dataprocess.N_JOBS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
     tier_based = True
+    viewgroup = 'restricted'
 
 
 
@@ -257,6 +259,7 @@ class WLCGUserView(WLCGBaseView):
     collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.HOST, dataprocess.VO_GROUP )
     columns = [ dataprocess.USER, dataprocess.VO_NAME, dataprocess.VO_ROLE, dataprocess.N_JOBS,
                 dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    viewgroup = 'restricted'
 
 
 
@@ -289,7 +292,7 @@ class WLCGOversightView(baseview.BaseView):
         subject = resourceutil.getSubject(request)
 
         # authz check
-        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
+        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg'), (rights.CTX_VIEWGROUP, 'pub') ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'WLCG oversight view', subject)
 
@@ -505,7 +508,7 @@ class WLCGStorageView(baseview.BaseView):
         subject = resourceutil.getSubject(request)
 
         # authz check
-        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg') ]
+        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg'), (rights.CTX_VIEWGROUP, 'pub') ]
         if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
             return self.renderAuthzErrorPage(request, 'WLCG Storage View', subject)
 
