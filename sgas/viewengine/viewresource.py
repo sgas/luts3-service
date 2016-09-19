@@ -65,7 +65,7 @@ class ViewTopResource(resource.Resource):
         
         if mfst.hasProperty(WLCG_CONFIG_FILE):
             from sgas.viewengine import wlcgview
-            self.putChild('wlcg', wlcgview.WLCGView(urdb, authorizer, mfst))
+            self.putChild('wlcg', wlcgview.WLCGView(db, authorizer, mfst))
 
 
     def render_GET(self, request):
