@@ -2,7 +2,8 @@
 WLCG View. Part of SGAS viewengine.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2011)
+        Erik Edelmann <edelmann@csc.fi>
+Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016)
 """
 
 import time
