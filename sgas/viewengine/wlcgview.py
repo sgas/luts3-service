@@ -733,13 +733,13 @@ class WLCGStorageView(baseview.BaseView):
                 ss.storage_share, sg.group_identity, storage_media, COALESCE(resource_capacity_used, 0) as r
             FROM
                 (SELECT %(timestamp)s::timestamp  AS sample) AS t
-                CROSS JOIN (SELECT DISTINCT storage_share  FROM storagerecords WHERE measure_time <= %(timestamp)s AND (measure_time + valid_duration * interval '1 seconds') >= %(timestamp)s) AS ss
-                CROSS JOIN (SELECT DISTINCT group_identity FROM storagerecords WHERE storage_system = 'dcache.ndgf.org' AND measure_time <= %(timestamp)s AND (measure_time + valid_duration * interval '1 seconds') >= %(timestamp)s) AS sg
-                LEFT OUTER JOIN storagerecords ON (measure_time <= t.sample AND measure_time + valid_duration * interval '1 seconds' >= t.sample AND
+                CROSS JOIN (SELECT DISTINCT storage_share  FROM storagerecords WHERE start_time <= %(timestamp)s AND end_time >= %(timestamp)s) AS ss
+                CROSS JOIN (SELECT DISTINCT group_identity FROM storagerecords WHERE storage_system = 'dcache.ndgf.org' AND start_time <= %(timestamp)s AND end_time >= %(timestamp)s) AS sg
+                LEFT OUTER JOIN storagerecords ON (start_time <= t.sample AND end_time >= t.sample AND
                                                    ss.storage_share = storagerecords.storage_share AND
                                                    sg.group_identity = storagerecords.group_identity)
             WHERE resource_capacity_used IS NOT NULL
-            ORDER BY t.sample, storage_system, ss.storage_share, storage_media, storage_class, sg.group_identity, measure_time DESC) as s
+            ORDER BY t.sample, storage_system, ss.storage_share, storage_media, storage_class, sg.group_identity, end_time DESC) as s
         GROUP BY s.storage_share, s.group_identity, storage_media
         ORDER BY s.storage_share, s.group_identity, storage_media;
     """
