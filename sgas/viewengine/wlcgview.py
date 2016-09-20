@@ -13,7 +13,7 @@ from wlcgsgas import query as wlcgquery, dataprocess
 
 from twisted.web import server
 
-from sgas.server import resourceutil
+from sgas.server import resourceutil, config
 from sgas.viewengine import html, htmltable, dateform, baseview, rights
 
 
@@ -59,6 +59,7 @@ class WLCGView(baseview.BaseView):
         baseview.BaseView.__init__(self, urdb, authorizer, manifest)
 
         self.subview = {
+            't1summary': ('WLCG T1 Summary', WLCGT1SummaryView(self.urdb, self.authorizer, self.manifest, 't1summary')),
             'machine'   : ('WLCG machine view', WLCGMachineView(self.urdb, self.authorizer, self.manifest, 'machine')),
             'vooversight': ('WLCG VO oversight view', WLCGVOOversightView(self.urdb, self.authorizer, self.manifest, 'vooversight')),
             'machinepermonth'   : ('WLCG machine per month view', WLCGMachinePerMonthView(self.urdb, self.authorizer, self.manifest, 'machinepermonth')),
@@ -520,6 +521,178 @@ class WLCGOversightView(baseview.BaseView):
                          ( 'hs06-wallhours', 'HS06 Walltime hours'), ( 'hs06-ne', 'HS06 Wall Node Equivalents' )]
         unit_buttons = html.createRadioButtons('unit', unit_options, checked_value=unit)
         selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option, unit_buttons)
+
+        quarters = dateform.generateFormQuarters()
+        quarter_links = []
+        for q in quarters:
+            year, quart = dateform.parseQuarter(q)
+            sd, ed = dateform.quarterStartEndDates(year, quart)
+            quarter_links.append(html.createLink('%s?startdate=%s&enddate=%s' % (self.path, sd, ed), q ) )
+        range_text = html.createParagraph('Date range: %s - %s (%s days)' % (start_date, end_date, days))
+
+        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
+        request.write( html.createTitle(title) )
+        request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(selector_form) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(range_text) )
+        request.write( table_content )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
+        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
+        request.write( html.HTML_VIEWBASE_FOOTER )
+
+        request.finish()
+        return server.NOT_DONE_YET
+
+
+
+class WLCGT1SummaryView(baseview.BaseView):
+    # This view is rather different than the others, so it is its own class
+
+    collapse = [ dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER ]
+
+    # Make a storage query that can be UNIONized with a WLCG_QUERY; Storage
+    # number will be stored in 'n_jobs'
+    storage_query = """
+    SELECT extract(YEAR FROM end_time)::integer  AS year,
+           extract(MONTH FROM end_time)::integer AS month,
+           'STORAGE' as machine_name,
+           CASE WHEN group_identity LIKE 'atlas-%%' THEN
+               'atlas'
+           ELSE 
+               group_identity 
+           END AS vo_name,
+           storage_media AS vo_group,
+           '' AS vo_role,
+           '' AS user_identity,
+           sum(resource_capacity_used) AS n_jobs,
+           0 AS cputime,
+           0 AS walltime,
+           0 AS cputime_scaled,
+           0 AS walltime_scaled
+     FROM storagerecords
+     WHERE end_time = (SELECT max(end_time) FROM storagerecords WHERE end_time >= %s AND end_time <= %s) AND
+           group_identity NOT IN ('atlas-no', 'atlas-dk')
+     GROUP BY end_time, storage_media, vo_name"""
+
+
+    def __init__(self, urdb, authorizer, mfst, path):
+        self.path = path
+        baseview.BaseView.__init__(self, urdb, authorizer, mfst)
+
+        wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
+        self.tier_mapping = wlcg_config['tier-mapping']
+        self.tier_shares  = wlcg_config['tier-ratio']
+        self.hepspec06  = wlcg_config['hepspec06']
+        self.default_tier = wlcg_config['default-tier']
+        
+        cfg = config.readConfig("/etc/sgas.conf") 
+        self.db_url = cfg.get(config.SERVER_BLOCK, config.DB)
+
+
+
+    def render_GET(self, request):
+        subject = resourceutil.getSubject(request)
+
+        # authz check
+        ctx = [ (rights.CTX_VIEWGROUP, 'wlcg'), (rights.CTX_VIEWGROUP, 'pub') ]
+        if not self.authorizer.isAllowed(subject, rights.ACTION_VIEW, ctx):
+            return self.renderAuthzErrorPage(request, 'WLCG T1 Summary', subject)
+
+        # access allowed
+        start_date, end_date = dateform.parseStartEndDates(request)
+
+        # set dates if not specified (defaults are current month, which is not what we want)
+        year, quart = dateform.currentYearQuart()
+        if not 'startdate' in request.args or request.args['startdate'] == ['']:
+            start_date, _ = dateform.quarterStartEndDates(year, quart)
+        if not 'enddate' in request.args or request.args['enddate'] == ['']:
+            _, end_date = dateform.quarterStartEndDates(year, quart)
+        if 'unit' in request.args and request.args['unit'][0] not in WLCG_UNIT_MAPPING:
+            return self.renderErrorPage('Invalid units parameters')
+        unit = request.args.get('unit', ['hs06-wallhours'])[0]
+
+        t_query_start = time.time()
+        d = self.retrieveWLCGData(start_date, end_date)
+        d.addCallback(self.renderWLCGViewPage, request, start_date, end_date, unit, t_query_start)
+        d.addErrback(self.renderErrorPage, request)
+        return server.NOT_DONE_YET
+
+
+    def retrieveWLCGData(self, start_date, end_date):
+
+        query = self.storage_query + ' UNION ' + wlcgquery.WLCG_QUERY
+
+        d = self.urdb.query(query, (start_date, end_date, start_date, end_date))
+        return d
+
+
+    def renderWLCGViewPage(self, wlcg_data, request, start_date, end_date, unit, t_query_start):
+
+        t_query = time.time() - t_query_start
+        days = dateform.dayDelta(start_date, end_date)
+        t_dataprocess_start = time.time()
+
+        wlcg_records = dataprocess.rowsToDicts(wlcg_data)
+        wlcg_records = [ r for r in wlcg_records if r[dataprocess.VO_NAME] in ('alice', 'atlas') ]
+
+        # Separate the records into computing and storage
+        comp_records = []
+        storage_records = []
+        for r in wlcg_records:
+            if r[dataprocess.HOST] == 'STORAGE':
+                storage_records.append(r)
+            else:
+                comp_records.append(r)
+
+        # massage data
+        comp_records = dataprocess.addMissingScaleValues(comp_records, self.hepspec06)
+        comp_records = dataprocess.collapseFields(comp_records, self.collapse)
+        comp_records = dataprocess.tierMergeSplit(comp_records, self.tier_mapping, self.tier_shares, self.default_tier)
+
+        # Collapse the fields that couldn't be collapsed before the tier-splitting.
+        comp_records = [ r for r in comp_records if r['tier'] == u'NDGF-T1' ]
+        comp_records = dataprocess.collapseFields(comp_records, [ dataprocess.VO_ROLE, dataprocess.HOST ])
+
+
+        summary = {}
+        for r in comp_records + storage_records:
+            vo = r[dataprocess.VO_NAME] 
+
+            if vo not in summary:
+                summary[vo] = {'disk':0.0, 'tape':0.0, dataprocess.KSI2K_WALL_TIME:0.0, dataprocess.KSI2K_CPU_TIME:0.0}
+            
+            if r.get(dataprocess.HOST, '') == 'STORAGE':
+                media = r['vo_group']                        # We stored "storage_media" in "vo_group" ...
+                summary[vo][media] += r[dataprocess.N_JOBS]  # ... and "resource_capacity_used" in "n_jobs". 
+            else:
+                summary[vo][dataprocess.KSI2K_WALL_TIME] += r[dataprocess.KSI2K_WALL_TIME]
+                summary[vo][dataprocess.KSI2K_CPU_TIME] += r[dataprocess.KSI2K_CPU_TIME]
+
+        columns = [("Walltime (HS06 days)", lambda r: r[dataprocess.KSI2K_WALL_TIME] * 4.0 / 24),
+                   ("CPUtime (HS06 days)",  lambda r: r[dataprocess.KSI2K_CPU_TIME] * 4.0 / 24),
+                   ("Disk (TiB)",           lambda r: r['disk'] / 1024.0**4),
+                   ("Tape (TiB)",           lambda r: r['tape'] / 1024.0**4)]
+
+        elements = []
+        for row in summary.keys():
+            for cname,cfunc in columns:
+                value = "%.2f" % cfunc(summary[row])
+                elements.append( ((cname,row), value))
+
+        t_dataprocess = time.time() - t_dataprocess_start
+
+        matrix = dict(elements)
+        table_content = htmltable.createHTMLTable(matrix, [c[0] for c in columns], summary.keys())
+
+        # render page
+        start_date_option = request.args.get('startdate', [''])[0]
+        end_date_option   = request.args.get('enddate', [''])[0]
+
+        title = 'WLCG T1 Summary'
+        selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option)
 
         quarters = dateform.generateFormQuarters()
         quarter_links = []
