@@ -60,6 +60,7 @@ class WLCGView(baseview.BaseView):
 
         self.subview = {
             'machine'   : ('WLCG machine view', WLCGMachineView(self.urdb, self.authorizer, self.manifest, 'machine')),
+            'machinepermonth'   : ('WLCG machine per month view', WLCGMachinePerMonthView(self.urdb, self.authorizer, self.manifest, 'machinepermonth')),
             'vo'        : ('WLCG VO view',      WLCGVOView(self.urdb, self.authorizer, self.manifest, 'vo')),
             'user'      : ('WLCG User view',    WLCGUserView(self.urdb, self.authorizer, self.manifest, 'user')),
             'tier'      : ('WLCG tier view',    WLCGTierView(self.urdb, self.authorizer, self.manifest, 'tier')),
@@ -260,6 +261,11 @@ class WLCGMachineView(WLCGBaseView):
     columns = [ dataprocess.HOST, dataprocess.VO_NAME, dataprocess.N_JOBS,
                 dataprocess.WALL_TIME, dataprocess.WALL_EQUIVALENTS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
 
+class WLCGMachinePerMonthView(WLCGBaseView):
+
+    collapse = ( dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER )
+    columns = [ dataprocess.YEAR, dataprocess.MONTH, dataprocess.HOST, dataprocess.VO_NAME, dataprocess.N_JOBS,
+                dataprocess.WALL_TIME, dataprocess.CPU_TIME, dataprocess.EFFICIENCY ]
 
 class WLCGUserView(WLCGBaseView):
 
