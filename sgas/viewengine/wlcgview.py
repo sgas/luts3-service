@@ -60,6 +60,7 @@ class WLCGView(baseview.BaseView):
 
         self.subview = {
             'machine'   : ('WLCG machine view', WLCGMachineView(self.urdb, self.authorizer, self.manifest, 'machine')),
+            'vooversight': ('WLCG VO oversight view', WLCGVOOversightView(self.urdb, self.authorizer, self.manifest, 'vooversight')),
             'machinepermonth'   : ('WLCG machine per month view', WLCGMachinePerMonthView(self.urdb, self.authorizer, self.manifest, 'machinepermonth')),
             'vo'        : ('WLCG VO view',      WLCGVOView(self.urdb, self.authorizer, self.manifest, 'vo')),
             'user'      : ('WLCG User view',    WLCGUserView(self.urdb, self.authorizer, self.manifest, 'user')),
@@ -204,7 +205,6 @@ class WLCGBaseView(baseview.BaseView):
         return server.NOT_DONE_YET
 
 
-
     def createTable(self, records, columns):
 
         row_names = range(0, len(records))
@@ -253,6 +253,64 @@ class WLCGTierMachineSplitView(WLCGBaseView):
                 dataprocess.N_JOBS, dataprocess.HS06_WALL_TIME, dataprocess.HS06_CPU_TIME, dataprocess.HS06_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
     tier_based = True
     split = dataprocess.TIER
+
+
+def sortAndSumByCountry(records, key):
+    """
+    Sort the records by country, and insert records representing sum over
+    the countries, and append a total sum at the end.
+
+    The argument 'key' is there for compatibility with the builtin function
+    'sorted' only.
+
+    """
+
+    countryCode = lambda x: x[dataprocess.HOST].split(".")[-1]
+
+    # Group records by country
+    rec = sorted(records, key=countryCode)
+
+    totalsum = {dataprocess.HOST: "ALL-TOTAL"}
+    countrysum = {}
+    n = 0
+    i = 0
+    while i < len(rec):
+        country = countryCode(rec[i]).upper() + "-TOTAL"
+
+        if dataprocess.HOST not in countrysum:
+            countrysum[dataprocess.HOST] = country
+
+        if countrysum[dataprocess.HOST] != country:
+            if n > 0: # '> 1' if we want sums only for multi-cluster countries
+                countrysum[dataprocess.EFFICIENCY] = int(100.0*countrysum[dataprocess.HS06_CPU_TIME]/countrysum[dataprocess.HS06_WALL_TIME])
+                rec.insert(i, countrysum)
+                i += 1
+            countrysum = {dataprocess.HOST: country}
+            n = 0
+
+        for key in rec[i]:
+            if key not in (dataprocess.HOST, dataprocess.TIER, dataprocess.EFFICIENCY):
+                val = rec[i][key]
+                countrysum[key] = countrysum.get(key, 0) + val
+                totalsum[key] = totalsum.get(key, 0) + val
+        n += 1
+        i += 1
+
+
+    countrysum[dataprocess.EFFICIENCY] = int(100.0*countrysum[dataprocess.HS06_CPU_TIME]/countrysum[dataprocess.HS06_WALL_TIME])
+    rec.append(countrysum)
+    totalsum[dataprocess.EFFICIENCY] = int(100.0*totalsum[dataprocess.HS06_CPU_TIME]/totalsum[dataprocess.HS06_WALL_TIME])
+    rec.append(totalsum)
+    return rec
+
+class WLCGVOOversightView(WLCGBaseView):
+
+    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER)
+    columns = [ dataprocess.HOST,
+                dataprocess.N_JOBS, dataprocess.HS06_WALL_TIME, dataprocess.HS06_CPU_TIME, dataprocess.HS06_CPU_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    tier_based = True
+    split = dataprocess.VO_NAME
+    sort = staticmethod(sortAndSumByCountry)
 
 
 class WLCGMachineView(WLCGBaseView):
