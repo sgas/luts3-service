@@ -55,8 +55,7 @@ class TopResource(resource.Resource):
 
     def render_GET(self, request):
         # No authz check, we allow everyone to fetch service list
-        #print "Host Header:", request.received_headers.get('host')
-        host = request.received_headers.get('host')
+        host = request.requestHeaders.getRawHeaders('host')[0]
         if not host:
             log.msg('Client did not send proper host header.', system='sgas.TopResource')
             return # FIXME this returns 500...
@@ -65,11 +64,11 @@ class TopResource(resource.Resource):
         # note: once loggers get updated to understands path referrel
         # (currently they only understand complete URLs) these hacks
         # can be removed - this will probably be in the beginning of 2011 :-)
-        if 'x-forwarded-port' in request.received_headers:
-            host += ':' + request.received_headers.get('x-forwarded-port')
+        if request.requestHeaders.hasHeader('x-forwarded-port'):
+            host += ':' + request.requestHeaders.getRawHeaders('x-forwarded-port')[0]
 
         is_secure = request.isSecure()
-        if request.received_headers.get('x-forwarded-protocol', '') == 'https':
+        if request.requestHeaders.getRawHeaders('x-forwarded-protocol', '')[0] == 'https':
             is_secure = True
 
         basepath = '/'.join(request.prepath)

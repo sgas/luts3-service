@@ -23,8 +23,10 @@ def getSubject(request):
     Utility method for extracting the subject name from a twisted.web.http.Request
     """
     # identity forwarded by reverse proxy
-    if request.getClientIP() in LOOPBACK_ADDRESSES and X_SSL_SUBJECT in request.received_headers:
-        return request.received_headers.get(X_SSL_SUBJECT)
+    if request.getClientIP() in LOOPBACK_ADDRESSES and request.requestHeaders.hasHeader(X_SSL_SUBJECT):
+        x = request.requestHeaders.getRawHeaders(X_SSL_SUBJECT)
+        log.msg("getSubject: Found '%s'" % str(x))
+        return x[0]
 
     # request wasn't secure or no certificate was presented
     return None
@@ -34,9 +36,9 @@ def getHostname(request):
     """
     Utility method for getting hostname of client.
     """
-    if request.getClientIP() in LOOPBACK_ADDRESSES and X_FORWARDED_FOR in request.received_headers:
+    if request.getClientIP() in LOOPBACK_ADDRESSES and request.requestHeaders.hasHeader(X_FORWARDED_FOR):
         # nginx typically returns ip addresses
-        addr = request.received_headers.get(X_FORWARDED_FOR)
+        addr = request.requestHeaders.getRawHeaders(X_FORWARDED_FOR)[0]
         if isIPAddress(addr):
             # we really shouldn't do such blocking calls in twisted,
             # but the twisted dns interface is rather terrible and
