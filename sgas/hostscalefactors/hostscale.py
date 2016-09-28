@@ -33,7 +33,7 @@ class HostScaleFactorUpdater(service.Service):
         
         for hostname in cfg.options(SCALE_BLOCK):
             try:
-                scale_factors[hostname] = cfg.getfloat(SCALE_BLOCK, hostname)
+                self.scale_factors[hostname] = cfg.getfloat(SCALE_BLOCK, hostname)
             except ValueError:
                 log.msg('Invalid scale factor value for entry: %s' % hostname, system='sgas.Setup')
 
