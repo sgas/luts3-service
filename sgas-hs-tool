@@ -1,0 +1,20 @@
+#!/usr/bin/python
+#
+
+"""
+A tool for managing hostscalingfactors in the SGAS db.
+
+Author: Erik Edelmann <edelmann@csc.fi>
+Copyright NeIC 2016
+"""
+
+import argparse
+
+argparser = argparse.ArgumentParser(description='Manage hostscaling factors in SGAS')
+argparser.add_argument('action', help='Action (set show del)')
+argparser.add_argument('machine_name', nargs='?', help="Machine name")
+argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
+
+args = argparser.parse_args()
+
+print args
