@@ -103,7 +103,42 @@ def set_factor(db, machine_name, time, factor):
         sys.exit(1)
 
 
+def del_factors(db, machine_name, time):
 
+    if not machine_name:
+        sys.stderr.write("ERROR: Machine_name must be given for action 'del'!\n")
+        sys.exit(1)
+
+    condition = "WHERE machine_name = '%s'" % machine_name
+
+    if time:
+        condition += " AND from_time = '%s'" % time
+
+    print "These host scale factors will be deleted:\n"
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT * FROM hostscalefactors %s;" % condition)
+    except psycopg2.Error as e:
+        sys.stderr.write("DB Error: %s\n" % e)
+        sys.exit(1)
+    for row in cur.fetchall():
+        machine_name = row[0]
+        scalefactor = row[1]
+        time = row[2]
+        print "%-40s  %7s    %s" % (machine_name, scalefactor, time)
+    print "\nProceed (y/n)?"
+    response = sys.stdin.readline()
+
+    if response not in ('y\n', 'Y\n'):
+        print "Aborting. Nothing deleted"
+        sys.exit(0)
+
+    try:
+        cur.execute("DELETE FROM hostscalefactors %s;" % condition)
+        db.commit()
+    except psycopg2.Error as e:
+        sys.stderr.write("DB Error: %s\n" % e)
+        sys.exit(1)
 
 
 
@@ -125,7 +160,7 @@ def main():
     elif args.action == 'set':
         set_factor(db, args.machine_name, args.time, args.factor)
     elif args.action == 'del':
-        del_factor(db, args.machine_name, args.time)
+        del_factors(db, args.machine_name, args.time)
     else:
         raise Exception("Huh?  We should never end up here!")
 
