@@ -16,7 +16,9 @@ from sgas.server import config
 
 
 DEFAULT_POSTGRESQL_PORT = 5432
+
 NOW = datetime.datetime.now()
+EPOCH = '1970-01-01 00:00:00'
 
 
 def connectDb(dbstring):
@@ -31,6 +33,7 @@ def connectDb(dbstring):
     except psycopg2.Error as e:
         print "DB Error: %s" % e
     sys.exit(1)
+
 
 
 def show_factors(db, machine_name, time):
@@ -48,7 +51,7 @@ def show_factors(db, machine_name, time):
         cur = db.cursor()
         cur.execute(query % (machine_requirement, time))
     except psycopg2.Error as e:
-        print "DB Error: %s" % e
+        sys.stderr.write("DB Error: %s\n" % e)
         sys.exit(1)
 
     for row in cur.fetchall():
@@ -58,11 +61,52 @@ def show_factors(db, machine_name, time):
         print "%-40s  %7s    %s" % (machine_name, scalefactor, time)
 
 
+def set_factor(db, machine_name, time, factor):
+
+    if not machine_name:
+        sys.stderr.write("ERROR: Machine_name must be given for action 'set'!\n")
+        sys.exit(1)
+
+    if not factor:
+        sys.stderr.write("ERROR: A scale factor must be given for action 'set'!\n")
+        sys.exit(1)
+
+    cur = db.cursor()
+
+    if not time:
+        # Use NOW by default, unless this is the first scale factor for this
+        # machine, in which case we use the Epoch instead.
+        try:
+            cur.execute("SELECT count(*) FROM hostscalefactors WHERE machine_name = '%s';" % machine_name)
+        except psycopg2.Error as e:
+            sys.stderr.write("DB Error: %s\n" % e)
+            sys.exit(1)
+        row = cur.fetchone()
+
+        if row[0] > 0:
+            time = NOW.isoformat()
+        else:
+            time = EPOCH
+
+    sql = "INSERT INTO hostscalefactors (machine_name, from_time, scale_factor) VALUES ('%s', '%s', %s);" % (machine_name, time, factor)
+    try:
+        cur.execute(sql)
+        db.commit()
+    except psycopg2.Error as e:
+        sys.stderr.write("DB Error: %s\n" % e)
+        sys.exit(1)
+
+
+
+
+
+
 
 def main():
     argparser = argparse.ArgumentParser(description='Manage hostscaling factors in SGAS')
     argparser.add_argument('action', choices=['set', 'show', 'del'], help='Action')
     argparser.add_argument('machine_name', nargs='?', help="Machine name")
+    argparser.add_argument('factor', nargs='?', help="Scale factor")
     argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
     argparser.add_argument('-c', '--conf', help="SGAS config file (default: /etc/sgas.conf)", default="/etc/sgas.conf")
 
@@ -74,7 +118,7 @@ def main():
     if args.action == 'show':
         show_factors(db, args.machine_name, args.time)
     elif args.action == 'set':
-        set_factor(db, args.machine_name, args.time)
+        set_factor(db, args.machine_name, args.time, args.factor)
     elif args.action == 'del':
         del_factor(db, args.machine_name, args.time)
     else:
