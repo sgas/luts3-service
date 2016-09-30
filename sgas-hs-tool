@@ -37,7 +37,12 @@ def connectDb(dbstring):
 
 
 def show_factors(db, machine_name, time):
-    query = "SELECT DISTINCT ON (machine_name) machine_name, scale_factor, from_time FROM hostscalefactors WHERE %s from_time <= '%s' ORDER BY machine_name, from_time DESC;"
+    query = """
+        SELECT DISTINCT ON (machine_name) machine_name, scale_factor, from_time
+        FROM hostscalefactors
+        WHERE %s from_time <= '%s'
+        ORDER BY machine_name, from_time DESC;
+        """
 
     if machine_name:
         machine_requirement = "machine_name = '%s' AND" % machine_name
@@ -88,14 +93,14 @@ def set_factor(db, machine_name, time, factor):
         else:
             time = EPOCH
 
-    sql = "INSERT INTO hostscalefactors (machine_name, from_time, scale_factor) VALUES ('%s', '%s', %s);" % (machine_name, time, factor)
+    sql = "INSERT INTO hostscalefactors (machine_name, from_time, scale_factor) VALUES ('%s', '%s', %s);" \
+        % (machine_name, time, factor)
     try:
         cur.execute(sql)
         db.commit()
     except psycopg2.Error as e:
         sys.stderr.write("DB Error: %s\n" % e)
         sys.exit(1)
-
 
 
 
