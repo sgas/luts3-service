@@ -662,17 +662,17 @@ class WLCGT1SummaryView(baseview.BaseView):
             vo = r[dataprocess.VO_NAME] 
 
             if vo not in summary:
-                summary[vo] = {'disk':0.0, 'tape':0.0, dataprocess.KSI2K_WALL_TIME:0.0, dataprocess.KSI2K_CPU_TIME:0.0}
+                summary[vo] = {'disk':0.0, 'tape':0.0, dataprocess.HS06_WALL_TIME:0.0, dataprocess.HS06_CPU_TIME:0.0}
             
             if r.get(dataprocess.HOST, '') == 'STORAGE':
                 media = r['vo_group']                        # We stored "storage_media" in "vo_group" ...
                 summary[vo][media] += r[dataprocess.N_JOBS]  # ... and "resource_capacity_used" in "n_jobs". 
             else:
-                summary[vo][dataprocess.KSI2K_WALL_TIME] += r[dataprocess.KSI2K_WALL_TIME]
-                summary[vo][dataprocess.KSI2K_CPU_TIME] += r[dataprocess.KSI2K_CPU_TIME]
+                summary[vo][dataprocess.HS06_WALL_TIME] += r[dataprocess.HS06_WALL_TIME]
+                summary[vo][dataprocess.HS06_CPU_TIME] += r[dataprocess.HS06_CPU_TIME]
 
-        columns = [("Walltime (HS06 days)", lambda r: r[dataprocess.KSI2K_WALL_TIME] * 4.0 / 24),
-                   ("CPUtime (HS06 days)",  lambda r: r[dataprocess.KSI2K_CPU_TIME] * 4.0 / 24),
+        columns = [("Walltime (HS06 days)", lambda r: r[dataprocess.HS06_WALL_TIME] / 24.0),
+                   ("CPUtime (HS06 days)",  lambda r: r[dataprocess.HS06_CPU_TIME] / 24.0),
                    ("Disk (TiB)",           lambda r: r['disk'] / 1024.0**4),
                    ("Tape (TiB)",           lambda r: r['tape'] / 1024.0**4)]
 
