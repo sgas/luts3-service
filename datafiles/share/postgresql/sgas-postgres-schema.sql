@@ -111,8 +111,10 @@ CREATE TABLE runtimeenvironment_usagedata (
 );
 
 CREATE TABLE hostscalefactors (
-    machine_name            varchar(200)    NOT NULL UNIQUE PRIMARY KEY,
-    scale_factor            float           NOT NULL
+    machine_name            varchar(200)    NOT NULL,
+    from_time               timestamp       NOT NULL,
+    scale_factor            float           NOT NULL,
+    PRIMARY KEY (machine_name, from_time)
 );
 
 
