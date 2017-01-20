@@ -70,6 +70,10 @@ class JobUsageRecordInsertResource(GenericInsertResource):
                                     insert_identity=insert_identity,
                                     insert_hostname=insert_hostname,
                                     insert_time=insert_time)
+
+            if 'machine_name' not in ur_doc:
+                raise Exception("UR %s from %s / %s has no machine_name" % (ur_doc['record_id'], insert_hostname, ur_doc['end_time']))
+
             ur_docs.append(ur_doc)
 
         # check authz
