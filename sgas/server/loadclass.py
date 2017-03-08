@@ -33,26 +33,27 @@ def loadClassType(cfg, log, type):
 def loadClass(cfg, log, plugin):
     section = "plugin:%s" % plugin
     if not section in cfg.sections(): 
-        log.msg("Plugin: %s can't be loaded :-( section x %s is missing" % (plugin, section), system='sgas.Setup')
+        log.msg("Plugin: %s can't be loaded :-( section %s is missing" % (plugin, section), system='sgas.Setup')
         return None
     if not config.PLUGIN_CLASS in cfg.options(section):
-        log.msg("Plugin: %s can't be loaded :-( option z %s is missing in %s" % (plugin, config.PLUGIN_CLASS, section), system='sgas.Setup')
+        log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_CLASS, section), system='sgas.Setup')
+        return None
+    if not config.PLUGIN_PACKAGE in cfg.options(section):
+        log.msg("Plugin: %s can't be loaded :-( option %s is missing in %s" % (plugin, config.PLUGIN_PACKAGE, section), system='sgas.Setup')
         return None
            
-    log.msg("Loading %s" % cfg.get(section,config.PLUGIN_CLASS), system='sgas.Setup')
-    
-    m = re.search(r'^(.*)\.([^\.]+)$',cfg.get(section,config.PLUGIN_CLASS))
+    m = re.search(r'^(.*)\.([^\.]+)$',cfg.get(section,config.PLUGIN_PACKAGE))
     if not m:
-        log.warning("Plugin: %s can't be loaded; the %s definition seems malformed in %s" % (plugin, config.PLUGIN_CLASS, section), system='sgas.Setup')
+        log.warning("Plugin: %s can't be loaded; the %s definition seems malformed in %s" % (plugin, config.PLUGIN_PACKAGE, section), system='sgas.Setup')
         return None
 
-    ppackage = m.group(1)
-    pclass = m.group(2)
+    ppackage = m.groups()
+    pclass = cfg.get(section,config.PLUGIN_CLASS)
               
     # import module
-    pluginModule = __import__(ppackage,globals(),locals(),[pclass])
+    pluginModule = __import__(ppackage[0],globals(),locals(),[ppackage[1]])
     
     # Create class
-    pluginClass = getattr(pluginModule,pclass)
+    pluginClass = getattr(getattr(pluginModule,ppackage[1]),pclass)
         
     return pluginClass

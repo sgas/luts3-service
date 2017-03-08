@@ -33,6 +33,7 @@ HOSTNAME_CHECK_WHITELIST = 'check_whitelist'
 # plugins
 PLUGINS          = 'plugins'
 PLUGIN_CLASS     = 'class'
+PLUGIN_PACKAGE   = 'package'
 PLUGIN_TYPE      = 'type'
 
 
