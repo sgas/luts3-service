@@ -41,8 +41,13 @@ def loadClass(cfg, log, plugin):
            
     log.msg("Loading %s" % cfg.get(section,config.PLUGIN_CLASS), system='sgas.Setup')
     
-    ppackage = re.search(r'^(.*)\.([^\.]+)$',cfg.get(section,config.PLUGIN_CLASS)).group(1)
-    pclass = re.search(r'^(.*)\.([^\.]+)$',cfg.get(section,config.PLUGIN_CLASS)).group(2)
+    m = re.search(r'^(.*)\.([^\.]+)$',cfg.get(section,config.PLUGIN_CLASS))
+    if not m:
+        log.warning("Plugin: %s can't be loaded; the %s definition seems malformed in %s" % (plugin, config.PLUGIN_CLASS, section), system='sgas.Setup')
+        return None
+
+    ppackage = m.group(1)
+    pclass = m.group(2)
               
     # import module
     pluginModule = __import__(ppackage,globals(),locals(),[pclass])
