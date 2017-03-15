@@ -13,6 +13,7 @@ from xml.etree import cElementTree as ET
 from twisted.python import log
 from twisted.web import resource
 
+from util import has_headers, get_headers
 
 
 XML_HEADER = '''<?xml version="1.0" encoding="UTF-8"?>'''
@@ -55,8 +56,7 @@ class TopResource(resource.Resource):
 
     def render_GET(self, request):
         # No authz check, we allow everyone to fetch service list
-        #print "Host Header:", request.received_headers.get('host')
-        host = request.received_headers.get('host')
+        host = get_headers(request, 'host')
         if not host:
             log.msg('Client did not send proper host header.', system='sgas.TopResource')
             return # FIXME this returns 500...
@@ -65,11 +65,11 @@ class TopResource(resource.Resource):
         # note: once loggers get updated to understands path referrel
         # (currently they only understand complete URLs) these hacks
         # can be removed - this will probably be in the beginning of 2011 :-)
-        if 'x-forwarded-port' in request.received_headers:
-            host += ':' + request.received_headers.get('x-forwarded-port')
+        if has_headers(request, 'x-forwarded-port'):
+            host += ':' + get_headers(request, 'x-forwarded-port')
 
         is_secure = request.isSecure()
-        if request.received_headers.get('x-forwarded-protocol', '') == 'https':
+        if get_headers(request, 'x-forwarded-protocol') == 'https':
             is_secure = True
 
         basepath = '/'.join(request.prepath)
