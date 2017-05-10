@@ -101,7 +101,10 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
             dls = []
             for dl in ur_doc['downloads']:
                 dla = dl.get('url'), dl.get('size'), dl.get('start_time'), dl.get('end_time'), dl.get('bypass_cache'), dl.get('from_cache')
-                dls.append(dla)
+                if not any(dla):
+                    log.msg("Got an empty download record for job %s; ignoring it" % ur_doc.get('global_job_id', '(unknown)'))
+                else:
+                    dls.append(dla)
             ur_doc['downloads'] = [ [ stringify(f) for f in e  ] for e in dls ]
 
         if 'uploads' in ur_doc:
