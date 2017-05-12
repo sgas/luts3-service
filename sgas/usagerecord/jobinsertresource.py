@@ -13,6 +13,7 @@ from twisted.python import log
 from twisted.enterprise import adbapi
 
 import time
+import re
 
 import psycopg2
 import psycopg2.extensions # not used, but enables tuple adaption
@@ -28,6 +29,8 @@ from sgas.usagerecord import updater
 ACTION_INSERT           = 'insert' # backwards compat
 ACTION_JOB_INSERT       = 'jobinsert'
 CTX_MACHINE_NAME        = 'machine_name'
+
+ARCID_RE = re.compile("[a-zA-Z]+://([-a-zA-Z0-9._]*)(:[0-9]+)?/[a-zA-Z0-9]+/([a-zA-Z0-9_-]+)")
 
 class JobInsertChecker(ctxinsertchecker.InsertChecker):
 
@@ -72,7 +75,18 @@ class JobUsageRecordInsertResource(GenericInsertResource):
                                     insert_time=insert_time)
 
             if 'machine_name' not in ur_doc:
-                raise Exception("UR %s from %s / %s has no machine_name" % (ur_doc['record_id'], insert_hostname, ur_doc['end_time']))
+
+                # Try to figure out the machine_name from the global_job_id
+                m = ARCID_RE.match(ur_doc.get('global_job_id'))
+                if m:
+                    machine_name = m.group(1)
+                    s = m.group(3)
+                    record_id = 'ur-' + machine_name + '-' + s
+                    log.msg("Job %s / %s had no machine_name; it will be assumed to be %s. Also, setting record_id to %s" % (ur_doc['record_id'], ur_doc['global_job_id'], machine_name, record_id))
+                    ur_doc['machine_name'] = machine_name
+                    ur_doc['record_id'] = record_id
+                else:
+                    raise Exception("UR %s / %s from %s at %s has no machine_name" % (ur_doc['record_id'], ur_doc.get('global_job_id'), insert_identity, ur_doc['end_time']))
 
             ur_docs.append(ur_doc)
 
