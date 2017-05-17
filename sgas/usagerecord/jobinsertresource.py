@@ -77,7 +77,7 @@ class JobUsageRecordInsertResource(GenericInsertResource):
             if 'machine_name' not in ur_doc:
 
                 # Try to figure out the machine_name from the global_job_id
-                m = ARCID_RE.match(ur_doc.get('global_job_id'))
+                m = ARCID_RE.match(ur_doc.get('global_job_id') or '')
                 if m:
                     machine_name = m.group(1)
                     s = m.group(3)
