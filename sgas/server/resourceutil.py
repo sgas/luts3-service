@@ -36,7 +36,7 @@ def getHostname(request):
     """
     Utility method for getting hostname of client.
     """
-    if request.getClientIP() in LOOPBACK_ADDRESSES and has_header(request, X_FORWARDED_FOR):
+    if request.getClientIP() in LOOPBACK_ADDRESSES and has_headers(request, X_FORWARDED_FOR):
         # nginx typically returns ip addresses
         addr = get_headers(request, X_FORWARDED_FOR)
         if isIPAddress(addr):
