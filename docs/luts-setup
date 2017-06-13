@@ -6,12 +6,11 @@ a mechanism for retrieving aggregated information from these.
 
 == Requirements ==
 
-* Python 2.6 (2.5 will probably work, but is not well tested)
-* Twisted Core and Web (http://twistedmatrix.com/)
+* Python (Tested with 2.7 - 2.6 may work, but that is untested. Python 3
+  most likely will not work)
+* Twisted Core and Web (12.x - previous versions may work too)
 * NginX 0.7.66 / 0.8.51 or later (http://nginx.org/)
-* PostgreSQL 8.4 as backend database (8.3 should work as well)
-
-For Python 2.5 you will need the simplejson module.
+* PostgreSQL 9.x as backend database (8.x may work as well)
 
 Debian/Ubuntu packages: python-twisted python-twisted-web nginx
 
