@@ -21,7 +21,8 @@ installing a newer version of NginX.
 
 The installation will have installed an NginX configuration file into
 /etc/nginx/sites-available. To enable this configuration symlink it from the
-NginX sites-enabled directory, typically located at /etc/nginx/sites-enabled.
+NginX sites-enabled directory, typically located at
+/etc/nginx/sites-enabled (e.g. Ubuntu) or /etc/nginx/conf.d (e.g. CentOS).
 
 You should to through the values in the installed configuration to see if they
 are correct. You will need to set the server_name option, which should be the
@@ -39,3 +40,8 @@ which is the NorduGrid CA. You may need to change this. It is possible to have
 multiple client CAs by catting several CA files together into one file (the CA
 files typically end with .0).
 
+If you have SELinux enabled, you may have to explicitely allow usage of
+some ports
+
+  sudo semanage port -a -t http_port_t  -p tcp 6143
+  sudo semanage port -a -t http_port_t  -p tcp 6180
