@@ -1,5 +1,18 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.8.1
+
+Bug fixes:
+
+- WLCG views: use start_- and end_time instead of "measured" for Storage queries
+
+- Fix host scale factors.
+
+- Fix a problem with loading plugins.
+
+- Support newer twisted versions (old should still work too)
+
+
 3.8.0
 
 Mostly refactorization of the code with added support for handling
