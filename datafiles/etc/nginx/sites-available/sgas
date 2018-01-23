@@ -17,7 +17,7 @@ server {
     ssl_verify_client on;
     ssl_verify_depth 3;
 
-    ssl_protocols  TLSv1;
+    ssl_protocols  TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
 
     client_max_body_size 2m;
 
