@@ -1,5 +1,13 @@
 SGAS Luts Server Change Log (from version 3.0.0 and onwords)
 
+3.8.x 
+
+- Add commented out config for newer NGINX (available in CentOS 7.4+). The
+_legacy variables are needed since the old variables changed from
+/O=Grid/CN=somewhere to CN=somewhere,O=Grid format, which SGAS does not like.
+
+
+
 3.8.1
 
 Bug fixes:
