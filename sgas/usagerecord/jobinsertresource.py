@@ -65,12 +65,21 @@ class JobUsageRecordInsertResource(GenericInsertResource):
 
         ur_docs = []
 
+        ur_errors = False
         for ur_element in ursplitter.splitURDocument(usagerecord_data):
             ur_doc = urparser.xmlToDict(ur_element,
                                     insert_identity=insert_identity,
                                     insert_hostname=insert_hostname,
                                     insert_time=insert_time)
+
+            if not ur_doc.get(CTX_MACHINE_NAME):
+                log.msg("ERROR: UR %s from %s doesn't have %s defined!" % (ur_doc.get("record_id"), ur_doc.get("insert_identity"), CTX_MACHINE_NAME))
+                ur_errors = True
+
             ur_docs.append(ur_doc)
+
+        if ur_errors:
+            raise Exception("There where faulty URs!")
 
         # check authz
         machine_names = set( [ doc.get(CTX_MACHINE_NAME) for doc in ur_docs ] )
