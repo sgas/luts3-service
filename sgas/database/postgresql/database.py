@@ -226,7 +226,7 @@ class PostgreSQLDatabase(service.MultiService):
 
 
     @defer.inlineCallbacks
-    def updateAggregator(self,aggregator,service=None,retry=False):
+    def updateAggregator(self,aggregator,service=None,retry=False,ndb=0):
         try:
             conn = adbapi.Connection(self.pool_proxy.dbpool)
             while True:
@@ -248,23 +248,39 @@ class PostgreSQLDatabase(service.MultiService):
                         log.msg('Aggregation(%s) updated: %s / %s' % (aggregator,insert_date, machine_name), system='sgas.AggregationUpdater')
                     if service and service.stopping:
                         break
-                except psycopg2.InterfaceError, e:
-                    # typically means we lost the connection due to a db restart
-                    if retry:
-                        log.msg('Reconnect in update failed, bailing out.', system='sgas.AggregationUpdater')
-                        raise
-                    else:
-                        log.msg('Got InterfaceError while attempting update: %s.' % str(e), system='sgas.AggregationUpdater')
-                        log.msg('Attempting reconnect.', system='sgas.AggregationUpdater')
-                        retry = True
-                        self.pool_proxy.reconnect()
-                except:
+                except Exception, e:
+                    log.msg("Rolling back, because some error occured: %s" % str(e), system='sgas.AggregationUpdater')
                     conn.rollback()
                     raise
 
+        except psycopg2.InterfaceError, e:
+            # typically means we lost the connection due to a db restart
+            if retry:
+                log.msg('Got interface error again!', system='sgas.AggregationUpdater')
+                if ndb < self.pool_proxy.nconnect-1:
+                    log.msg('Attempting to connect to another server .', system='sgas.AggregationUpdater')
+                    self.pool_proxy.reconnect(try_other_db = True)
+                    yield self.updateAggregator(aggregator, service, ndb=ndb+1)
+                else:
+                    log.msg('No more db servers to try!', system='sgas.AggregationUpdater')
+                    raise error.DatabaseUnavailableError(str(e))
+            else:
+                log.msg('Got InterfaceError while attempting update: %s.' % str(e), system='sgas.AggregationUpdater')
+                log.msg('Attempting reconnect.', system='sgas.AggregationUpdater')
+                self.pool_proxy.reconnect()
+                yield self.updateAggregator(aggregator, service, retry=True)
+
         except Exception, e:
-            log.err(e, system='sgas.AggregationUpdater')
-            raise
+            log.msg('Unexpected database error: %s' % str(e).split('\n')[0], system='sgas.AggregationUpdater')
+
+            if ndb < self.pool_proxy.nconnect-1:
+                log.msg('Attempting to connect to another server.', system='sgas.AggregationUpdater')
+                self.pool_proxy.reconnect(try_other_db = True)
+                yield self.updateAggregator(aggregator, service, retry=True, ndb=ndb+1)
+            else:
+                log.msg('No more db servers to try!', system='sgas.AggregationUpdater')
+                raise
+
 
         finally:
             conn.close()
