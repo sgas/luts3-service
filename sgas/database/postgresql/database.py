@@ -32,7 +32,8 @@ class _DatabasePoolProxy:
 
     def __init__(self, connect_info):
 
-        self.connect_info = connect_info
+        self.connect_info = connect_info.split(',')
+        self.nconnect = len(self.connect_info)
         self.dbpool = None
         self.reconnect()
 
@@ -45,14 +46,24 @@ class _DatabasePoolProxy:
         return adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
 
 
-    def reconnect(self):
+    def reconnect(self, try_other_db=False):
+
+        def rotate(a):
+            tmp = a[1:]
+            tmp.append(a[0])
+            return tmp
+
         # close dbpool before creating an new (to stop the threadpool mainly)
         if self.dbpool is not None:
             log.msg('Closing failed connection before reconnecting.', system='sgas.PostgreSQLDatabase')
             log.msg('This will likely cause psycopg2.InterfaceError, as the connection is half-closed.', system='sgas.PostgreSQLDatabase')
             self.dbpool.close()
 
-        self.dbpool = self._setupPool(self.connect_info)
+        if try_other_db:
+            self.connect_info = rotate(self.connect_info)
+
+        log.msg("(Re-)connecting to db %s." % self.connect_info[0], system="sgas.PostgreSQLDatabase")
+        self.dbpool = self._setupPool(self.connect_info[0])
 
 
 
@@ -110,7 +121,7 @@ class PostgreSQLDatabase(service.MultiService):
                 raise error.DatabaseUnavailableError(str(e))
 
     @defer.inlineCallbacks
-    def recordInserter(self, type, proc, arg_list, retry=False):
+    def recordInserter(self, type, proc, arg_list, retry=False, ndb=0):
         try:
             id_dict = {}
             conn = adbapi.Connection(self.pool_proxy.dbpool)
@@ -135,9 +146,20 @@ class PostgreSQLDatabase(service.MultiService):
                 raise
 
         except psycopg2.OperationalError, e:
-            if 'Connection refused' in str(e):
-                raise error.DatabaseUnavailableError(str(e))
-            raise # re-raise current exception
+
+            log.msg('Got Operational error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
+
+            if ndb < self.pool_proxy.nconnect-1:
+                log.msg('Attempting to connect to another server .', system='sgas.PostgreSQLDatabase')
+                self.pool_proxy.reconnect(try_other_db = True)
+                yield self.recordInserter(type, proc, arg_list, retry=retry, ndb=ndb+1)
+            else:
+                log.msg('No more db servers to try!', system='sgas.PostgreSQLDatabase')
+
+                if 'Connection refused' in str(e):
+                    raise error.DatabaseUnavailableError(str(e))
+                raise # re-raise current exception
+
         except psycopg2.InterfaceError, e:
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
@@ -151,9 +173,15 @@ class PostgreSQLDatabase(service.MultiService):
                 raise error.DatabaseUnavailableError(str(e))
 
         except Exception, e:
-            log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
-            log.err(e, system='sgas.PostgreSQLDatabase')
-            raise
+            log.msg('Unexpected database error: %s' % str(e).split('\n')[0], system='sgas.PostgreSQLDatabase')
+
+            if ndb < self.pool_proxy.nconnect-1:
+                log.msg('Attempting to connect to another server .', system='sgas.PostgreSQLDatabase')
+                self.pool_proxy.reconnect(try_other_db = True)
+                yield self.recordInserter(type, proc, arg_list, retry=retry, ndb=ndb+1)
+            else:
+                log.msg('No more db servers to try!', system='sgas.PostgreSQLDatabase')
+                raise
 
     @defer.inlineCallbacks
     def dictquery(self, query, query_args=None, retry=False):
