@@ -168,15 +168,22 @@ class PostgreSQLDatabase(service.MultiService):
                 log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
                 self.pool_proxy.reconnect()
                 yield self.recordInserter(type, proc, arg_list, retry=True)
+
             if retry:
-                log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
-                raise error.DatabaseUnavailableError(str(e))
+                log.msg('Got interface error again!', system='sgas.PostgreSQLDatabase')
+                if ndb < self.pool_proxy.nconnect-1:
+                    log.msg('Attempting to connect to another server .', system='sgas.PostgreSQLDatabase')
+                    self.pool_proxy.reconnect(try_other_db = True)
+                    yield self.recordInserter(type, proc, arg_list, retry=retry, ndb=ndb+1)
+                else:
+                    log.msg('No more db servers to try!', system='sgas.PostgreSQLDatabase')
+                    raise error.DatabaseUnavailableError(str(e))
 
         except Exception, e:
             log.msg('Unexpected database error: %s' % str(e).split('\n')[0], system='sgas.PostgreSQLDatabase')
 
             if ndb < self.pool_proxy.nconnect-1:
-                log.msg('Attempting to connect to another server .', system='sgas.PostgreSQLDatabase')
+                log.msg('Attempting to connect to another server.', system='sgas.PostgreSQLDatabase')
                 self.pool_proxy.reconnect(try_other_db = True)
                 yield self.recordInserter(type, proc, arg_list, retry=retry, ndb=ndb+1)
             else:
