@@ -61,6 +61,18 @@ def getHostname(request):
         return hostname
 
 
+def getCN(dn):
+    """
+    Get the CN part of a DN
+    """
+
+    fields = dn.split('/')
+    for f in fields:
+        if f[0:3] == 'CN=':
+            cn = f[3:]
+            return cn
+
+
 def isIPAddress(addr):
 
     if ip_matcher.match(addr):
