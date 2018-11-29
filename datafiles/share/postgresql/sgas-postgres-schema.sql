@@ -110,13 +110,25 @@ CREATE TABLE runtimeenvironment_usagedata (
     PRIMARY KEY (usagedata_id, runtimeenvironments_id)
 );
 
-CREATE TABLE hostscalefactors (
-    machine_name            varchar(200)    NOT NULL,
-    from_time               timestamp       NOT NULL,
-    scale_factor            float           NOT NULL,
-    PRIMARY KEY (machine_name, from_time)
+CREATE TABLE hostscalefactor_types (
+    id                      serial          NOT NULL PRIMARY KEY,
+    factor_type             varchar(200)    NOT NULL UNIQUE
 );
 
+CREATE TABLE hostscalefactor_type_default (
+        id      integer     REFERENCES hostscalefactor_types (id)
+);
+
+CREATE EXTENSION btree_gist;
+
+CREATE TABLE hostscalefactors_data (
+    machine_name_id         integer         NOT NULL REFERENCES machinename (id),
+    scalefactor_type_id     integer         NOT NULL REFERENCES hostscalefactor_types (id),
+    validity_period         tsrange         NOT NULL,
+    scale_factor            float           NOT NULL,
+    PRIMARY KEY (machine_name_id, scalefactor_type_id, validity_period),
+    EXCLUDE USING GIST (machine_name_id WITH =, scalefactor_type_id WITH =, validity_period WITH &&)
+);
 
 CREATE INDEX insert_time_date_hash_idx ON usagedata USING HASH (date(insert_time));
 
