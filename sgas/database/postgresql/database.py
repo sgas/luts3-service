@@ -145,7 +145,7 @@ class PostgreSQLDatabase(service.MultiService):
                 log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
                 log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
                 self.pool_proxy.reconnect()
-                yield self.insertJobUsageRecords(usagerecord_docs, retry=True)
+                yield self.recordInserter(type, proc, arg_list, retry=True)
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))

@@ -20,34 +20,40 @@ The [plugin:<pluginname>] part defines a unique name to the plugin.
 # Query interface
 # See docs/quert-interface for more information.
 [plugin:query]
-class=sgas.queryengine.queryresource.QueryResource
+package=sgas.queryengine.queryresource
+class=QueryResource
 type=site
 
 # Monitor interface
 # See docs/monitoring for more information.
 [plugin:monitor]
-class=sgas.generic.monitorresource.MonitorResource
+package=sgas.generic.monitorresource
+class=MonitorResource
 type=site
 
 # UsageRecords record insert interface
 [plugin:jobusagerecordinsert]
-class=sgas.usagerecord.jobinsertresource.JobUsageRecordInsertResource
+package=sgas.usagerecord.jobinsertresource
+class=JobUsageRecordInsertResource
 type=site
 
 # Storage records insert interface
 # See docs/storage for more information.
 [plugin:storageusagerecordinsert]
-class=sgas.storagerecord.storageinsertresource.StorageUsageRecordInsertResource
+package=sgas.storagerecord.storageinsertresource
+class=StorageUsageRecordInsertResource
 type=site
 
 # View interface
 # See docs/views for more information
 [plugin:view]
-class=sgas.viewengine.viewresource.ViewTopResource
+package=sgas.viewengine.viewresource
+class=ViewTopResource
 type=site
 
 # Host scale factors service
 # See docs/hostscaling for more information
 [plugin:hostscalefactors]
-class=sgas.hostscalefactors.hostscale.HostScaleFactorUpdater
+package=sgas.hostscalefactors.hostscale
+class=HostScaleFactorUpdater
 type=service

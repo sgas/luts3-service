@@ -71,7 +71,7 @@ class GenericInsertResource(resource.Resource):
         # request allowed, continue
 
         # hostname is used for logging / provenance in the usage records
-        hostname = resourceutil.getHostname(request)
+        hostname = resourceutil.getHostname(request) or resourceutil.getCN(subject)
 
         request.content.seek(0)
         data = request.content.read()

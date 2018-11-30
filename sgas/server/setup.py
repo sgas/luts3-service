@@ -9,7 +9,8 @@ from twisted.web import resource, server
 from sgas import __version__
 from sgas.authz import engine
 from sgas.server import config, messages, topresource, loadclass
-from sgas.database.postgresql import database as pgdatabase, hostscale
+from sgas.database.postgresql import database as pgdatabase
+from sgas.hostscalefactors import hostscale
 
 
 
