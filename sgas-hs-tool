@@ -1,10 +1,11 @@
 #!/usr/bin/python
+# vim: tw=0 ts=4 sw=4
 
 """
 A tool for managing hostscalingfactors in the SGAS db.
 
 Author: Erik Edelmann <edelmann@csc.fi>
-Copyright NeIC 2016
+Copyright NeIC 2016, 2018
 """
 
 import argparse
@@ -22,6 +23,26 @@ EPOCH = '1970-01-01 00:00:00'
 
 verbose = False
 
+def format_datetimerange(dtr):
+
+    dtformat = "%Y-%m-%d %H:%M:%S"
+
+    start_delim = "[ " if dtr.lower_inc else "( "
+    if dtr.lower:
+        start = dtr.lower.strftime(dtformat)
+    else:
+        start = ""
+
+    if dtr.upper:
+        end = dtr.upper.strftime(dtformat)
+    else:
+        end = ""
+
+    end_delim = " ]" if dtr.upper_inc else " )"
+
+    return "%s%-19s - %-19s%s" % (start_delim, start, end, end_delim)
+
+
 def connectDb(dbstring):
     args = [ e or None for e in dbstring.split(':') ]
     host, port, database, user, password = args[:5]
@@ -35,46 +56,49 @@ def connectDb(dbstring):
         sys.stderr.write("DB Error: %s\n" % e)
         sys.exit(1)
 
-def execute_sql(cur, sql):
+def execute_sql(cur, sql, args=()):
     if verbose:
-        sys.stderr.write("SQL: %s\n" % sql)
+        sys.stderr.write("SQL: %s\n" % (sql % args))
 
     try:
-        cur.execute(sql)
+        cur.execute(sql, args)
     except psycopg2.Error as e:
         sys.stderr.write("DB Error: %s\n" % e)
         sys.exit(1)
 
 
-def show_factors(db, machine_name, time):
+def show_factors(db, machine_name, time, factor_type):
     query = """
-        SELECT %s machine_name, scale_factor, from_time
-        FROM hostscalefactors
-        %s
-        ORDER BY machine_name, from_time DESC;
+        select m.machine_name, hs.validity_period, hs.scale_factor
+          from hostscalefactors_data hs
+          left join machinename m on m.id = hs.machine_name_id
+          left join hostscalefactor_types st on st.id = hs.scalefactor_type_id
+        where %s
+        order by m.machine_name, hs.validity_period;
         """
+    args = []
+
+    if factor_type != None:
+        condition = "st.factor_type = %s"
+        args.append(factor_type)
+    else:
+        condition = "hs.scalefactor_type_id = ( SELECT hostscalefactor_type_default.id FROM hostscalefactor_type_default LIMIT 1)"
 
     if machine_name:
-        conditions = " WHERE machine_name = '%s'" % machine_name
-    else:
-        conditions = ""
+        condition += " and m.machine_name = %s"
+        args.append(machine_name)
 
     if time:
-        distinct = "DISTINCT ON (machine_name)"
-        if condition:
-            conditions += " AND from_time < '%s'" % time
-        else:
-            conditions = " WHERE from_time < '%s'" % time
-    else:
-        distinct = ""
+        condition += " and %s::timestamp <@ hs.validity_period"
+        args.append(time)
 
     cur = db.cursor()
-    execute_sql(cur, query % (distinct, conditions))
+    execute_sql(cur, query % condition, args)
     for row in cur.fetchall():
         machine_name = row[0]
-        scalefactor = row[1]
-        time = row[2]
-        print "%-40s  %7s    %s" % (machine_name, scalefactor, time)
+        validity_period = format_datetimerange(row[1])
+        factor = row[2]
+        print "%-40s  %s  %s" % (machine_name, validity_period, factor)
 
 
 def set_factor(db, machine_name, time, factor):
@@ -141,6 +165,7 @@ def main():
     argparser.add_argument('machine_name', nargs='?', help="Machine name")
     argparser.add_argument('factor', nargs='?', help="Scale factor")
     argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
+    argparser.add_argument('-f', '--factortype', help="Factor type")
     argparser.add_argument('-c', '--conf', help="SGAS config file (default: /etc/sgas.conf)", default="/etc/sgas.conf")
     argparser.add_argument('-V', '--verbose', help="More output", action='store_true')
 
@@ -153,7 +178,7 @@ def main():
     db = connectDb(cfg.get(config.SERVER_BLOCK,config.DB))
 
     if args.action == 'show':
-        show_factors(db, args.machine_name, args.time)
+        show_factors(db, args.machine_name, args.time, args.factortype)
     elif args.action == 'set':
         set_factor(db, args.machine_name, args.time, args.factor)
     elif args.action == 'del':
