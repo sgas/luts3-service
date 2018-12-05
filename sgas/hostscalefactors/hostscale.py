@@ -5,7 +5,8 @@ This module will connect to the database (once available), and update the
 scaling factors, in the database.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2010)
+        Erik Edelmann <erik.edelmann@ndgf.org>
+Copyright: Nordic Data Grid Facility (2010), NeIC (2018)
 """
 
 from twisted.python import log
