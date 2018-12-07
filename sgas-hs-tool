@@ -101,14 +101,14 @@ def show_factors(db, machine_name, time, factor_type):
         print "%-40s  %s  %s" % (machine_name, validity_period, factor)
 
 
-def set_factor(db, machine_name, time, factor):
+def add_factor(db, machine_name, time, factor):
 
     if not machine_name:
-        sys.stderr.write("ERROR: Machine_name must be given for action 'set'!\n")
+        sys.stderr.write("ERROR: Machine_name must be given for action 'add'!\n")
         sys.exit(1)
 
     if not factor:
-        sys.stderr.write("ERROR: A scale factor must be given for action 'set'!\n")
+        sys.stderr.write("ERROR: A scale factor must be given for action 'add'!\n")
         sys.exit(1)
 
     cur = db.cursor()
@@ -161,7 +161,7 @@ def del_factors(db, machine_name, time):
 
 def main():
     argparser = argparse.ArgumentParser(description='Manage hostscaling factors in SGAS')
-    argparser.add_argument('action', choices=['set', 'show', 'del'], help='Action')
+    argparser.add_argument('action', choices=['add', 'show', 'del'], help='Action')
     argparser.add_argument('machine_name', nargs='?', help="Machine name")
     argparser.add_argument('factor', nargs='?', help="Scale factor")
     argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
@@ -179,8 +179,8 @@ def main():
 
     if args.action == 'show':
         show_factors(db, args.machine_name, args.time, args.factortype)
-    elif args.action == 'set':
-        set_factor(db, args.machine_name, args.time, args.factor)
+    elif args.action == 'add':
+        add_factor(db, args.machine_name, args.time, args.factor)
     elif args.action == 'del':
         del_factors(db, args.machine_name, args.time)
     else:
