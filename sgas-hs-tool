@@ -10,37 +10,47 @@ Copyright NeIC 2016, 2018
 
 import argparse
 import psycopg2
-import datetime
+from psycopg2.extras import DateTimeRange
+from datetime import datetime
 import sys
 
 from sgas.server import config
-
+from sgas.util.dtrparser import parse_datetimerange, tuple2str
 
 DEFAULT_POSTGRESQL_PORT = 5432
 
-NOW = datetime.datetime.now()
+#NOW = datetime.now()
 EPOCH = '1970-01-01 00:00:00'
+DTFORMAT = "%Y-%m-%d %H:%M:%S"
 
 verbose = False
 
-def format_datetimerange(dtr):
 
-    dtformat = "%Y-%m-%d %H:%M:%S"
+def format_datetimerange(dtr):
 
     start_delim = "[ " if dtr.lower_inc else "( "
     if dtr.lower:
-        start = dtr.lower.strftime(dtformat)
+        start = dtr.lower.strftime(DTFORMAT)
     else:
         start = ""
 
     if dtr.upper:
-        end = dtr.upper.strftime(dtformat)
+        end = dtr.upper.strftime(DTFORMAT)
     else:
         end = ""
 
     end_delim = " ]" if dtr.upper_inc else " )"
 
-    return "%s%-19s - %-19s%s" % (start_delim, start, end, end_delim)
+    return "%s%-19s , %-19s%s" % (start_delim, start, end, end_delim)
+
+
+def form_dtr(lower, upper, lower_inc, upper_inc):
+    #print "form_dtr: %s, %s, %s %s" % (lower, upper, lower_inc, upper_inc)
+    #dtl = datetime.strptime(DTFORMAT, tl) if tl else None
+    #dtu = datetime.strptime(DTFORMAT, tu) if tu else None
+    lim = '[' if lower_inc else '('
+    lim += ']' if upper_inc else ')'
+    return DateTimeRange(lower, upper, lim)
 
 
 def connectDb(dbstring):
@@ -101,31 +111,102 @@ def show_factors(db, machine_name, time, factor_type):
         print "%-40s  %s  %s" % (machine_name, validity_period, factor)
 
 
-def add_factor(db, machine_name, time, factor):
+def add_factor(db, machine_name, timerange, factortype, factor):
 
-    if not machine_name:
-        sys.stderr.write("ERROR: Machine_name must be given for action 'add'!\n")
-        sys.exit(1)
+    def get_factor_types(cur):
+        factor_types = {}
+        execute_sql(cur, "select * from hostscalefactor_types;")
+        for row in cur.fetchall():
+            factor_type_id = row[0]
+            factor_type = row[1]
+            factor_types[factor_type] = factor_type_id
 
-    if not factor:
-        sys.stderr.write("ERROR: A scale factor must be given for action 'add'!\n")
-        sys.exit(1)
+        return factor_types
+
+    def get_machines(cur):
+        machines = {}
+        execute_sql(cur, "select * from machinename;")
+        for row in cur.fetchall():
+            machinname_id = row[0]
+            machine_name = row[1]
+            machines[machine_name] = machinname_id
+        return machines
+
 
     cur = db.cursor()
 
-    if not time:
-        # Use NOW by default, unless this is the first scale factor for this
-        # machine, in which case we use the Epoch instead.
-        execute_sql(cur, "SELECT count(*) FROM hostscalefactors WHERE machine_name = '%s';" % machine_name)
-        row = cur.fetchone()
-        if row[0] > 0:
-            time = NOW.isoformat()
-        else:
-            time = EPOCH
+    machines = get_machines(cur)
+    if not machine_name:
+        raise Exception("No machine_name given for action 'add'")
+    if machine_name not in machines:
+        raise Exception("Unknown machine_name: '%s'" % machine_name)
 
-    sql = "INSERT INTO hostscalefactors (machine_name, from_time, scale_factor) VALUES ('%s', '%s', %s);" \
-        % (machine_name, time, factor)
-    execute_sql(cur, sql)
+    if not factor:
+        raise Exception("No scale factor given for action 'add'")
+
+    factor_types = get_factor_types(cur)
+    if factortype not in factor_types:
+        raise Exception("Unknown factor type: '%s'" % factortype)
+
+    machine_id = machines[machine_name]
+    factortype_id = factor_types[factortype]
+    sql = """select id, validity_period
+             from hostscalefactors_data
+             where machine_name_id = %s and scalefactor_type_id = %s and validity_period && %s
+             order by validity_period;"""
+    execute_sql(cur,sql,(machine_id, factortype_id, timerange))
+
+    if cur.rowcount == 0:
+        # Phiew - no overlapping timeranges!
+        if verbose:
+            print "Adding factor %s for machine %s, factor type '%s', time period %s"\
+                  % (factor, machine_name, factortype, format_datetimerange(timerange))
+
+        sql = "insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor) values (%i, %i, %s, %f);"
+        execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
+    elif cur.rowcount == 1:
+        # 1 overlapping timerange; see if we can resolve the conflict
+
+        row = cur.fetchone()
+        old_factor_id = row[0]
+        old_timerange = row[1]
+
+        if not old_timerange.upper and timerange.lower and (timerange.lower > old_timerange.lower or (not old_timerange.lower)):
+
+            # insert the new factor definition after (time-wise) the old one
+            mod_timerange = form_dtr(old_timerange.lower, timerange.lower, old_timerange.lower_inc, not timerange.lower_inc)
+
+        elif not old_timerange.lower and timerange.upper and (timerange.upper < old_timerange.upper or (not old_timerange.upper)):
+
+            # insert the new factor definition before (time-wise) the old one
+            mod_timerange = form_dtr(timerange.upper, old_timerange.upper, not timerange.upper_inc, old_timerange.upper_inc)
+
+        else:
+            raise Exception("New factor for machine '%s', factor type '%s', time range %s would overlap with factor definition %i"\
+                            % (machine_name, factortype, format_datetimerange(timerange), old_factor_id))
+
+
+        if verbose:
+            print "Changing validity period of factor def %i from %s to %s"\
+                  % (old_factor_id, format_datetimerange(old_timerange), format_datetimerange(mod_timerange))
+        execute_sql(cur, "update hostscalefactors_data set validity_period = %s where id = %s;", (mod_timerange, old_factor_id))
+
+        if verbose:
+            print "Adding factor %s for machine %s, factor type '%s', time period %s"\
+                  % (factor, machine_name, factortype, format_datetimerange(timerange))
+        sql = "insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor) values (%s, %s, %s, %s);"
+        execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
+
+
+    else:
+        # cur.rowcount() > 1 - several overlapping timeranges. Can't resolve that
+        conflict_ids = []
+        for row in cur.fetchall():
+            conflict_ids.append(row[0])
+        raise Exception("New factor for machine '%s', factor type '%s', time range %s would overlap with factor definitions %s"\
+                        % (machine_name, factortype, format_datetimerange(timerange), tuple2str(conflict_ids)))
+
+
     db.commit()
 
 
@@ -165,6 +246,7 @@ def main():
     argparser.add_argument('machine_name', nargs='?', help="Machine name")
     argparser.add_argument('factor', nargs='?', help="Scale factor")
     argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
+    argparser.add_argument('-r', '--timerange', help="Timerange in format  [|( [YYYY-MM-DD[ hh:mm:ss]], [YYYY-MM-DD[ hh:mm:ss] ]|), e.g. '( , 2018-10-11)' = until (but not including) 2018-10-11")
     argparser.add_argument('-f', '--factortype', help="Factor type")
     argparser.add_argument('-c', '--conf', help="SGAS config file (default: /etc/sgas.conf)", default="/etc/sgas.conf")
     argparser.add_argument('-V', '--verbose', help="More output", action='store_true')
@@ -180,7 +262,8 @@ def main():
     if args.action == 'show':
         show_factors(db, args.machine_name, args.time, args.factortype)
     elif args.action == 'add':
-        add_factor(db, args.machine_name, args.time, args.factor)
+        timerange = parse_datetimerange(args.timerange or '(,)')
+        add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '')
     elif args.action == 'del':
         del_factors(db, args.machine_name, args.time)
     else:
@@ -189,3 +272,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# vim: tw=0 ts=4 sw=4
