@@ -115,7 +115,7 @@ def show_factors(db, machine_name, time, factor_type):
         print "%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id)
 
 
-def add_factor(db, machine_name, timerange, factortype, factor):
+def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
 
     def get_factor_types(cur):
         factor_types = {}
@@ -143,7 +143,12 @@ def add_factor(db, machine_name, timerange, factortype, factor):
     if not machine_name:
         raise Exception("No machine_name given for action 'add'")
     if machine_name not in machines:
-        raise Exception("Unknown machine_name: '%s'" % machine_name)
+        if add_machine:
+            print "Machine %s unknown - adding to db" % machine_name
+            execute_sql(cur, "insert into machinename (machine_name) values (%s);", (machine_name,))
+            machines = get_machines(cur)
+        else:
+            raise Exception("Unknown machine_name: '%s'" % machine_name)
 
     if not factor:
         raise Exception("No scale factor given for action 'add'")
@@ -253,6 +258,7 @@ def main():
     argparser.add_argument('action', choices=['add', 'show', 'del'], help='Action')
     argparser.add_argument('-i', '--definition_ids', help="Comma separated list of scale factor definition ids")
     argparser.add_argument('-m', '--machine_name', help="Machine name")
+    argparser.add_argument('-a', '--add_machine', action='store_true', help="Add machine name to db if unknown when adding a factor")
     argparser.add_argument('-f', '--factor', help="Scale factor")
     argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
     argparser.add_argument('-r', '--timerange', help="Timerange in format  [|( [YYYY-MM-DD[ hh:mm:ss]], [YYYY-MM-DD[ hh:mm:ss] ]|), e.g. '( , 2018-10-11)' = until (but not including) 2018-10-11")
@@ -273,7 +279,7 @@ def main():
     elif args.action == 'add':
         timerange = parse_datetimerange(args.timerange or '(,)')
         try:
-            add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '')
+            add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '', args.add_machine)
         except Exception, e:
             sys.stderr.write("Error adding new factor: %s\n" % e)
             sys.exit(1)
