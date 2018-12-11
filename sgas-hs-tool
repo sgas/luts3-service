@@ -227,6 +227,9 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
 
 def del_factors(db, def_ids):
 
+    if not def_ids:
+        raise Exception("No scale factor definition ids given")
+
     print "These host scale factors will be deleted:\n"
     cur = db.cursor()
     sql = """
@@ -299,7 +302,11 @@ def main():
             sys.exit(1)
 
     elif args.action == 'del':
-        del_factors(db, def_ids)
+        try:
+            del_factors(db, def_ids)
+        except Exception, e:
+            sys.stderr.write("Deleting scale factor definitions failed: %s\n" % e)
+            sys.exit(1)
 
     else:
         raise Exception("Huh?  We should never end up here!")
