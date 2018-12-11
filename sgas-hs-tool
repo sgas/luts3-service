@@ -77,7 +77,7 @@ def execute_sql(cur, sql, args=()):
         sys.exit(1)
 
 
-def show_factors(db, machine_name, time, factor_type):
+def show_factors(db, machine_name, time, factor_type, def_ids):
     args = []
 
     if factor_type != None:
@@ -93,6 +93,10 @@ def show_factors(db, machine_name, time, factor_type):
     if time:
         condition += " and %s::timestamp <@ hs.validity_period"
         args.append(time)
+
+    if def_ids:
+        condition += " and hs.id in %s"
+        args.append(tuple(def_ids))
 
     cur = db.cursor()
     query = """
@@ -271,11 +275,21 @@ def main():
     global verbose
     verbose = args.verbose
 
+    if args.definition_ids:
+        try:
+            def_ids = [ int(s) for s in args.definition_ids.split(',') ]
+        except ValueError, e:
+            sys.stderr.write("Can't parse the definition ids: %s\n" % e)
+            sys.exit(1)
+    else:
+        def_ids = None
+
     cfg = config.readConfig(args.conf)
     db = connectDb(cfg.get(config.SERVER_BLOCK,config.DB))
 
     if args.action == 'show':
-        show_factors(db, args.machine_name, args.time, args.factortype)
+        show_factors(db, args.machine_name, args.time, args.factortype, def_ids)
+
     elif args.action == 'add':
         timerange = parse_datetimerange(args.timerange or '(,)')
         try:
@@ -283,13 +297,8 @@ def main():
         except Exception, e:
             sys.stderr.write("Error adding new factor: %s\n" % e)
             sys.exit(1)
-    elif args.action == 'del':
-        try:
-            def_ids = [ int(s) for s in args.definition_ids.split(',') ]
-        except ValueError, e:
-            sys.stderr.write("Can't parse the definition ids: %s\n" % e)
-            sys.exit(1)
 
+    elif args.action == 'del':
         del_factors(db, def_ids)
 
     else:
