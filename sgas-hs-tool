@@ -162,7 +162,8 @@ def add_factor(db, machine_name, timerange, factortype, factor):
             print "Adding factor %s for machine %s, factor type '%s', time period %s"\
                   % (factor, machine_name, factortype, format_datetimerange(timerange))
 
-        sql = "insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor) values (%i, %i, %s, %f);"
+        sql = """insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor)
+                                values (%s, %s, %s, %s);"""
         execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
     elif cur.rowcount == 1:
         # 1 overlapping timerange; see if we can resolve the conflict
