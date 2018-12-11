@@ -195,7 +195,8 @@ def add_factor(db, machine_name, timerange, factortype, factor):
         if verbose:
             print "Adding factor %s for machine %s, factor type '%s', time period %s"\
                   % (factor, machine_name, factortype, format_datetimerange(timerange))
-        sql = "insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor) values (%s, %s, %s, %s);"
+        sql = """insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor)
+                                values (%s, %s, %s, %s);"""
         execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
 
 
@@ -205,7 +206,7 @@ def add_factor(db, machine_name, timerange, factortype, factor):
         for row in cur.fetchall():
             conflict_ids.append(row[0])
         raise Exception("New factor for machine '%s', factor type '%s', time range %s would overlap with factor definitions %s"\
-                        % (machine_name, factortype, format_datetimerange(timerange), tuple2str(conflict_ids)))
+                        % (machine_name, factortype, format_datetimerange(timerange), tuple2str(conflict_ids, "and")))
 
 
     db.commit()
@@ -264,7 +265,11 @@ def main():
         show_factors(db, args.machine_name, args.time, args.factortype)
     elif args.action == 'add':
         timerange = parse_datetimerange(args.timerange or '(,)')
-        add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '')
+        try:
+            add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '')
+        except Exception, e:
+            sys.stderr.write("Error adding new factor: %s\n" % e)
+            sys.exit(1)
     elif args.action == 'del':
         del_factors(db, args.machine_name, args.time)
     else:

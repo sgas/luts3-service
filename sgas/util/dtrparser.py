@@ -33,7 +33,7 @@ def parse_datetime(s):
     return dt
 
 
-def tuple2str(t):
+def tuple2str(t, conjunction="or"):
     if len(t) == 0:
         return ''
     else:
@@ -41,7 +41,7 @@ def tuple2str(t):
         i = 1
         while i < len(t):
             if i == len(t) - 1:
-                s += " or '%s'" % str(t[i])
+                s += " %s '%s'" % (conjunction, str(t[i]))
             else:
                 s += ", '%s'" % str(t[i])
             i += 1
