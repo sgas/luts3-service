@@ -122,11 +122,11 @@ CREATE TABLE hostscalefactor_type_default (
 CREATE EXTENSION btree_gist;
 
 CREATE TABLE hostscalefactors_data (
+    id                      serial          NOT NULL PRIMARY KEY,
     machine_name_id         integer         NOT NULL REFERENCES machinename (id),
-    scalefactor_type_id     integer         NOT NULL REFERENCES hostscalefactor_types (id),
+    scalefactor_type_id     integer         NOT NULL REFERENCES hostscalefactor_types(id),
     validity_period         tsrange         NOT NULL,
     scale_factor            float           NOT NULL,
-    PRIMARY KEY (machine_name_id, scalefactor_type_id, validity_period),
     EXCLUDE USING GIST (machine_name_id WITH =, scalefactor_type_id WITH =, validity_period WITH &&)
 );
 
