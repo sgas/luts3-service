@@ -78,14 +78,6 @@ def execute_sql(cur, sql, args=()):
 
 
 def show_factors(db, machine_name, time, factor_type):
-    query = """
-        select m.machine_name, hs.validity_period, hs.scale_factor
-          from hostscalefactors_data hs
-          left join machinename m on m.id = hs.machine_name_id
-          left join hostscalefactor_types st on st.id = hs.scalefactor_type_id
-        where %s
-        order by m.machine_name, hs.validity_period;
-        """
     args = []
 
     if factor_type != None:
@@ -103,7 +95,15 @@ def show_factors(db, machine_name, time, factor_type):
         args.append(time)
 
     cur = db.cursor()
-    execute_sql(cur, query % condition, args)
+    query = """
+        select m.machine_name, hs.validity_period, hs.scale_factor
+          from hostscalefactors_data hs
+          left join machinename m on m.id = hs.machine_name_id
+          left join hostscalefactor_types st on st.id = hs.scalefactor_type_id
+        where """ + condition + """
+        order by m.machine_name, hs.validity_period;
+        """
+    execute_sql(cur, query, tuple(args))
     for row in cur.fetchall():
         machine_name = row[0]
         validity_period = format_datetimerange(row[1])
