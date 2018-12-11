@@ -216,25 +216,27 @@ def add_factor(db, machine_name, timerange, factortype, factor):
     db.commit()
 
 
-def del_factors(db, machine_name, time):
-
-    if not machine_name:
-        sys.stderr.write("ERROR: Machine_name must be given for action 'del'!\n")
-        sys.exit(1)
-
-    condition = "WHERE machine_name = '%s'" % machine_name
-
-    if time:
-        condition += " AND from_time = '%s'" % time
+def del_factors(db, def_ids):
 
     print "These host scale factors will be deleted:\n"
     cur = db.cursor()
-    execute_sql(cur, "SELECT * FROM hostscalefactors %s;" % condition)
+    sql = """
+        select hs.id, m.machine_name, hs.validity_period, hs.scale_factor
+          from hostscalefactors_data hs
+          left join machinename m on m.id = hs.machine_name_id
+          left join hostscalefactor_types st on st.id = hs.scalefactor_type_id
+        where hs.id in %s
+        order by hs.id;
+    """
+    execute_sql(cur, sql, (tuple(def_ids),))
+    print "%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id")
+    print "-----------------------------------------------------------------------------------------------------------------"
     for row in cur.fetchall():
-        machine_name = row[0]
-        scalefactor = row[1]
-        time = row[2]
-        print "%-40s  %7s    %s" % (machine_name, scalefactor, time)
+        hs_id = row[0]
+        machine_name = row[1]
+        validity_period = format_datetimerange(row[2])
+        factor = row[3]
+        print "%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id)
     print "\nProceed (y/n)?"
 
     response = sys.stdin.readline()
@@ -242,20 +244,21 @@ def del_factors(db, machine_name, time):
         print "Aborting. Nothing deleted"
         sys.exit(0)
 
-    execute_sql(cur, "DELETE FROM hostscalefactors %s;" % condition)
+    execute_sql(cur, "DELETE FROM hostscalefactors_data where id in %s;", (tuple(def_ids),))
     db.commit()
 
 
 def main():
     argparser = argparse.ArgumentParser(description='Manage hostscaling factors in SGAS')
     argparser.add_argument('action', choices=['add', 'show', 'del'], help='Action')
-    argparser.add_argument('machine_name', nargs='?', help="Machine name")
-    argparser.add_argument('factor', nargs='?', help="Scale factor")
+    argparser.add_argument('-i', '--definition_ids', help="Comma separated list of scale factor definition ids")
+    argparser.add_argument('-m', '--machine_name', help="Machine name")
+    argparser.add_argument('-f', '--factor', help="Scale factor")
     argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
     argparser.add_argument('-r', '--timerange', help="Timerange in format  [|( [YYYY-MM-DD[ hh:mm:ss]], [YYYY-MM-DD[ hh:mm:ss] ]|), e.g. '( , 2018-10-11)' = until (but not including) 2018-10-11")
-    argparser.add_argument('-f', '--factortype', help="Factor type")
+    argparser.add_argument('-T', '--factortype', help="Factor type")
     argparser.add_argument('-c', '--conf', help="SGAS config file (default: /etc/sgas.conf)", default="/etc/sgas.conf")
-    argparser.add_argument('-V', '--verbose', help="More output", action='store_true')
+    argparser.add_argument('-V', '--verbose', help="More output (SQL queries being run, etc)", action='store_true')
 
     args = argparser.parse_args()
 
@@ -275,7 +278,14 @@ def main():
             sys.stderr.write("Error adding new factor: %s\n" % e)
             sys.exit(1)
     elif args.action == 'del':
-        del_factors(db, args.machine_name, args.time)
+        try:
+            def_ids = [ int(s) for s in args.definition_ids.split(',') ]
+        except ValueError, e:
+            sys.stderr.write("Can't parse the definition ids: %s\n" % e)
+            sys.exit(1)
+
+        del_factors(db, def_ids)
+
     else:
         raise Exception("Huh?  We should never end up here!")
 
