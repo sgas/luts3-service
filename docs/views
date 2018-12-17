@@ -41,7 +41,7 @@ viewgroup       Comma-seperated list of groups which can access the view.
 type            The type of graph. Valid options:
                 lines, columns, stacked_columns, grouped_columns, scatterplot
 drawtable       Explicetely render or disable table. Valid values: "true" or "false".
-drawgraph       Explicitely render/disable table. Valid values: "true" or "false".
+drawgraph       Explicitely render or disable graph. Valid values: "true" or "false".
 description     Free form string describing the view.
 query           The query send to the database for data retrieval. Note that the data must
                 follow the specific format of the view type in order to make sense.
