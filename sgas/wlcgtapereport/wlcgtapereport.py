@@ -102,7 +102,7 @@ class WLCGTapeReport(resource.Resource):
             report = {
                 "storageservice": {
                     "name": "NDGF-T1-Tape",
-                    "implementation": "DCAHCE",
+                    "implementation": "DCACHE",
                     "implementationversion": self.dcache_version,
                     "latestupdate": latestupdate,
                     "storageshares": storageshares
