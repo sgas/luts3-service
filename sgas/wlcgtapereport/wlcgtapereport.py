@@ -91,10 +91,10 @@ class WLCGTapeReport(resource.Resource):
             for r in rows:
                 if r["vo"] not in WLCG_VOs: continue
 
-                used_gb = r["used_bytes"]/GIGA
-                ss = { "name": r["vo"],
-                       "usedsize": used_gb,
-                       "occupiedsize": used_gb,
+                used_bytes_rounded = int(r["used_bytes"]/GIGA) * GIGA # In bytes, rounded to GBs
+                ss = { "name": r["vo"].upper(),
+                       "usedsize": used_bytes_rounded,
+                       "occupiedsize": used_bytes_rounded,
                        "timestamp": now,
                        "vos": [ r["vo"] ] }
                 storageshares.append(ss)
