@@ -86,6 +86,12 @@ class WLCGTapeReport(resource.Resource):
                 if v:
                     self.dcache_version = v
                     self.dcache_version_lastcheck = now
+                else:
+                    if self.dcache_version:
+                        log.msg("WARNING: Didn't get dCache version information, will rely on old info (%s)" \
+                                % self.dcache_version)
+                    else:
+                        log.msg("WARNING: Didn't get dCache version information, and no old info to use!")
 
             storageshares = []
             for r in rows:
