@@ -2,12 +2,6 @@
 A plugin to implement WLCG Tape reporting according to
 https://twiki.cern.ch/twiki/bin/view/HEPTape/TapeMetricsJSON
 
-Additional comment by Oxana (2019-03-18):
-"Regarding the tape usage, the only mandatory metrics are ‘usedsize’ and
-‘occupied’ size. If the latter is impossible to calculate at the moment,
-I guess it wouldn’t be too bad if at the beginning it was set to be equal
-to ‘usedsize’. All the other metrics are optional, but desirable." 
-
 Author: Erik Edelmann <edelmann@csc.fi>
 Copyright: Nordic e-Infrastructure Collaboration (2019)
 """
@@ -47,13 +41,10 @@ group by
 
 
 def find_dcache_version():
-    # This function is ugly beyond imagination, but it's good enough for
-    # now
     import subprocess
 
     curl = subprocess.Popen(['curl', '-k', '-v', 'https://dav.ndgf.org/'],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout,stderr = curl.communicate()
     for x in stdout.splitlines():
         if x[:16] == "< Server: dCache":
