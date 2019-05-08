@@ -81,7 +81,7 @@ def shouldRenderTable(view, n_batches, n_groups):
 def shouldRenderGraph(view):
 
     if view.drawgraph is not None:
-        return view.drawtable
+        return view.drawgraph
     else:
         return True
 
