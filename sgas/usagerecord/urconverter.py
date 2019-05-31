@@ -64,7 +64,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
             lji = ur_doc['local_job_id']
             # heuristic for checking for bad local job id
             # AFAIK this catches all the bad local job ids i've seen so far, with no false positives
-            if len(lji) > 40 or lji.startswith('/'):
+            if len(lji) > 80 or lji.startswith('/'):
                 ur_doc['local_job_id'] = None
                 # the record id is typically machine_name:local_job_id, so we need to change that as well
                 old_record_id = ur_doc['record_id']
@@ -75,7 +75,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
                     # if no global job id is avalable, use the createtime as it is fairly unique and required to exist
                     ur_doc['record_id'] = ur_doc.get('machine_name', '') + ':' + ur_doc.get('create_time', '')
                 # finally, log that the heuristic was used
-                log.msg('HEURISTIC IN USE. Removed LocalJobId and rewrote recordId from %s to %s' % (old_record_id, ur_doc['record_id']))
+                log.msg('HEURISTIC IN USE. Removed LocalJobId ("%s") and rewrote recordId from %s to %s' % (lji, old_record_id, ur_doc['record_id']))
         # end hack :-)
 
         # from version 3.5 the db schema only does integers
