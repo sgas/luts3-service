@@ -100,6 +100,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
         if 'downloads' in ur_doc:
             dls = []
             for dl in ur_doc['downloads']:
+                if not dl: continue
                 dla = dl.get('url'), dl.get('size'), dl.get('start_time'), dl.get('end_time'), dl.get('bypass_cache'), dl.get('from_cache')
                 dls.append(dla)
             ur_doc['downloads'] = [ [ stringify(f) for f in e  ] for e in dls ]
@@ -107,6 +108,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
         if 'uploads' in ur_doc:
             uls = []
             for ul in ur_doc['uploads']:
+                if not ul: continue
                 ula = ul.get('url'), ul.get('size'), ul.get('start_time'), ul.get('end_time')
                 uls.append(ula)
             ur_doc['uploads'] = [ [ stringify(f) for f in e  ] for e in uls ]
