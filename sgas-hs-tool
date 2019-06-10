@@ -67,11 +67,14 @@ def connectDb(dbstring):
         sys.exit(1)
 
 def execute_sql(cur, sql, args=()):
+
+    q = cur.mogrify(sql,args)
+
     if verbose:
-        sys.stderr.write("SQL: %s\n" % (sql % args))
+        sys.stderr.write("SQL: %s\n" % q)
 
     try:
-        cur.execute(sql, args)
+        cur.execute(q)
     except psycopg2.Error as e:
         sys.stderr.write("DB Error: %s\n" % e)
         sys.exit(1)
@@ -167,7 +170,7 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
              from hostscalefactors_data
              where machine_name_id = %s and scalefactor_type_id = %s and validity_period && %s
              order by validity_period;"""
-    execute_sql(cur,sql,(machine_id, factortype_id, timerange))
+    execute_sql(cur,sql)
 
     if cur.rowcount == 0:
         # Phiew - no overlapping timeranges!
