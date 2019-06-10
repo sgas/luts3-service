@@ -64,7 +64,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
             lji = ur_doc['local_job_id']
             # heuristic for checking for bad local job id
             # AFAIK this catches all the bad local job ids i've seen so far, with no false positives
-            if len(lji) > 80 or lji.startswith('/'):
+            if len(lji) > 120 or lji.startswith('/'):
                 ur_doc['local_job_id'] = None
                 # the record id is typically machine_name:local_job_id, so we need to change that as well
                 old_record_id = ur_doc['record_id']
