@@ -16,6 +16,27 @@ from twisted.web import server
 from sgas.server import resourceutil, config
 from sgas.viewengine import html, htmltable, dateform, baseview, rights
 
+# Mapping for more readable column names
+COLUMN_NAMES = {
+    wlcg.YEAR                    : 'Year',
+    wlcg.MONTH                   : 'Month',
+    wlcg.TIER                    : 'Tier',
+    wlcg.MACHINE_NAME            : 'Host',
+    wlcg.VO_NAME                 : 'VO',
+    wlcg.VO_GROUP                : 'VO Group',
+    wlcg.VO_ROLE                 : 'VO Role',
+    wlcg.USER                    : 'User',
+    wlcg.N_JOBS                  : 'Job count',
+    wlcg.CPU_SECONDS             : 'CPU hours',   # (We change time units ...)
+    wlcg.CORE_SECONDS            : 'Wall hours',  # Yeah, I know ... but sombody decided calling it "Wall", so we'll keep it
+    wlcg.CPU_SECONDS_HS06        : 'HS06 CPU hours',
+    wlcg.CORE_SECONDS_HS06       : 'HS06 wall hours',
+    wlcg.EFFICIENCY              : 'Job efficiency',
+    #wlcg.CPU_EQUIVALENTS        : 'CPU node equivalents',
+    wlcg.CORE_EQUIVALENTS        : 'Wall node equivalents',
+    wlcg.HS06_CPU_EQUIVALENTS    : 'HS06 CPU node equivalents',
+    wlcg.HS06_CORE_EQUIVALENTS   : 'HS06 Wall node equivalents'
+}
 
 def _formatValue(v):
     if type(v) is float:
@@ -24,7 +45,7 @@ def _formatValue(v):
         return v
 
 
-def sortKey(record, field_order):
+def _sortKey(record, field_order):
     """
     Given a record, returns a key usable for sorting.
     """
@@ -33,6 +54,24 @@ def sortKey(record, field_order):
         if f in record:
             attrs.append(record[f])
     return tuple(attrs)
+
+
+def _changeUnits(records):
+    """
+    Efficiency -> %
+    Seconds -> hours
+    """
+    time_columns = (wlcg.CPU_SECONDS, wlcg.CORE_SECONDS, wlcg.CPU_SECONDS_HS06, wlcg.CORE_SECONDS_HS06)
+
+    for r in records:
+        if wlcg.EFFICIENCY in r:
+            r[wlcg.EFFICIENCY] *= 100
+
+        for c in time_columns:
+            if c in r:
+                r[c] /= 3600
+
+    return records
 
 
 class WLCGView(baseview.BaseView):
@@ -89,7 +128,8 @@ class WLCGBaseView(baseview.BaseView):
 
     group_by = []
     columns = []
-    vo_list = None
+    vo_list = ('atlas', 'alice', 'cms')
+    split = None
     tier_based = False
     viewgroup = 'pub'
     sort = staticmethod(sorted)
@@ -97,7 +137,7 @@ class WLCGBaseView(baseview.BaseView):
     def __init__(self, urdb, authorizer, mfst, path):
         self.path = path
         baseview.BaseView.__init__(self, urdb, authorizer, mfst)
-        wlcgdb = wlcg.WLCG(urdb)
+        self.wlcgdb = wlcg.WLCG(urdb)
 
 
     def render_GET(self, request):
@@ -131,10 +171,12 @@ class WLCGBaseView(baseview.BaseView):
 
         t_dataprocess_start = time.time()
 
-        sk = lambda key : sortKey(key, field_order=self.columns)
+        wlcg_records = wlcg.rowsToDicts(wlcg_data, self.columns)
+        wlcg_records = _changeUnits(wlcg_records)
+
+        sk = lambda key : _sortKey(key, field_order=self.columns)
         wlcg_records = self.sort(wlcg_records, key=sk)
 
-        #print "L2", len(wlcg_records)
         t_dataprocess = time.time() - t_dataprocess_start
 
         if self.split is None:
@@ -183,26 +225,26 @@ class WLCGBaseView(baseview.BaseView):
 
 class WLCGVOView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
+    group_by = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
     columns = [ wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.MACHINE_NAME, 
-                wlcg.N_JOBS, wlcg.WALL_SECONDS, wlcg.WALL_EQUIVALENTS,
-                wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.WALL_SECONDS, wlcg.CORE_EQUIVALENTS,
+                wlcg.WALL_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
 
 
 class WLCGTierView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
+    group_by = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
     columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_ROLE,
-                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
 
 
 
 class WLCGFullTierView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH )
+    group_by = ( wlcg.YEAR, wlcg.MONTH )
     columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER,
-                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     viewgroup = 'restricted'
 
@@ -210,9 +252,9 @@ class WLCGFullTierView(WLCGBaseView):
 
 class WLCGTierMachineSplitView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
+    group_by = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
     columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_ROLE,
-                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     split = wlcg.TIER
 
@@ -267,7 +309,7 @@ def sortAndSumByCountry(records, key):
 
 class WLCGVOOversightView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER)
+    group_by = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER)
     columns = [ wlcg.MACHINE_NAME,
                 wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CPU_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
@@ -277,29 +319,29 @@ class WLCGVOOversightView(WLCGBaseView):
 
 class WLCGMachineView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
     columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.N_JOBS,
-                wlcg.WALL_SECONDS, wlcg.WALL_EQUIVALENTS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+    group_by = ( wlcg.MACHINE_NAME, wlcg.VO_NAME )
 
 class WLCGMachinePerMonthView(WLCGBaseView):
 
-    collapse = ( wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
+    group_by = ( wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
     columns = [ wlcg.YEAR, wlcg.MONTH, wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.N_JOBS,
                 wlcg.WALL_SECONDS, wlcg.CPU_SECONDS, wlcg.EFFICIENCY ]
 
 class WLCGUserView(WLCGBaseView):
 
-    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.MACHINE_NAME, wlcg.VO_GROUP )
+    group_by = ( wlcg.YEAR, wlcg.MONTH, wlcg.MACHINE_NAME, wlcg.VO_GROUP )
     columns = [ wlcg.USER, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.N_JOBS,
-                wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.WALL_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     viewgroup = 'restricted'
 
 
 
-WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.HS06_EQUIVALENTS]
+WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.HS06_CORE_EQUIVALENTS]
 WLCG_UNIT_MAPPING = {
     'ksi2k-ne' : WLCG_UNIT_MAPPING_DEFAULT,
-    'hs06-ne'  : lambda rec : rec[wlcg.HS06_EQUIVALENTS],
+    'hs06-ne'  : lambda rec : rec[wlcg.HS06_CORE_EQUIVALENTS],
     'hs06-cpune'  : lambda rec : rec[wlcg.HS06_CPU_EQUIVALENTS],
     'ksi2k-wallhours' : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
     'hs06-wallhours'  : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
