@@ -126,7 +126,7 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
 
     def get_factor_types(cur):
         factor_types = {}
-        execute_sql(cur, "select * from hostscalefactor_types;")
+        execute_sql(cur, "select id, factor_type from hostscalefactor_types;")
         for row in cur.fetchall():
             factor_type_id = row[0]
             factor_type = row[1]
@@ -136,7 +136,7 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
 
     def get_machines(cur):
         machines = {}
-        execute_sql(cur, "select * from machinename;")
+        execute_sql(cur, "select id, machine_name from machinename;")
         for row in cur.fetchall():
             machinname_id = row[0]
             machine_name = row[1]
@@ -170,7 +170,7 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
              from hostscalefactors_data
              where machine_name_id = %s and scalefactor_type_id = %s and validity_period && %s
              order by validity_period;"""
-    execute_sql(cur,sql)
+    execute_sql(cur,sql,(machine_id, factortype_id, timerange))
 
     if cur.rowcount == 0:
         # Phiew - no overlapping timeranges!
