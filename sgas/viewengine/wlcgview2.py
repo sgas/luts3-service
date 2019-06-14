@@ -9,7 +9,7 @@ Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaborati
 import time
 import json
 
-from wlcgsgas import query as wlcgquery, dataprocess
+from sgas.wlcg import wlcg
 
 from twisted.web import server
 
@@ -17,38 +17,22 @@ from sgas.server import resourceutil, config
 from sgas.viewengine import html, htmltable, dateform, baseview, rights
 
 
-# Mapping for more readable column names
-COLUMN_NAMES = {
-    dataprocess.YEAR                    : 'Year',
-    dataprocess.MONTH                   : 'Month',
-    dataprocess.TIER                    : 'Tier',
-    dataprocess.HOST                    : 'Host',
-    dataprocess.VO_NAME                 : 'VO',
-    dataprocess.VO_GROUP                : 'VO Group',
-    dataprocess.VO_ROLE                 : 'VO Role',
-    dataprocess.USER                    : 'User',
-    dataprocess.N_JOBS                  : 'Job count',
-    dataprocess.CPU_TIME                : 'CPU time',
-    dataprocess.WALL_TIME               : 'Wall time',
-    dataprocess.KSI2K_CPU_TIME          : 'KSI2K CPU time',
-    dataprocess.KSI2K_WALL_TIME         : 'KSI2K wall time',
-    dataprocess.HS06_CPU_TIME           : 'HS06 CPU hours',
-    dataprocess.HS06_WALL_TIME          : 'HS06 wall hours',
-    dataprocess.EFFICIENCY              : 'Job efficiency',
-    dataprocess.CPU_EQUIVALENTS         : 'CPU node equivalents',
-    dataprocess.WALL_EQUIVALENTS        : 'Wall node equivalents',
-    dataprocess.KSI2K_CPU_EQUIVALENTS   : 'KSI2K CPU node equivalents',
-    dataprocess.KSI2K_WALL_EQUIVALENTS  : 'KSI2K Wall node equivalents',
-    dataprocess.HS06_CPU_EQUIVALENTS    : 'HS06 CPU node equivalents',
-    dataprocess.HS06_WALL_EQUIVALENTS   : 'HS06 Wall node equivalents'
-}
-
-
 def _formatValue(v):
     if type(v) is float:
         return int(v)
     else:
         return v
+
+
+def sortKey(record, field_order):
+    """
+    Given a record, returns a key usable for sorting.
+    """
+    attrs = []
+    for f in field_order:
+        if f in record:
+            attrs.append(record[f])
+    return tuple(attrs)
 
 
 class WLCGView(baseview.BaseView):
@@ -93,7 +77,7 @@ class WLCGView(baseview.BaseView):
         request.write(html.HTML_VIEWBASE_HEADER % {'title': 'WLCG Views (experimental)'})
         request.write( html.createTitle('WLCG Views (experimental)') )
         for view_url, ( description, _ ) in self.subview.items():
-            request.write('<div><a href=wlcg/%s>%s</a></div>\n' % (view_url, description))
+            request.write('<div><a href=wlcg2/%s>%s</a></div>\n' % (view_url, description))
             request.write( html.P )
         request.write(html.HTML_VIEWBASE_FOOTER)
         request.finish()
@@ -103,9 +87,9 @@ class WLCGView(baseview.BaseView):
 
 class WLCGBaseView(baseview.BaseView):
 
-    collapse = []
+    group_by = []
     columns = []
-    split = None
+    vo_list = None
     tier_based = False
     viewgroup = 'pub'
     sort = staticmethod(sorted)
@@ -113,12 +97,7 @@ class WLCGBaseView(baseview.BaseView):
     def __init__(self, urdb, authorizer, mfst, path):
         self.path = path
         baseview.BaseView.__init__(self, urdb, authorizer, mfst)
-
-        wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
-        self.tier_mapping = wlcg_config['tier-mapping']
-        self.tier_shares  = wlcg_config['tier-ratio']
-        self.hepspec06  = wlcg_config['hepspec06']
-        self.default_tier = str(wlcg_config['default-tier'])
+        wlcgdb = wlcg.WLCG(urdb)
 
 
     def render_GET(self, request):
@@ -140,7 +119,7 @@ class WLCGBaseView(baseview.BaseView):
 
     def retrieveWLCGData(self, start_date, end_date):
 
-        d = self.urdb.query(wlcgquery.WLCG_QUERY, (start_date, end_date))
+        d = self.wlcgdb.fetch(columns=self.columns, group_by=self.group_by, timerange=(start_date, end_date), vo_list=self.vo_list)
         return d
 
 
@@ -150,28 +129,10 @@ class WLCGBaseView(baseview.BaseView):
 
         days = dateform.dayDelta(start_date, end_date)
 
-        # massage data
-        #print "L1", len(wlcg_data)
         t_dataprocess_start = time.time()
-        wlcg_records = dataprocess.rowsToDicts(wlcg_data)
-        wlcg_records = dataprocess.addMissingScaleValues(wlcg_records, self.hepspec06)
-        wlcg_records = dataprocess.collapseFields(wlcg_records, self.collapse)
-        if self.tier_based:
-            wlcg_records = dataprocess.tierMergeSplit(wlcg_records, self.tier_mapping, self.tier_shares, self.default_tier)
-            if not self.split:
-                wlcg_records = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, ) )
-        # information on ops vo does not add any value
-        wlcg_records = [ rec for rec in wlcg_records if rec[dataprocess.VO_NAME] != 'ops' ]
-        wlcg_records = dataprocess.addEffiencyProperty(wlcg_records)
-        wlcg_records = dataprocess.addEquivalentProperties(wlcg_records, days)
 
-        sk = lambda key : dataprocess.sortKey(key, field_order=self.columns)
-        if self.split is None:
-            wlcg_records = self.sort(wlcg_records, key=sk)
-        else:
-            split_records = dataprocess.splitRecords(wlcg_records, self.split)
-            for split_attr, records in split_records.items():
-                split_records[split_attr] = self.sort(records, key=sk)
+        sk = lambda key : sortKey(key, field_order=self.columns)
+        wlcg_records = self.sort(wlcg_records, key=sk)
 
         #print "L2", len(wlcg_records)
         t_dataprocess = time.time() - t_dataprocess_start
@@ -222,26 +183,26 @@ class WLCGBaseView(baseview.BaseView):
 
 class WLCGVOView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER )
-    columns = [ dataprocess.VO_NAME, dataprocess.VO_ROLE, dataprocess.HOST, 
-                dataprocess.N_JOBS, dataprocess.WALL_TIME, dataprocess.WALL_EQUIVALENTS,
-                dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
+    columns = [ wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.MACHINE_NAME, 
+                wlcg.N_JOBS, wlcg.WALL_SECONDS, wlcg.WALL_EQUIVALENTS,
+                wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
 
 
 class WLCGTierView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER )
-    columns = [ dataprocess.TIER, dataprocess.VO_NAME, dataprocess.VO_ROLE,
-                dataprocess.N_JOBS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
+    columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_ROLE,
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
 
 
 
 class WLCGFullTierView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH )
-    columns = [ dataprocess.TIER, dataprocess.VO_NAME, dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER,
-                dataprocess.N_JOBS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH )
+    columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER,
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     viewgroup = 'restricted'
 
@@ -249,11 +210,11 @@ class WLCGFullTierView(WLCGBaseView):
 
 class WLCGTierMachineSplitView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER )
-    columns = [ dataprocess.HOST, dataprocess.VO_NAME, dataprocess.VO_ROLE,
-                dataprocess.N_JOBS, dataprocess.HS06_WALL_TIME, dataprocess.HS06_CPU_TIME, dataprocess.HS06_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER )
+    columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_ROLE,
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
-    split = dataprocess.TIER
+    split = wlcg.TIER
 
 
 def sortAndSumByCountry(records, key):
@@ -266,31 +227,31 @@ def sortAndSumByCountry(records, key):
 
     """
 
-    countryCode = lambda x: x[dataprocess.HOST].split(".")[-1]
+    countryCode = lambda x: x[wlcg.MACHINE_NAME].split(".")[-1]
 
     # Group records by country
     rec = sorted(records, key=countryCode)
 
-    totalsum = {dataprocess.HOST: "ALL-TOTAL"}
+    totalsum = {wlcg.MACHINE_NAME: "ALL-TOTAL"}
     countrysum = {}
     n = 0
     i = 0
     while i < len(rec):
         country = countryCode(rec[i]).upper() + "-TOTAL"
 
-        if dataprocess.HOST not in countrysum:
-            countrysum[dataprocess.HOST] = country
+        if wlcg.MACHINE_NAME not in countrysum:
+            countrysum[wlcg.MACHINE_NAME] = country
 
-        if countrysum[dataprocess.HOST] != country:
+        if countrysum[wlcg.MACHINE_NAME] != country:
             if n > 0: # '> 1' if we want sums only for multi-cluster countries
-                countrysum[dataprocess.EFFICIENCY] = int(100.0*countrysum[dataprocess.HS06_CPU_TIME]/countrysum[dataprocess.HS06_WALL_TIME])
+                countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_HS06]/countrysum[wlcg.WALL_SECONDS_HS06])
                 rec.insert(i, countrysum)
                 i += 1
-            countrysum = {dataprocess.HOST: country}
+            countrysum = {wlcg.MACHINE_NAME: country}
             n = 0
 
         for key in rec[i]:
-            if key not in (dataprocess.HOST, dataprocess.TIER, dataprocess.EFFICIENCY):
+            if key not in (wlcg.MACHINE_NAME, wlcg.TIER, wlcg.EFFICIENCY):
                 val = rec[i][key]
                 countrysum[key] = countrysum.get(key, 0) + val
                 totalsum[key] = totalsum.get(key, 0) + val
@@ -298,51 +259,51 @@ def sortAndSumByCountry(records, key):
         i += 1
 
 
-    countrysum[dataprocess.EFFICIENCY] = int(100.0*countrysum[dataprocess.HS06_CPU_TIME]/countrysum[dataprocess.HS06_WALL_TIME])
+    countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_HS06]/countrysum[wlcg.WALL_SECONDS_HS06])
     rec.append(countrysum)
-    totalsum[dataprocess.EFFICIENCY] = int(100.0*totalsum[dataprocess.HS06_CPU_TIME]/totalsum[dataprocess.HS06_WALL_TIME])
+    totalsum[wlcg.EFFICIENCY] = int(100.0*totalsum[wlcg.CPU_SECONDS_HS06]/totalsum[wlcg.WALL_SECONDS_HS06])
     rec.append(totalsum)
     return rec
 
 class WLCGVOOversightView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER)
-    columns = [ dataprocess.HOST,
-                dataprocess.N_JOBS, dataprocess.HS06_WALL_TIME, dataprocess.HS06_CPU_TIME, dataprocess.HS06_CPU_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER)
+    columns = [ wlcg.MACHINE_NAME,
+                wlcg.N_JOBS, wlcg.WALL_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CPU_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
-    split = dataprocess.VO_NAME
+    split = wlcg.VO_NAME
     sort = staticmethod(sortAndSumByCountry)
 
 
 class WLCGMachineView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER )
-    columns = [ dataprocess.HOST, dataprocess.VO_NAME, dataprocess.N_JOBS,
-                dataprocess.WALL_TIME, dataprocess.WALL_EQUIVALENTS, dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
+    columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.N_JOBS,
+                wlcg.WALL_SECONDS, wlcg.WALL_EQUIVALENTS, wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
 
 class WLCGMachinePerMonthView(WLCGBaseView):
 
-    collapse = ( dataprocess.VO_GROUP, dataprocess.VO_ROLE, dataprocess.USER )
-    columns = [ dataprocess.YEAR, dataprocess.MONTH, dataprocess.HOST, dataprocess.VO_NAME, dataprocess.N_JOBS,
-                dataprocess.WALL_TIME, dataprocess.CPU_TIME, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
+    columns = [ wlcg.YEAR, wlcg.MONTH, wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.N_JOBS,
+                wlcg.WALL_SECONDS, wlcg.CPU_SECONDS, wlcg.EFFICIENCY ]
 
 class WLCGUserView(WLCGBaseView):
 
-    collapse = ( dataprocess.YEAR, dataprocess.MONTH, dataprocess.HOST, dataprocess.VO_GROUP )
-    columns = [ dataprocess.USER, dataprocess.VO_NAME, dataprocess.VO_ROLE, dataprocess.N_JOBS,
-                dataprocess.KSI2K_WALL_TIME, dataprocess.KSI2K_WALL_EQUIVALENTS, dataprocess.EFFICIENCY ]
+    collapse = ( wlcg.YEAR, wlcg.MONTH, wlcg.MACHINE_NAME, wlcg.VO_GROUP )
+    columns = [ wlcg.USER, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.N_JOBS,
+                wlcg.WALL_SECONDS_HS06, wlcg.HS06_EQUIVALENTS, wlcg.EFFICIENCY ]
     viewgroup = 'restricted'
 
 
 
-WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[dataprocess.KSI2K_WALL_EQUIVALENTS]
+WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.HS06_EQUIVALENTS]
 WLCG_UNIT_MAPPING = {
     'ksi2k-ne' : WLCG_UNIT_MAPPING_DEFAULT,
-    'hs06-ne'  : lambda rec : rec[dataprocess.HS06_WALL_EQUIVALENTS],
-    'hs06-cpune'  : lambda rec : rec[dataprocess.HS06_CPU_EQUIVALENTS],
-    'ksi2k-wallhours' : lambda rec : rec[dataprocess.KSI2K_WALL_TIME],
-    'hs06-wallhours'  : lambda rec : rec[dataprocess.HS06_WALL_TIME],
-    'hs06-cpuhours'  : lambda rec : rec[dataprocess.HS06_CPU_TIME]
+    'hs06-ne'  : lambda rec : rec[wlcg.HS06_EQUIVALENTS],
+    'hs06-cpune'  : lambda rec : rec[wlcg.HS06_CPU_EQUIVALENTS],
+    'ksi2k-wallhours' : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
+    'hs06-wallhours'  : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
+    'hs06-cpuhours'  : lambda rec : rec[wlcg.CPU_SECONDS_HS06]
 }
 
 
@@ -350,7 +311,7 @@ WLCG_UNIT_MAPPING = {
 class WLCGOversightView(baseview.BaseView):
 
     # This view is rather different than the others, so it is its own class
-    collapse = [ dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER ]
+    collapse = [ wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER ]
 
     def __init__(self, urdb, authorizer, mfst, path):
         self.path = path
@@ -403,26 +364,26 @@ class WLCGOversightView(baseview.BaseView):
         days = dateform.dayDelta(start_date, end_date)
         t_dataprocess_start = time.time()
 
-        wlcg_records = dataprocess.rowsToDicts(wlcg_data)
+        wlcg_records = wlcg.rowsToDicts(wlcg_data)
         # information on ops and dteam vo does not add any value
-        wlcg_records = [ rec for rec in wlcg_records if rec[dataprocess.VO_NAME] not in ('dteam', 'ops') ]
+        wlcg_records = [ rec for rec in wlcg_records if rec[wlcg.VO_NAME] not in ('dteam', 'ops') ]
 
         # massage data
-        wlcg_records = dataprocess.addMissingScaleValues(wlcg_records, self.hepspec06)
-        wlcg_records = dataprocess.collapseFields(wlcg_records, self.collapse)
-        wlcg_records = dataprocess.tierMergeSplit(wlcg_records, self.tier_mapping, self.tier_shares, self.default_tier)
+        wlcg_records = wlcg.addMissingScaleValues(wlcg_records, self.hepspec06)
+        wlcg_records = wlcg.collapseFields(wlcg_records, self.collapse)
+        wlcg_records = wlcg.tierMergeSplit(wlcg_records, self.tier_mapping, self.tier_shares, self.default_tier)
         # role must be collapsed after split in order for the tier split to function
-        wlcg_records = dataprocess.collapseFields(wlcg_records, [ dataprocess.VO_ROLE ] )
+        wlcg_records = wlcg.collapseFields(wlcg_records, [ wlcg.VO_ROLE ] )
 
-        sort_key = lambda key : dataprocess.sortKey(key, field_order=[ dataprocess.HOST] )
-        split_records = dataprocess.splitRecords(wlcg_records, dataprocess.TIER)
+        sort_key = lambda key : wlcg.sortKey(key, field_order=[ wlcg.MACHINE_NAME] )
+        split_records = wlcg.splitRecords(wlcg_records, wlcg.TIER)
         for split_attr, records in split_records.items():
             split_records[split_attr] = sorted(records, key=sort_key)
 
         t_dataprocess = time.time() - t_dataprocess_start
 
         # get tld groups
-        hosts = set( [ rec[dataprocess.HOST] for rec in wlcg_records ] )
+        hosts = set( [ rec[wlcg.MACHINE_NAME] for rec in wlcg_records ] )
         tld_groups = {}
         for host in hosts:
             tld = host.split('.')[-1].upper()
@@ -431,45 +392,45 @@ class WLCGOversightView(baseview.BaseView):
         # create composite to-tier names
         vo_tiers = set()
         for rec in wlcg_records:
-            tl = 't1' if 'T1' in rec[dataprocess.TIER] else 't2'
-            vt = tl + '-' + rec[dataprocess.VO_NAME]
-            rec[dataprocess.VO_NAME] = vt
-            del rec[dataprocess.TIER] # same as collapsing afterwards
+            tl = 't1' if 'T1' in rec[wlcg.TIER] else 't2'
+            vt = tl + '-' + rec[wlcg.VO_NAME]
+            rec[wlcg.VO_NAME] = vt
+            del rec[wlcg.TIER] # same as collapsing afterwards
             vo_tiers.add(vt)
 
         TOTAL = 'Total'
         TIER_TOTAL = self.default_tier.split('-')[0].upper()
 
         # calculate total per site
-        site_totals = dataprocess.collapseFields(wlcg_records, ( dataprocess.VO_NAME, ) )
+        site_totals = wlcg.collapseFields(wlcg_records, ( wlcg.VO_NAME, ) )
         for r in site_totals:
-            r[dataprocess.VO_NAME] = TOTAL
+            r[wlcg.VO_NAME] = TOTAL
 
         # calculate total per country-tier
         country_tier_totals = [ r.copy() for r in wlcg_records ]
         for rec in country_tier_totals:
-            rec[dataprocess.HOST] = rec[dataprocess.HOST].split('.')[-1].upper() + '-TOTAL'
-            rec[dataprocess.USER] = 'FAKE'
-        country_tier_totals = dataprocess.collapseFields(country_tier_totals, ( dataprocess.USER, ) )
+            rec[wlcg.MACHINE_NAME] = rec[wlcg.MACHINE_NAME].split('.')[-1].upper() + '-TOTAL'
+            rec[wlcg.USER] = 'FAKE'
+        country_tier_totals = wlcg.collapseFields(country_tier_totals, ( wlcg.USER, ) )
 
         # calculate total per country
-        country_totals = dataprocess.collapseFields(country_tier_totals, ( dataprocess.VO_NAME, ) )
+        country_totals = wlcg.collapseFields(country_tier_totals, ( wlcg.VO_NAME, ) )
         for rec in country_totals:
-            rec[dataprocess.VO_NAME] = TOTAL
+            rec[wlcg.VO_NAME] = TOTAL
 
         # calculate total per tier-vo
-        tier_vo_totals = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, ) )
+        tier_vo_totals = wlcg.collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, ) )
         for r in tier_vo_totals:
-            r[dataprocess.HOST] = TIER_TOTAL
+            r[wlcg.MACHINE_NAME] = TIER_TOTAL
 
         # calculate total
-        total = dataprocess.collapseFields(wlcg_records, ( dataprocess.HOST, dataprocess.VO_NAME ) )
+        total = wlcg.collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.VO_NAME ) )
         assert len(total) in (0,1), 'Records did not collapse into a single record when calculating grand total'
         if len(total) == 0:
-            total = [ { dataprocess.CPU_TIME : 0, dataprocess.WALL_TIME : 0, dataprocess.KSI2K_CPU_TIME : 0, dataprocess.KSI2K_WALL_TIME : 0 } ]
+            total = [ { wlcg.CPU_SECONDS : 0, wlcg.WALL_SECONDS : 0, wlcg.CPU_SECONDS_HS06 : 0, wlcg.WALL_SECONDS_HS06 : 0 } ]
         total_record = total[0]
-        total_record[dataprocess.HOST] = TIER_TOTAL
-        total_record[dataprocess.VO_NAME] = TOTAL
+        total_record[wlcg.MACHINE_NAME] = TIER_TOTAL
+        total_record[wlcg.VO_NAME] = TOTAL
 
         # put all calculated records together and add equivalents
         wlcg_records += site_totals
@@ -477,7 +438,7 @@ class WLCGOversightView(baseview.BaseView):
         wlcg_records += country_totals
         wlcg_records += tier_vo_totals
         wlcg_records += [ total_record ]
-        wlcg_records = dataprocess.addEquivalentProperties(wlcg_records, days)
+        wlcg_records = wlcg.addEquivalentProperties(wlcg_records, days)
 
         # create table
         columns = sorted(vo_tiers)
@@ -495,7 +456,7 @@ class WLCGOversightView(baseview.BaseView):
         for row in row_names:
             for col in columns:
                 for rec in wlcg_records:
-                    if rec[dataprocess.HOST] == row and rec[dataprocess.VO_NAME] == col:
+                    if rec[wlcg.MACHINE_NAME] == row and rec[wlcg.VO_NAME] == col:
                         value = _formatValue( unit_extractor(rec) )
                         # hurrah for formatting
                         if row == TIER_TOTAL and col == TOTAL:
@@ -551,7 +512,7 @@ class WLCGOversightView(baseview.BaseView):
 class WLCGT1SummaryView(baseview.BaseView):
     # This view is rather different than the others, so it is its own class
 
-    collapse = [ dataprocess.YEAR, dataprocess.MONTH, dataprocess.VO_GROUP, dataprocess.USER ]
+    collapse = [ wlcg.YEAR, wlcg.MONTH, wlcg.VO_GROUP, wlcg.USER ]
 
     # Make a storage query that can be UNIONized with a WLCG_QUERY; Storage
     # number will be stored in 'n_jobs'
@@ -635,44 +596,44 @@ class WLCGT1SummaryView(baseview.BaseView):
         days = dateform.dayDelta(start_date, end_date)
         t_dataprocess_start = time.time()
 
-        wlcg_records = dataprocess.rowsToDicts(wlcg_data)
-        wlcg_records = [ r for r in wlcg_records if r[dataprocess.VO_NAME] in ('alice', 'atlas') ]
+        wlcg_records = wlcg.rowsToDicts(wlcg_data)
+        wlcg_records = [ r for r in wlcg_records if r[wlcg.VO_NAME] in ('alice', 'atlas') ]
 
         # Separate the records into computing and storage
         comp_records = []
         storage_records = []
         for r in wlcg_records:
-            if r[dataprocess.HOST] == 'STORAGE':
+            if r[wlcg.MACHINE_NAME] == 'STORAGE':
                 storage_records.append(r)
             else:
                 comp_records.append(r)
 
         # massage data
-        comp_records = dataprocess.addMissingScaleValues(comp_records, self.hepspec06)
-        comp_records = dataprocess.collapseFields(comp_records, self.collapse)
-        comp_records = dataprocess.tierMergeSplit(comp_records, self.tier_mapping, self.tier_shares, self.default_tier)
+        comp_records = wlcg.addMissingScaleValues(comp_records, self.hepspec06)
+        comp_records = wlcg.collapseFields(comp_records, self.collapse)
+        comp_records = wlcg.tierMergeSplit(comp_records, self.tier_mapping, self.tier_shares, self.default_tier)
 
         # Collapse the fields that couldn't be collapsed before the tier-splitting.
         comp_records = [ r for r in comp_records if r['tier'] == u'NDGF-T1' ]
-        comp_records = dataprocess.collapseFields(comp_records, [ dataprocess.VO_ROLE, dataprocess.HOST ])
+        comp_records = wlcg.collapseFields(comp_records, [ wlcg.VO_ROLE, wlcg.MACHINE_NAME ])
 
 
         summary = {}
         for r in comp_records + storage_records:
-            vo = r[dataprocess.VO_NAME] 
+            vo = r[wlcg.VO_NAME] 
 
             if vo not in summary:
-                summary[vo] = {'disk':0.0, 'tape':0.0, dataprocess.HS06_WALL_TIME:0.0, dataprocess.HS06_CPU_TIME:0.0}
+                summary[vo] = {'disk':0.0, 'tape':0.0, wlcg.WALL_SECONDS_HS06:0.0, wlcg.CPU_SECONDS_HS06:0.0}
             
-            if r.get(dataprocess.HOST, '') == 'STORAGE':
+            if r.get(wlcg.MACHINE_NAME, '') == 'STORAGE':
                 media = r['vo_group']                        # We stored "storage_media" in "vo_group" ...
-                summary[vo][media] += r[dataprocess.N_JOBS]  # ... and "resource_capacity_used" in "n_jobs". 
+                summary[vo][media] += r[wlcg.N_JOBS]  # ... and "resource_capacity_used" in "n_jobs". 
             else:
-                summary[vo][dataprocess.HS06_WALL_TIME] += r[dataprocess.HS06_WALL_TIME]
-                summary[vo][dataprocess.HS06_CPU_TIME] += r[dataprocess.HS06_CPU_TIME]
+                summary[vo][wlcg.WALL_SECONDS_HS06] += r[wlcg.WALL_SECONDS_HS06]
+                summary[vo][wlcg.CPU_SECONDS_HS06] += r[wlcg.CPU_SECONDS_HS06]
 
-        columns = [("Walltime (HS06 days)", lambda r: r[dataprocess.HS06_WALL_TIME] / 24.0),
-                   ("CPUtime (HS06 days)",  lambda r: r[dataprocess.HS06_CPU_TIME] / 24.0),
+        columns = [("Walltime (HS06 days)", lambda r: r[wlcg.WALL_SECONDS_HS06] / 24.0),
+                   ("CPUtime (HS06 days)",  lambda r: r[wlcg.CPU_SECONDS_HS06] / 24.0),
                    ("Disk (TiB)",           lambda r: r['disk'] / 1024.0**4),
                    ("Tape (TiB)",           lambda r: r['tape'] / 1024.0**4)]
 
