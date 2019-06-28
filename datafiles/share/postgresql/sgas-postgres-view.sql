@@ -1,6 +1,20 @@
+-- For backwards compability, create a view based on hostscalefactors_data,
+-- which looks like the old hostscalefactors table
+
+CREATE VIEW hostscalefactors AS
+        SELECT m.machine_name,
+               hs.scale_factor
+        FROM hostscalefactors_data hs
+        RIGHT OUTER JOIN machinename m ON hs.machine_name_id = m.id
+        WHERE NOW()::timestamp <@ hs.validity_period
+          AND hs.scalefactor_type_id = (SELECT id FROM hostscalefactor_type_default LIMIT 1)
+;
+
+
 -- create view of the usage records in the database
 -- the purpose of the view is to make data easily accessable so users do not
 -- have to do the joins between the tables them selves.
+
 
 CREATE VIEW usagerecords AS
 SELECT
@@ -29,8 +43,10 @@ SELECT
     submit_time,
     cpu_duration,
     wall_duration,
-    cpu_duration  * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name) AS cpu_duration_scaled,
-    wall_duration * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name) AS wall_duration_scaled,
+    cpu_duration  * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name AND from_time < start_time ORDER BY from_time DESC LIMIT 1) AS cpu_duration_scaled,
+    wall_duration * (SELECT scale_factor FROM hostscalefactors WHERE machine_name = machinename.machine_name AND from_time < start_time ORDER BY from_time DESC LIMIT 1) AS wall_duration_scaled,
+    -- cpu_duration  * hs.scale_factor AS cpu_duration_scaled,
+    -- wall_duration * hs.scale_factor AS wall_duration_scaled,
     user_time,
     kernel_time,
     major_page_faults,
@@ -45,6 +61,7 @@ SELECT
     insert_time
 FROM
     usagedata
+-- LEFT OUTER JOIN hostscalefactors hs ON (usagedata.machine_name_id = hs.machine_name_id AND hs.scalefactor_type_id = 1 AND start_time <@ hs.validity_period)
 LEFT OUTER JOIN globalusername  ON (usagedata.global_user_name_id = globalusername.id)
 LEFT OUTER JOIN voinformation   ON (usagedata.vo_information_id   = voinformation.id)
 LEFT OUTER JOIN localuser       ON (usagedata.local_user_id       = localuser.id)
@@ -124,6 +141,7 @@ SELECT
     generate_time                                                                   AS generate_time
 FROM
     uraggregated_data
+-- LEFT OUTER JOIN hostscalefactors hs ON (uraggregated_data.machine_name_id = hs.machine_name_id AND hs.scalefactor_type_id = 1 AND execution_time::timestamp <@ hs.validity_period)
 LEFT OUTER JOIN machinename         ON (uraggregated_data.machine_name_id     = machinename.id)
 LEFT OUTER JOIN jobqueue            ON (uraggregated_data.queue_id            = jobqueue.id)
 LEFT OUTER JOIN globalusername      ON (uraggregated_data.global_user_name_id = globalusername.id)

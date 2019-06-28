@@ -1,0 +1,321 @@
+#!/usr/bin/python
+# vim: tw=0 ts=4 sw=4
+
+"""
+A tool for managing hostscalingfactors in the SGAS db.
+
+Author: Erik Edelmann <edelmann@csc.fi>
+Copyright NeIC 2016, 2018
+"""
+
+import argparse
+import psycopg2
+from psycopg2.extras import DateTimeRange
+from datetime import datetime
+import sys
+
+from sgas.server import config
+from sgas.util.dtrparser import parse_datetimerange, tuple2str
+
+DEFAULT_POSTGRESQL_PORT = 5432
+
+#NOW = datetime.now()
+EPOCH = '1970-01-01 00:00:00'
+DTFORMAT = "%Y-%m-%d %H:%M:%S"
+
+verbose = False
+
+
+def format_datetimerange(dtr):
+
+    start_delim = "[ " if dtr.lower_inc else "( "
+    if dtr.lower:
+        start = dtr.lower.strftime(DTFORMAT)
+    else:
+        start = ""
+
+    if dtr.upper:
+        end = dtr.upper.strftime(DTFORMAT)
+    else:
+        end = ""
+
+    end_delim = " ]" if dtr.upper_inc else " )"
+
+    return "%s%-19s , %-19s%s" % (start_delim, start, end, end_delim)
+
+
+def form_dtr(lower, upper, lower_inc, upper_inc):
+    #print "form_dtr: %s, %s, %s %s" % (lower, upper, lower_inc, upper_inc)
+    #dtl = datetime.strptime(DTFORMAT, tl) if tl else None
+    #dtu = datetime.strptime(DTFORMAT, tu) if tu else None
+    lim = '[' if lower_inc else '('
+    lim += ']' if upper_inc else ')'
+    return DateTimeRange(lower, upper, lim)
+
+
+def connectDb(dbstring):
+    args = [ e or None for e in dbstring.split(':') ]
+    host, port, database, user, password = args[:5]
+
+    if port is None:
+        port = DEFAULT_POSTGRESQL_PORT
+
+    try:
+        return psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
+    except psycopg2.Error as e:
+        sys.stderr.write("DB Error: %s\n" % e)
+        sys.exit(1)
+
+def execute_sql(cur, sql, args=()):
+
+    q = cur.mogrify(sql,args)
+
+    if verbose:
+        sys.stderr.write("SQL: %s\n" % q)
+
+    try:
+        cur.execute(q)
+    except psycopg2.Error as e:
+        sys.stderr.write("DB Error: %s\n" % e)
+        sys.exit(1)
+
+
+def show_factors(db, machine_name, time, factor_type, def_ids):
+    args = []
+
+    if factor_type != None:
+        condition = "st.factor_type = %s"
+        args.append(factor_type)
+    else:
+        condition = "hs.scalefactor_type_id = ( SELECT hostscalefactor_type_default.id FROM hostscalefactor_type_default LIMIT 1)"
+
+    if machine_name:
+        condition += " and m.machine_name = %s"
+        args.append(machine_name)
+
+    if time:
+        condition += " and %s::timestamp <@ hs.validity_period"
+        args.append(time)
+
+    if def_ids:
+        condition += " and hs.id in %s"
+        args.append(tuple(def_ids))
+
+    cur = db.cursor()
+    query = """
+        select hs.id, m.machine_name, hs.validity_period, hs.scale_factor
+          from hostscalefactors_data hs
+          left join machinename m on m.id = hs.machine_name_id
+          left join hostscalefactor_types st on st.id = hs.scalefactor_type_id
+        where """ + condition + """
+        order by m.machine_name, hs.validity_period;
+        """
+    execute_sql(cur, query, tuple(args))
+
+    print "%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id")
+    print "-----------------------------------------------------------------------------------------------------------------"
+    for row in cur.fetchall():
+        hs_id = row[0]
+        machine_name = row[1]
+        validity_period = format_datetimerange(row[2])
+        factor = row[3]
+        print "%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id)
+
+
+def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
+
+    def get_factor_types(cur):
+        factor_types = {}
+        execute_sql(cur, "select id, factor_type from hostscalefactor_types;")
+        for row in cur.fetchall():
+            factor_type_id = row[0]
+            factor_type = row[1]
+            factor_types[factor_type] = factor_type_id
+
+        return factor_types
+
+    def get_machines(cur):
+        machines = {}
+        execute_sql(cur, "select id, machine_name from machinename;")
+        for row in cur.fetchall():
+            machinname_id = row[0]
+            machine_name = row[1]
+            machines[machine_name] = machinname_id
+        return machines
+
+
+    cur = db.cursor()
+
+    machines = get_machines(cur)
+    if not machine_name:
+        raise Exception("No machine_name given for action 'add'")
+    if machine_name not in machines:
+        if add_machine:
+            print "Machine %s unknown - adding to db" % machine_name
+            execute_sql(cur, "insert into machinename (machine_name) values (%s);", (machine_name,))
+            machines = get_machines(cur)
+        else:
+            raise Exception("Unknown machine_name: '%s'" % machine_name)
+
+    if not factor:
+        raise Exception("No scale factor given for action 'add'")
+
+    factor_types = get_factor_types(cur)
+    if factortype not in factor_types:
+        raise Exception("Unknown factor type: '%s'" % factortype)
+
+    machine_id = machines[machine_name]
+    factortype_id = factor_types[factortype]
+    sql = """select id, validity_period
+             from hostscalefactors_data
+             where machine_name_id = %s and scalefactor_type_id = %s and validity_period && %s
+             order by validity_period;"""
+    execute_sql(cur,sql,(machine_id, factortype_id, timerange))
+
+    if cur.rowcount == 0:
+        # Phiew - no overlapping timeranges!
+        if verbose:
+            print "Adding factor %s for machine %s, factor type '%s', time period %s"\
+                  % (factor, machine_name, factortype, format_datetimerange(timerange))
+
+        sql = """insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor)
+                                values (%s, %s, %s, %s);"""
+        execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
+    elif cur.rowcount == 1:
+        # 1 overlapping timerange; see if we can resolve the conflict
+
+        row = cur.fetchone()
+        old_factor_id = row[0]
+        old_timerange = row[1]
+
+        if not old_timerange.upper and timerange.lower and (timerange.lower > old_timerange.lower or (not old_timerange.lower)):
+
+            # insert the new factor definition after (time-wise) the old one
+            mod_timerange = form_dtr(old_timerange.lower, timerange.lower, old_timerange.lower_inc, not timerange.lower_inc)
+
+        elif not old_timerange.lower and timerange.upper and (timerange.upper < old_timerange.upper or (not old_timerange.upper)):
+
+            # insert the new factor definition before (time-wise) the old one
+            mod_timerange = form_dtr(timerange.upper, old_timerange.upper, not timerange.upper_inc, old_timerange.upper_inc)
+
+        else:
+            raise Exception("New factor for machine '%s', factor type '%s', time range %s would overlap with factor definition %i"\
+                            % (machine_name, factortype, format_datetimerange(timerange), old_factor_id))
+
+
+        if verbose:
+            print "Changing validity period of factor def %i from %s to %s"\
+                  % (old_factor_id, format_datetimerange(old_timerange), format_datetimerange(mod_timerange))
+        execute_sql(cur, "update hostscalefactors_data set validity_period = %s where id = %s;", (mod_timerange, old_factor_id))
+
+        if verbose:
+            print "Adding factor %s for machine %s, factor type '%s', time period %s"\
+                  % (factor, machine_name, factortype, format_datetimerange(timerange))
+        sql = """insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor)
+                                values (%s, %s, %s, %s);"""
+        execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
+
+
+    else:
+        # cur.rowcount() > 1 - several overlapping timeranges. Can't resolve that
+        conflict_ids = []
+        for row in cur.fetchall():
+            conflict_ids.append(row[0])
+        raise Exception("New factor for machine '%s', factor type '%s', time range %s would overlap with factor definitions %s"\
+                        % (machine_name, factortype, format_datetimerange(timerange), tuple2str(conflict_ids, "and")))
+
+
+    db.commit()
+
+
+def del_factors(db, def_ids):
+
+    if not def_ids:
+        raise Exception("No scale factor definition ids given")
+
+    print "These host scale factors will be deleted:\n"
+    cur = db.cursor()
+    sql = """
+        select hs.id, m.machine_name, hs.validity_period, hs.scale_factor
+          from hostscalefactors_data hs
+          left join machinename m on m.id = hs.machine_name_id
+          left join hostscalefactor_types st on st.id = hs.scalefactor_type_id
+        where hs.id in %s
+        order by hs.id;
+    """
+    execute_sql(cur, sql, (tuple(def_ids),))
+    print "%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id")
+    print "-----------------------------------------------------------------------------------------------------------------"
+    for row in cur.fetchall():
+        hs_id = row[0]
+        machine_name = row[1]
+        validity_period = format_datetimerange(row[2])
+        factor = row[3]
+        print "%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id)
+    print "\nProceed (y/n)?"
+
+    response = sys.stdin.readline()
+    if response not in ('y\n', 'Y\n'):
+        print "Aborting. Nothing deleted"
+        sys.exit(0)
+
+    execute_sql(cur, "DELETE FROM hostscalefactors_data where id in %s;", (tuple(def_ids),))
+    db.commit()
+
+
+def main():
+    argparser = argparse.ArgumentParser(description='Manage hostscaling factors in SGAS')
+    argparser.add_argument('action', choices=['add', 'show', 'del'], help='Action')
+    argparser.add_argument('-i', '--definition_ids', help="Comma separated list of scale factor definition ids")
+    argparser.add_argument('-m', '--machine_name', help="Machine name")
+    argparser.add_argument('-a', '--add_machine', action='store_true', help="Add machine name to db if unknown when adding a factor")
+    argparser.add_argument('-f', '--factor', help="Scale factor")
+    argparser.add_argument('-t', '--time', help="Time in format YYYY-MM-DD[ hh:mm:ss]")
+    argparser.add_argument('-r', '--timerange', help="Timerange in format  [|( [YYYY-MM-DD[ hh:mm:ss]], [YYYY-MM-DD[ hh:mm:ss] ]|), e.g. '( , 2018-10-11)' = until (but not including) 2018-10-11")
+    argparser.add_argument('-T', '--factortype', help="Factor type")
+    argparser.add_argument('-c', '--conf', help="SGAS config file (default: /etc/sgas.conf)", default="/etc/sgas.conf")
+    argparser.add_argument('-V', '--verbose', help="More output (SQL queries being run, etc)", action='store_true')
+
+    args = argparser.parse_args()
+
+    global verbose
+    verbose = args.verbose
+
+    if args.definition_ids:
+        try:
+            def_ids = [ int(s) for s in args.definition_ids.split(',') ]
+        except ValueError, e:
+            sys.stderr.write("Can't parse the definition ids: %s\n" % e)
+            sys.exit(1)
+    else:
+        def_ids = None
+
+    cfg = config.readConfig(args.conf)
+    db = connectDb(cfg.get(config.SERVER_BLOCK,config.DB))
+
+    if args.action == 'show':
+        show_factors(db, args.machine_name, args.time, args.factortype, def_ids)
+
+    elif args.action == 'add':
+        timerange = parse_datetimerange(args.timerange or '(,)')
+        try:
+            add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '', args.add_machine)
+        except Exception, e:
+            sys.stderr.write("Error adding new factor: %s\n" % e)
+            sys.exit(1)
+
+    elif args.action == 'del':
+        try:
+            del_factors(db, def_ids)
+        except Exception, e:
+            sys.stderr.write("Deleting scale factor definitions failed: %s\n" % e)
+            sys.exit(1)
+
+    else:
+        raise Exception("Huh?  We should never end up here!")
+
+
+if __name__ == "__main__":
+    main()
+
+# vim: tw=0 ts=4 sw=4

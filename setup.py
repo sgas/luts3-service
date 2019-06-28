@@ -59,7 +59,8 @@ setup(name='sgas-luts-service',
                 'sgas/ext', 'sgas/ext/isodate', 'sgas/ext/python',
                 'sgas/queryengine', 'sgas/server', 'sgas/usagerecord', 
                 'sgas/storagerecord', 'sgas/viewengine', 'sgas/generic',
-                'sgas/hostscalefactors','sgas/customqueryengine'],
+                'sgas/hostscalefactors','sgas/customqueryengine', 'sgas/util',
+                'sgas/wlcgtapereport', 'sgas/wlcg'],
 
       cmdclass = cmdclasses,
 
@@ -88,7 +89,7 @@ setup(name='sgas-luts-service',
           ('/etc/',                      ['datafiles/etc/sgas.authz']),
           ('/etc/init.d',                ['datafiles/etc/sgas']),
           ('/etc/nginx/sites-available', ['datafiles/etc/nginx/sites-available/sgas']),
-          ('bin',                        ['sgas-db-tool'])
+          ('bin',                        ['sgas-db-tool', 'sgas-hs-tool'])
       ]
 
 )

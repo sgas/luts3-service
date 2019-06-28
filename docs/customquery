@@ -100,9 +100,9 @@ It is also possible to specify multiple queries/groups by comma seperating the e
 
     "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Henrik Thostrup Jensen"     customquery:query=lastinsert-machine,customquery:querygroup=admin
     
-To grant a person access to all queries, just specify query or query:all, e.g.:
+To grant a person access to all queries, just specify customquery or customquery:all, e.g.:
 
-    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               query:all
+    "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Josva Kleist"               customquery:all
 
 Note that SGAS must be restarted in order for any configuration or
 authorization changes to take place.
