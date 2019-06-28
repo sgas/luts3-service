@@ -190,8 +190,8 @@ class WLCGView(baseview.BaseView):
             return self.renderAuthzErrorPage(request, 'WLCG view', subject)
 
         # access allowed
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'WLCG Views (experimental)'})
-        request.write( html.createTitle('WLCG Views (experimental)') )
+        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'WLCG Views'})
+        request.write( html.createTitle('WLCG Views') )
         for view_url, ( description, _ ) in self.subview.items():
             request.write('<div><a href=wlcg/%s>%s</a></div>\n' % (view_url, description))
             request.write( html.P )
