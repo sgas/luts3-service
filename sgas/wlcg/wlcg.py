@@ -155,9 +155,9 @@ class WLCG:
         if not self.query:
             return None
 
-        with open("/var/tmp/hepp", "w") as f:
-            f.write(self.query + '\n')
-            f.write(str(self.query_args))
+        #with open("/var/tmp/hepp", "w") as f:
+        #    f.write(self.query + '\n')
+        #    f.write(str(self.query_args))
 
         query = self.query + '\n;'
         query_args = deepcopy(self.query_args)
