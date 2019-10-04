@@ -27,6 +27,9 @@ $ createlang plpgsql sgas
 $ psql sgas
 sgas=# CREATE USER root PASSWORD 'db-password';
 
+# Add extension btree_gist
+sgas=# CREATE EXTENSION btree_gist;
+
 # Note: The following commands MUST be done by the SGAS database user,
 #       NOT the postgresql administrative user.
 sgas=# \i /usr/local/share/sgas/postgres/sgas-postgres-schema.sql

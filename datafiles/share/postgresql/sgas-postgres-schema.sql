@@ -119,8 +119,6 @@ CREATE TABLE hostscalefactor_type_default (
         id      integer     REFERENCES hostscalefactor_types (id)
 );
 
-CREATE EXTENSION btree_gist;
-
 CREATE TABLE hostscalefactors_data (
     id                      serial          NOT NULL PRIMARY KEY,
     machine_name_id         integer         NOT NULL REFERENCES machinename (id),
