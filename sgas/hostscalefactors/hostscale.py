@@ -29,11 +29,10 @@ class HostScaleFactorUpdater(service.Service):
 
         # get scale factors
         self.scale_factors = {}
+        self.default_scale_factor_type = None
 
         if not SCALE_BLOCK in cfg.sections():
             return
-
-        self.default_scale_factor_type = None
 
         for var in cfg.options(SCALE_BLOCK):
             if var == 'default_scale_factor_type':
