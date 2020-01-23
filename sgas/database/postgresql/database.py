@@ -42,7 +42,7 @@ class _DatabasePoolProxy:
         host, port, database, user, password = args[:5]
         if port is None:
             port = DEFAULT_POSTGRESQL_PORT
-        return adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password)
+        return adbapi.ConnectionPool('psycopg2', host=host, port=port, database=database, user=user, password=password, target_session_attrs="read-write")
 
 
     def reconnect(self):
