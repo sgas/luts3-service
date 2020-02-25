@@ -7,6 +7,7 @@ Copyright: Nordic Data Grid Facility (2010)
 
 import types
 import decimal
+import time
 
 import psycopg2
 import psycopg2.extensions # not used, but enables tuple adaption
@@ -101,13 +102,14 @@ class PostgreSQLDatabase(service.MultiService):
         except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
-            if not retry:
-                log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e), system='sgas.PostgreSQLDatabase')
-                self.pool_proxy.reconnect()
-                yield self.query(query, query_args, retry=True)
             if retry:
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
+            else:
+                log.msg('Got interface error while querying database(%s), attempting to reconnect' % str(e), system='sgas.PostgreSQLDatabase')
+                self.pool_proxy.reconnect()
+                yield self.query(query, query_args, retry=True)
+
 
     @defer.inlineCallbacks
     def recordInserter(self, type, proc, arg_list, retry=False):
@@ -144,6 +146,7 @@ class PostgreSQLDatabase(service.MultiService):
             if not retry:
                 log.msg('Got interface error while attempting insert: %s.' % str(e), system='sgas.PostgreSQLDatabase')
                 log.msg('Attempting to reconnect.', system='sgas.PostgreSQLDatabase')
+                time.sleep(3)
                 self.pool_proxy.reconnect()
                 yield self.recordInserter(type, proc, arg_list, retry=True)
             if retry:
@@ -213,7 +216,7 @@ class PostgreSQLDatabase(service.MultiService):
                         log.msg('Aggregation(%s) updated: %s / %s' % (aggregator,insert_date, machine_name), system='sgas.AggregationUpdater')
                     if service and service.stopping:
                         break
-                except psycopg2.InterfaceError, e:
+                except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
                     # typically means we lost the connection due to a db restart
                     if retry:
                         log.msg('Reconnect in update failed, bailing out.', system='sgas.AggregationUpdater')
@@ -222,8 +225,13 @@ class PostgreSQLDatabase(service.MultiService):
                         log.msg('Got InterfaceError while attempting update: %s.' % str(e), system='sgas.AggregationUpdater')
                         log.msg('Attempting reconnect.', system='sgas.AggregationUpdater')
                         retry = True
+                        time.sleep(3)
                         self.pool_proxy.reconnect()
-                except:
+                        log.msg("Reconnected ...", system='sgas.AggregationUpdater')
+                        self.updateAggregator(aggregator, service, retry=True)
+                        break
+                except Exception, e:
+                    log.msg("Got exception '%s', trying rollback" % e, system='sgas.AggregationUpdater')
                     conn.rollback()
                     raise
 
