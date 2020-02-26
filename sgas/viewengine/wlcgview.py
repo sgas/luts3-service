@@ -26,6 +26,7 @@ COLUMN_NAMES = {
     wlcg.YEAR                    : 'Year',
     wlcg.MONTH                   : 'Month',
     wlcg.TIER                    : 'Tier',
+    wlcg.COUNTRY                 : 'Country',
     wlcg.MACHINE_NAME            : 'Host',
     wlcg.VO_NAME                 : 'VO',
     wlcg.VO_GROUP                : 'VO Group',
@@ -124,7 +125,7 @@ def _collapseFields(records, collapse_fields):
     into a new batch of records for the new shared key fields.
     """
 
-    KEY_FIELDS = ( wlcg.YEAR, wlcg.MONTH, wlcg.TIER, wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
+    KEY_FIELDS = ( wlcg.YEAR, wlcg.MONTH, wlcg.TIER, wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
 
     def createFieldKey(record):
         """
@@ -149,6 +150,36 @@ def _collapseFields(records, collapse_fields):
 
     return summed_records
 
+
+def _groupBy(records, group_by_fields):
+    """
+    INCOMPLETE IMPLEMENTATION
+    """
+
+    def createFieldKey(record, key_fileds):
+        """
+        Returns the key fields of a record as a tuple.
+        """
+        key = tuple ( [ record[field] for field in key_fields ] )
+        return key
+
+    aggregate = {}
+    for rec in records:
+        r = rec.copy()
+        key = createFieldKey(r, group_by_fields)
+        if key not in aggregate:
+            aggregate[key] = [ ]
+
+
+def _countryCode(rec):
+    codes = { 'Finland': 'FI', 'Sweden':  'SE', 'Denmark': 'DK', 'Norway':  'NO' }
+
+    if wlcg.COUNTRY in rec and rec[wlcg.COUNTRY] in codes:
+        return codes[rec[wlcg.COUNTRY]]
+    else:
+        # Fall back - try to figure out the country based on
+        # machine_name
+        return rec[wlcg.MACHINE_NAME].split(".")[-1].upper()
 
 
 class WLCGView(baseview.BaseView):
@@ -205,6 +236,7 @@ class WLCGBaseView(baseview.BaseView):
 
     group_by = []
     columns = []
+    invisible_columns = []
     vo_list = ('atlas', 'alice', 'cms')
     split = None
     tier_based = False
@@ -267,7 +299,7 @@ class WLCGBaseView(baseview.BaseView):
             table_content = self.createTable(wlcg_records, self.columns)
         else:
             table_content = ''
-            columns = [ c for c in self.columns if c != self.split ]
+            columns = [ c for c in self.columns if c != self.split and c not in self.invisible_columns ]
             for split_attr, records in split_records.items():
                 table = self.createTable(records, columns)
                 table_content += html.createParagraph(split_attr) + table + html.SECTION_BREAK
@@ -300,6 +332,7 @@ class WLCGBaseView(baseview.BaseView):
         elements = []
         for rn in row_names:
             for c in columns:
+                if c in self.invisible_columns: continue
                 elements.append( ((c, rn), _formatValue(records[rn][c])) )
         matrix = dict(elements)
         table_markup = htmltable.createHTMLTable(matrix, columns, row_names, column_labels=COLUMN_NAMES, skip_base_column=True)
@@ -354,17 +387,15 @@ def sortAndSumByCountry(records, key):
 
     """
 
-    countryCode = lambda x: x[wlcg.MACHINE_NAME].split(".")[-1]
-
     # Group records by country
-    rec = sorted(records, key=countryCode)
+    rec = sorted(records, key=_countryCode)
 
     totalsum = {wlcg.MACHINE_NAME: "ALL-TOTAL"}
     countrysum = {}
     n = 0
     i = 0
     while i < len(rec):
-        country = countryCode(rec[i]).upper() + "-TOTAL"
+        country = _countryCode(rec[i]) + "-TOTAL"
 
         if wlcg.MACHINE_NAME not in countrysum:
             countrysum[wlcg.MACHINE_NAME] = country
@@ -378,7 +409,7 @@ def sortAndSumByCountry(records, key):
             n = 0
 
         for key in rec[i]:
-            if key not in (wlcg.MACHINE_NAME, wlcg.TIER, wlcg.EFFICIENCY, wlcg.VO_NAME):
+            if key not in (wlcg.MACHINE_NAME, wlcg.TIER, wlcg.COUNTRY, wlcg.EFFICIENCY, wlcg.VO_NAME):
                 val = rec[i][key]
                 countrysum[key] = countrysum.get(key, 0) + val
                 totalsum[key] = totalsum.get(key, 0) + val
@@ -394,9 +425,10 @@ def sortAndSumByCountry(records, key):
 
 class WLCGVOOversightView(WLCGBaseView):
 
-    group_by = (  wlcg.MACHINE_NAME, wlcg.VO_NAME )
-    columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME,
+    group_by = (  wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME )
+    columns = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME,
                 wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+    invisible_columns = wlcg.COUNTRY
     tier_based = True
     split = wlcg.VO_NAME
     sort = staticmethod(sortAndSumByCountry)
@@ -516,9 +548,25 @@ class WLCGOversightView(WLCGBaseView):
             r[wlcg.VO_NAME] = TOTAL
 
         # calculate total per country-tier
-        country_tier_totals = [ r.copy() for r in wlcg_records ]
-        for rec in country_tier_totals:
-            rec[wlcg.MACHINE_NAME] = rec[wlcg.MACHINE_NAME].split('.')[-1].upper() + '-TOTAL'
+        #country_tier_totals = [ r.copy() for r in wlcg_records ]
+        #for rec in country_tier_totals:
+        #    rec[wlcg.MACHINE_NAME] = rec[wlcg.MACHINE_NAME].split('.')[-1].upper() + '-TOTAL'
+        country_vo_aggregate = {}
+        for r in wlcg_records:
+            machine = r[wlcg.MACHINE_NAME].split('.')[-1].upper() + '-TOTAL'
+            if machine not in country_vo_aggregate:
+                country_vo_aggregate[machine] = {}
+            vo = r[wlcg.VO_NAME]
+            if vo not in country_vo_aggregate[machine]:
+                country_vo_aggregate[machine][vo] = 0
+            country_vo_aggregate[machine][vo] += r[unit]
+
+        country_tier_totals = []
+        for machine in country_vo_aggregate:
+            for vo in country_vo_aggregate[machine]:
+                r = {wlcg.MACHINE_NAME: machine, wlcg.VO_NAME: vo, unit: country_vo_aggregate[machine][vo]}
+                country_tier_totals.append(r)
+
 
         # calculate total per country
         country_totals = _collapseFields(country_tier_totals, ( wlcg.VO_NAME, ) )
