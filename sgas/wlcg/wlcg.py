@@ -8,6 +8,7 @@ from sgas.database.postgresql import database as pgdatabase
 USER = 'global_user'
 TIER = 'tier'
 SITE = 'site'
+COUNTRY = 'country'
 MACHINE_NAME = 'machine_name'
 YEAR = 'year'
 MONTH = 'month'
@@ -35,7 +36,7 @@ DISK_USED = 'disk_used'
 TAPE_USED = 'tape_used'
 
 
-_groupable_columns = (USER, TIME, YEAR, MONTH, TIER, SITE, VO_NAME, VO_GROUP, VO_ROLE, MACHINE_NAME, PROCESSORS, NODE_COUNT)
+_groupable_columns = (USER, TIME, YEAR, MONTH, TIER, SITE, COUNTRY, VO_NAME, VO_GROUP, VO_ROLE, MACHINE_NAME, PROCESSORS, NODE_COUNT)
 value_columns = (N_JOBS, CORE_SECONDS, WALL_SECONDS, CPU_SECONDS, CORE_SECONDS_HS06, WALL_SECONDS_HS06, CPU_SECONDS_HS06,
                   EFFICIENCY, HS06_CORE_EQUIVALENTS, HS06_CPU_EQUIVALENTS, CORE_EQUIVALENTS)
 
@@ -119,7 +120,7 @@ class _Joins():
 class _DB():
     def __init__(self, db_host=None, db_name=None, db_username=None, db_password=None):
         self.con = psycopg2.connect(host=db_host, database=db_name, user=db_username, password=db_password)
-        self.cur = self.conn.cursor()
+        self.cur = self.con.cursor()
 
     def __del__(self):
         self.con.close()
@@ -277,6 +278,12 @@ class WLCG:
                 joins.add('wlcg.machinename_site_junction', 'using(machine_name_id)')
                 joins.add('wlcg.sites', 'using(site_id)')
                 column_list.append({'name': SITE, 'code': 'wlcg.sites.site_name'})
+
+            elif c == COUNTRY:
+                joins.add('wlcg.machinename_site_junction', 'using(machine_name_id)')
+                joins.add('wlcg.sites', 'using(site_id)')
+                joins.add('wlcg.countries', 'using(country_id)')
+                column_list.append({'name': COUNTRY, 'code': 'wlcg.countries.country_name'})
 
             elif c == TIER:
                 joins.add('voinformation', 'on voinformation.id = wlcg.usagedata.vo_information_id')
