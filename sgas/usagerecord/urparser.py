@@ -196,8 +196,8 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
                             upload['from_cache'] = parseBoolean(ulele.text)
                     r.setdefault('uploads', []).append(upload)
 
-        else:
-            log.msg("Unhandled UR element: %s" % element.tag, system='sgas.UsageRecord')
+        #else:
+        #    log.msg("Unhandled UR element: %s" % element.tag, system='sgas.UsageRecord')
 
     # backwards logger compatability
     # alot of loggers set node_count when they should have used processors, therefore:
