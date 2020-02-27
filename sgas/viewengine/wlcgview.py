@@ -3,7 +3,7 @@ WLCG View. Part of SGAS viewengine.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
         Erik Edelmann <edelmann@csc.fi>
-Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016-2019)
+Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016-2020)
 """
 
 import time
@@ -34,7 +34,7 @@ COLUMN_NAMES = {
     wlcg.USER                    : 'User',
     wlcg.N_JOBS                  : 'Job count',
     wlcg.CPU_SECONDS             : 'CPU hours',   # (We change time units from s to h)
-    wlcg.CORE_SECONDS            : 'Wall hours',  # Yeah, I know ... but s omebody decided calling it "Wall", so we'll keep it
+    wlcg.CORE_SECONDS            : 'Wall hours',  # Yeah, I know ... but somebody decided calling it "Wall", so we'll keep it
     wlcg.CPU_SECONDS_HS06        : 'HS06 CPU hours',
     wlcg.CORE_SECONDS_HS06       : 'HS06 wall hours',
     wlcg.EFFICIENCY              : 'Job efficiency',
@@ -178,7 +178,7 @@ def _countryCode(rec):
         return codes[rec[wlcg.COUNTRY]]
     else:
         # Fall back - try to figure out the country based on
-        # machine_name
+        # machine_name top-level domain
         return rec[wlcg.MACHINE_NAME].split(".")[-1].upper()
 
 
@@ -471,7 +471,7 @@ WLCG_UNIT_MAPPING = {
 class WLCGOversightView(WLCGBaseView):
 
     # This view is rather different than the others, so it is its own class
-    group_by = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.TIER ]
+    group_by = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, wlcg.TIER ]
     units = (wlcg.CPU_SECONDS_HS06,  wlcg.HS06_CPU_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS)
     default_tier = 'ndgf-t1'
 
@@ -506,15 +506,17 @@ class WLCGOversightView(WLCGBaseView):
     def retrieveWLCGData(self, start_date, end_date, unit):
 
         end_date += " 23:59:59"
-        columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.TIER, unit ]
+        columns = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, wlcg.TIER, unit ]
         self.wlcgdb.add_query(columns=columns, group_by=self.group_by, timerange=(start_date,end_date), vo_list=self.vo_list)
 
         columns = (
             {'name': wlcg.MACHINE_NAME, 'code': wlcg.MACHINE_NAME},
-            {'name': wlcg.VO_NAME, 'code': "case when %s like '%%%%-t1' then 't1-' || %s else 't2-' || %s end" % (wlcg.TIER, wlcg.VO_NAME, wlcg.VO_NAME)},
+            {'name': wlcg.COUNTRY, 'code': wlcg.COUNTRY},
+            {'name': wlcg.VO_NAME,
+             'code': "case when %s like '%%%%-t1' then 't1-' || %s else 't2-' || %s end" % (wlcg.TIER, wlcg.VO_NAME, wlcg.VO_NAME)},
             {'name': unit, 'code': 'sum(' + unit + ')'}
         )
-        self.wlcgdb.add_outer_query(columns=columns, group_by=(wlcg.VO_NAME, wlcg.MACHINE_NAME, wlcg.TIER))
+        self.wlcgdb.add_outer_query(columns=columns, group_by=(wlcg.VO_NAME, wlcg.COUNTRY, wlcg.MACHINE_NAME, wlcg.TIER))
         d = self.wlcgdb.fetch()
         return d
 
@@ -525,16 +527,19 @@ class WLCGOversightView(WLCGBaseView):
         days = dateform.dayDelta(start_date, end_date)
         t_dataprocess_start = time.time()
 
-        wlcg_records = wlcg.rowsToDicts(wlcg_data, [ wlcg.MACHINE_NAME, wlcg.VO_NAME, unit ])
+        wlcg_records = wlcg.rowsToDicts(wlcg_data, [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, unit ])
 
         t_dataprocess = time.time() - t_dataprocess_start
 
         # get tld groups
-        hosts = set( [ rec[wlcg.MACHINE_NAME] for rec in wlcg_records ] )
         tld_groups = {}
-        for host in hosts:
-            tld = host.split('.')[-1].upper()
-            tld_groups.setdefault(tld, []).append(host)
+        for rec in wlcg_records:
+            host = rec[wlcg.MACHINE_NAME]
+            tld = _countryCode(rec)
+            if tld not in tld_groups:
+                tld_groups[tld] = [host]
+            elif  host not in tld_groups[tld]:
+                tld_groups[tld].append(host)
 
         vo_tiers = set()
         for rec in wlcg_records:
@@ -547,13 +552,9 @@ class WLCGOversightView(WLCGBaseView):
         for r in site_totals:
             r[wlcg.VO_NAME] = TOTAL
 
-        # calculate total per country-tier
-        #country_tier_totals = [ r.copy() for r in wlcg_records ]
-        #for rec in country_tier_totals:
-        #    rec[wlcg.MACHINE_NAME] = rec[wlcg.MACHINE_NAME].split('.')[-1].upper() + '-TOTAL'
         country_vo_aggregate = {}
         for r in wlcg_records:
-            machine = r[wlcg.MACHINE_NAME].split('.')[-1].upper() + '-TOTAL'
+            machine = _countryCode(r) + '-TOTAL'
             if machine not in country_vo_aggregate:
                 country_vo_aggregate[machine] = {}
             vo = r[wlcg.VO_NAME]
@@ -567,19 +568,18 @@ class WLCGOversightView(WLCGBaseView):
                 r = {wlcg.MACHINE_NAME: machine, wlcg.VO_NAME: vo, unit: country_vo_aggregate[machine][vo]}
                 country_tier_totals.append(r)
 
-
         # calculate total per country
         country_totals = _collapseFields(country_tier_totals, ( wlcg.VO_NAME, ) )
         for rec in country_totals:
             rec[wlcg.VO_NAME] = TOTAL
 
         # calculate total per tier-vo
-        tier_vo_totals = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, ) )
+        tier_vo_totals = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.COUNTRY ) )
         for r in tier_vo_totals:
             r[wlcg.MACHINE_NAME] = TIER_TOTAL
 
         # calculate total
-        total = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.VO_NAME ) )
+        total = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.COUNTRY ) )
         assert len(total) in (0,1), 'Records did not collapse into a single record when calculating grand total'
         if len(total) == 0:
             total = [ { wlcg.CPU_SECONDS : 0, wlcg.CORE_SECONDS : 0, wlcg.CPU_SECONDS_HS06 : 0, wlcg.CORE_SECONDS_HS06 : 0 } ]
@@ -600,7 +600,7 @@ class WLCGOversightView(WLCGBaseView):
 
         row_names = []
         for tld in sorted(tld_groups):
-            row_names += tld_groups[tld]
+            row_names += sorted(tld_groups[tld])
             row_names.append(tld + '-TOTAL')
         row_names.append(TIER_TOTAL)
 
