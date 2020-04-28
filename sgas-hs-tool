@@ -188,12 +188,12 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
         old_factor_id = row[0]
         old_timerange = row[1]
 
-        if not old_timerange.upper and timerange.lower and (timerange.lower > old_timerange.lower or (not old_timerange.lower)):
+        if not old_timerange.upper and timerange.lower and ((not old_timerange.lower) or timerange.lower > old_timerange.lower):
 
             # insert the new factor definition after (time-wise) the old one
             mod_timerange = form_dtr(old_timerange.lower, timerange.lower, old_timerange.lower_inc, not timerange.lower_inc)
 
-        elif not old_timerange.lower and timerange.upper and (timerange.upper < old_timerange.upper or (not old_timerange.upper)):
+        elif not old_timerange.lower and timerange.upper and ((not old_timerange.upper) or timerange.upper < old_timerange.upper):
 
             # insert the new factor definition before (time-wise) the old one
             mod_timerange = form_dtr(timerange.upper, old_timerange.upper, not timerange.upper_inc, old_timerange.upper_inc)
