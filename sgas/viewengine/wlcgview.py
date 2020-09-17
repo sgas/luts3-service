@@ -605,7 +605,7 @@ class WLCGOversightView(WLCGBaseView):
         row_names.append(TIER_TOTAL)
 
         #unit_extractor = WLCG_UNIT_MAPPING.get(unit, WLCG_UNIT_MAPPING_DEFAULT)
-        unit_extractor = lambda rec : rec[unit]
+        unit_extractor = lambda rec : rec.get(unit)
 
         elements = []
         for row in row_names:
