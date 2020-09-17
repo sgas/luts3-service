@@ -415,7 +415,7 @@ class WLCG:
 
 def rowsToDicts(rows, columns):
     result = []
-    for r in rows:
+    for r in (rows or []):
         d = {}
         for i in range(len(columns)):
             d[columns[i]] = r[i]
