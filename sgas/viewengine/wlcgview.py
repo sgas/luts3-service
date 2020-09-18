@@ -473,7 +473,6 @@ class WLCGOversightView(WLCGBaseView):
     # This view is rather different than the others, so it is its own class
     group_by = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, wlcg.TIER ]
     units = (wlcg.CPU_SECONDS_HS06,  wlcg.HS06_CPU_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS)
-    default_tier = 'ndgf-t1'
 
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
@@ -546,7 +545,7 @@ class WLCGOversightView(WLCGBaseView):
             vo_tiers.add(rec[wlcg.VO_NAME])
 
         TOTAL = 'Total'
-        TIER_TOTAL = self.default_tier.split('-')[0].upper()
+        ALL_TOTAL = 'All Total'
 
         site_totals = _collapseFields(wlcg_records, ( wlcg.VO_NAME, ) )
         for r in site_totals:
@@ -576,7 +575,7 @@ class WLCGOversightView(WLCGBaseView):
         # calculate total per tier-vo
         tier_vo_totals = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.COUNTRY ) )
         for r in tier_vo_totals:
-            r[wlcg.MACHINE_NAME] = TIER_TOTAL
+            r[wlcg.MACHINE_NAME] = ALL_TOTAL
 
         # calculate total
         total = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.COUNTRY ) )
@@ -584,7 +583,7 @@ class WLCGOversightView(WLCGBaseView):
         if len(total) == 0:
             total = [ { wlcg.CPU_SECONDS : 0, wlcg.CORE_SECONDS : 0, wlcg.CPU_SECONDS_HS06 : 0, wlcg.CORE_SECONDS_HS06 : 0 } ]
         total_record = total[0]
-        total_record[wlcg.MACHINE_NAME] = TIER_TOTAL
+        total_record[wlcg.MACHINE_NAME] = ALL_TOTAL
         total_record[wlcg.VO_NAME] = TOTAL
 
         # put all calculated records together and add equivalents
@@ -602,7 +601,7 @@ class WLCGOversightView(WLCGBaseView):
         for tld in sorted(tld_groups):
             row_names += sorted(tld_groups[tld])
             row_names.append(tld + '-TOTAL')
-        row_names.append(TIER_TOTAL)
+        row_names.append(ALL_TOTAL)
 
         #unit_extractor = WLCG_UNIT_MAPPING.get(unit, WLCG_UNIT_MAPPING_DEFAULT)
         unit_extractor = lambda rec : rec.get(unit)
@@ -614,11 +613,11 @@ class WLCGOversightView(WLCGBaseView):
                     if rec[wlcg.MACHINE_NAME] == row and rec[wlcg.VO_NAME] == col:
                         value = _formatValue( unit_extractor(rec) )
                         # hurrah for formatting
-                        if row == TIER_TOTAL and col == TOTAL:
+                        if row == ALL_TOTAL and col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
-                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == TIER_TOTAL:
+                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == ALL_TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, underlined=True)
-                        elif row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
+                        elif row.endswith('-TOTAL') or row == ALL_TOTAL or col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True)
                         elements.append( ((col,row), value))
                         break
@@ -729,8 +728,6 @@ class WLCGStorageView(baseview.BaseView):
         self.path = path
         baseview.BaseView.__init__(self, urdb, authorizer, mfst)
 
-        wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
-        self.default_tier = wlcg_config['default-tier']
 
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
@@ -797,7 +794,7 @@ class WLCGStorageView(baseview.BaseView):
         groups = set( [ rec['group'] for rec in records ] )
 
         TOTAL = 'Total'
-        TIER_TOTAL = self.default_tier.split('-')[0].upper()
+        ALL_TOTAL = 'All Total'
 
         # calculate totals per site / group
         site_group_totals = {}
@@ -845,8 +842,8 @@ class WLCGStorageView(baseview.BaseView):
         for country, rcu in country_totals.items():
             totals.append( { 'site': country, 'group': TOTAL, 'rcu': rcu } )
         for group, rcu in group_totals.items():
-            totals.append( { 'site': TIER_TOTAL, 'group': group, 'rcu': rcu } )
-        totals.append( { 'site': TIER_TOTAL, 'group': TOTAL, 'rcu': total } )
+            totals.append( { 'site': ALL_TOTAL, 'group': group, 'rcu': rcu } )
+        totals.append( { 'site': ALL_TOTAL, 'group': TOTAL, 'rcu': total } )
 
         # create table
         columns = sorted(groups)
@@ -856,7 +853,7 @@ class WLCGStorageView(baseview.BaseView):
         for tld in sorted(tld_groups):
             row_names += sorted(tld_groups[tld])
             row_names.append(tld + '-TOTAL')
-        row_names.append(TIER_TOTAL)
+        row_names.append(ALL_TOTAL)
 
         elements = []
         for row in row_names:
@@ -865,11 +862,11 @@ class WLCGStorageView(baseview.BaseView):
                     if rec['site'] == row and rec['group'] == col:
                         value = rec['rcu']
                         # hurrah for formatting
-                        if row == TIER_TOTAL and col == TOTAL:
+                        if row == ALL_TOTAL and col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
-                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == TIER_TOTAL:
+                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == ALL_TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, underlined=True)
-                        elif row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
+                        elif row.endswith('-TOTAL') or row == ALL_TOTAL or col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True)
                         elements.append( ((col,row), value))
                         break
