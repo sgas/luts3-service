@@ -92,7 +92,7 @@ def createQueryDefinition(query_name, query_config):
     
     # ConfigParser also uses %(xxx) for reading variables from the config file.
     # "Workaround" using diffrent tag.
-    query = re.sub(r'<<(\S+)>>',r'%(\1)s',query)
+    query = re.sub(r'<<([^>]+)>>',r'%(\1)s',query)
 
     return QueryDefinition(query_name, query_groups, query, params)
 
