@@ -156,6 +156,12 @@ class PostgreSQLDatabase(service.MultiService):
         except Exception, e:
             log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
             log.err(e, system='sgas.PostgreSQLDatabase')
+            for args in arg_list:
+                log.msg('Database: error: proc: %s' % proc, system='sgas.PostgreSQLDatabase')
+                for a in args:
+                    log.msg('Database: error: proc: %s, Args: "%s"' % (proc, ",".join(map(lambda x: str(x) if x else 'NULL',args))), system='sgas.PostgreSQLDatabase')
+                else:
+                    log.msg('Database: error: proc: %s, Args: "None"' % (proc), system='sgas.PostgreSQLDatabase')
             raise
 
     @defer.inlineCallbacks
