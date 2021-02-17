@@ -165,7 +165,7 @@ def parseRequestQuarter(request):
 
     try:
         year, quart = parseQuarter(quarter)
-    except ValueError, e:
+    except ValueError as e:
         raise baseview.ViewError(str(e))
 
     return year, quart

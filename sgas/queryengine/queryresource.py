@@ -52,7 +52,7 @@ class QueryResource(resource.Resource):
     def render_GET(self, request):
         try:
             query_args = queryparser.parseURLArguments(request.args)
-        except queryparser.QueryParseError, e:
+        except queryparser.QueryParseError as e:
             request.setResponseCode(400) # bad request
             log.msg('Rejecting query request: %s' % str(e), system='sgas.QueryResource')
             return str(e)

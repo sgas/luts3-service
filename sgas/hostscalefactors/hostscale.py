@@ -65,8 +65,8 @@ class HostScaleFactorUpdater(service.Service):
         try:
             yield self.pool_proxy.dbpool.runInteraction(self.issueUpdateStatements)
             log.msg("Host scale factors updated (%i entries)" % len(self.scale_factors), system='sgas.HostScaleFactorUpdate')
-        except Exception, e:
-            log.msg('Error updating host scale factors. Message: %s' % str(e), system='sgas.HostScaleFactorUpdate')
+        except Exception as e:
+            log.msg('Error updating host ggscale factors. Message: %s' % str(e), system='sgas.HostScaleFactorUpdate')
 
 
     def issueUpdateStatements(self, txn):

@@ -75,7 +75,7 @@ def parseURLArguments(request_args):
         start_date = isoDateTimeToPostgres(iso_start_date)
         end_date = isoDateTimeToPostgres(iso_end_date)
         #print "SE", start_date, end_date
-    except Exception, e:
+    except Exception as e:
         raise QueryParseError('Error parsing iso datetime: %s' % str(e))
 
     if not time_resolution in UNDERSTOOD_TIME_RESOLUTION:

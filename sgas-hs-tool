@@ -284,7 +284,7 @@ def main():
     if args.definition_ids:
         try:
             def_ids = [ int(s) for s in args.definition_ids.split(',') ]
-        except ValueError, e:
+        except ValueError as e:
             sys.stderr.write("Can't parse the definition ids: %s\n" % e)
             sys.exit(1)
     else:
@@ -300,14 +300,14 @@ def main():
         timerange = parse_datetimerange(args.timerange or '(,)')
         try:
             add_factor(db, args.machine_name, timerange, args.factortype, args.factor or '', args.add_machine)
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Error adding new factor: %s\n" % e)
             sys.exit(1)
 
     elif args.action == 'del':
         try:
             del_factors(db, def_ids)
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Deleting scale factor definitions failed: %s\n" % e)
             sys.exit(1)
 

@@ -60,10 +60,10 @@ def parseISODateTime(value):
     try:
         dt = isodate.parse_datetime(value)
         return time.strftime(JSON_DATETIME_FORMAT, dt.utctimetuple())
-    except ValueError, e:
+    except ValueError as e:
         log.msg("Failed to parse datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
-    except isodate.ISO8601Error, e:
+    except isodate.ISO8601Error as e:
         log.msg("Failed to parse ISO datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
 

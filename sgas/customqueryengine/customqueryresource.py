@@ -74,7 +74,7 @@ class QueryResource(resource.Resource):
 
         try:
             query_args = query.parseURLArguments(request.args)
-        except querydefinition.QueryParseError, e:
+        except querydefinition.QueryParseError as e:
             request.setResponseCode(400) # bad request
             log.msg('Rejecting custom query request: %s' % str(e), system='sgas.QueryResource')
             return str(e)

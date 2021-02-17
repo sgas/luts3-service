@@ -26,7 +26,7 @@ def splitSRDocument(sr_data):
 
     try:
         tree  = ET.fromstring(sr_data)
-    except Exception, e:
+    except Exception as e:
         raise ParseError("Error parsing storage record data (%s)" % str(e))
 
     if tree.tag == sr.STORAGE_USAGE_RECORDS:        

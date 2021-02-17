@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     try:
         dtr = parse_datetimerange(args.timerange)
-    except ParseError, e:
+    except ParseError as e:
         print "Parsing DateTimeString '%s' failed: %s" % (args.timerange, e)
         sys.exit(1)
 
