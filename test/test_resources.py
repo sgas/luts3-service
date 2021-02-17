@@ -151,7 +151,7 @@ class ResourceTest:
         try:
             yield d
             self.fail('Request should have failed with 503')
-        except weberror.Error, e:
+        except weberror.Error as e:
             self.failUnlessEqual(e.status, '503')
 
         # fetching individual usage records is currently not supported
