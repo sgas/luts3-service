@@ -101,7 +101,7 @@ def parse_duration(duration):
 def main():
     import sys
     r = parse_duration(sys.argv[1])
-    print r
+    print(r)
 
 if __name__ == '__main__':
     main()
