@@ -5,7 +5,7 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2009, 2010)
 """
 
-import ConfigParser
+import configparser as ConfigParser
 
 import re
 
@@ -76,6 +76,15 @@ class MultiLineFileReader:
 
     def __init__(self, fp):
         self._fp = fp
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        line = self.readline()
+        if not line:
+            raise StopIteration()
+        return line
 
     def readline(self):
 
