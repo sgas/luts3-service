@@ -36,16 +36,16 @@ class QueryDefinition:
     def parseURLArguments(self, request_args):
         # ensure all arguments are understood / allowed
         for query_field in request_args:
-            if query_field not in self.params:
+            if query_field.decode('utf-8') not in self.params:
                 raise QueryParseError('Query field "%s" not understood/allowed.' % query_field)
 
         result = {}
         # ensure all arguments are understood / allowed
         for query_field in self.params:
             if query_field:
-                if query_field not in request_args:
+                if query_field.encode('utf-8') not in request_args:
                     raise QueryParseError('Query field "%s" missing.' % query_field)
-                result[query_field] = request_args[query_field][0]
+                result[query_field] = request_args[query_field.encode('utf-8')][0].decode('utf-8')
             
         return result
 
