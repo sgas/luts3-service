@@ -83,7 +83,7 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
             ur_doc['charge'] = int(ur_doc['charge'])
 
         if 'exit_code' in ur_doc:
-            ur_doc['exit_code'] = ur_doc['exit_code'] & 0377 # equivalent to modulus 256
+            ur_doc['exit_code'] = ur_doc['exit_code'] & 0o377 # equivalent to modulus 256
 
         if 'host' in ur_doc:
             if type(ur_doc['host']) == type(None):
