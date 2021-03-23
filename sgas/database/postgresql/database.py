@@ -83,9 +83,8 @@ class PostgreSQLDatabase(service.MultiService):
 
     @defer.inlineCallbacks
     def query(self, query, query_args=None, retry=False):
-
         def buildValue(value):
-            if type(value) in (unicode, str, int, long, float, bool, types.NoneType):
+            if type(value) in (str, int, float, bool, type(None)):
                 return value
             if isinstance(value, decimal.Decimal):
                 sv = str(value)
@@ -168,7 +167,7 @@ class PostgreSQLDatabase(service.MultiService):
     def dictquery(self, query, query_args=None, retry=False):
 
         def buildValue(value):
-            if type(value) in (unicode, str, int, long, float, bool, types.NoneType):
+            if type(value) in (str, int, float, bool, type(None)):
                 return value
             if isinstance(value, decimal.Decimal):
                 sv = str(value)
