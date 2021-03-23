@@ -221,12 +221,13 @@ class WLCGView(baseview.BaseView):
             return self.renderAuthzErrorPage(request, 'WLCG view', subject)
 
         # access allowed
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'WLCG Views'})
-        request.write( html.createTitle('WLCG Views') )
+        body = html.HTML_VIEWBASE_HEADER % {'title': 'WLCG Views'}
+        body += html.createTitle('WLCG Views')
         for view_url, ( description, _ ) in self.subview.items():
-            request.write('<div><a href=wlcg/%s>%s</a></div>\n' % (view_url, description))
-            request.write( html.P )
-        request.write(html.HTML_VIEWBASE_FOOTER)
+            body += '<div><a href=wlcg/%s>%s</a></div>\n' % (view_url, description)
+            body += html.P
+        body += html.HTML_VIEWBASE_FOOTER
+        request.write(body.encode('utf-8'))
         request.finish()
         return server.NOT_DONE_YET
 
@@ -304,23 +305,24 @@ class WLCGBaseView(baseview.BaseView):
                 table = self.createTable(records, columns)
                 table_content += html.createParagraph(split_attr) + table + html.SECTION_BREAK
 
-        start_date_option = request.args.get('startdate', [''])[0]
-        end_date_option   = request.args.get('enddate', [''])[0]
+        start_date_option = request.args.get(b'startdate', [b''])[0].decode('utf-8')
+        end_date_option   = request.args.get(b'enddate', [b''])[0].decode('utf-8')
 
         title = 'WLCG %s view' % self.path
         selector_form = dateform.createMonthSelectorForm(self.path, start_date_option, end_date_option)
         range_text = html.createParagraph('Date range: %s - %s (%s days)' % (start_date, end_date, days))
 
-        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
-        request.write( html.createTitle(title) )
-        request.write( html.createParagraph(selector_form) )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph(range_text) )
-        request.write( table_content )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
-        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
-        request.write( html.HTML_VIEWBASE_FOOTER )
+        body = html.HTML_VIEWBASE_HEADER % {'title': title}
+        body += html.createTitle(title)
+        body += html.createParagraph(selector_form)
+        body += html.SECTION_BREAK
+        body += html.createParagraph(range_text)
+        body += table_content
+        body += html.SECTION_BREAK
+        body += html.createParagraph('Query time: %s' % round(t_query, 2))
+        body += html.createParagraph('Data process time: %s' % round(t_dataprocess, 2))
+        body += html.HTML_VIEWBASE_FOOTER
+        request.write(body.encode('utf-8'))
 
         request.finish()
         return server.NOT_DONE_YET
@@ -488,13 +490,13 @@ class WLCGOversightView(WLCGBaseView):
 
         # set dates if not specified (defaults are current month, which is not what we want)
         year, quart = dateform.currentYearQuart()
-        if not 'startdate' in request.args or request.args['startdate'] == ['']:
+        if not b'startdate' in request.args or request.args[b'startdate'] == [b'']:
             start_date, _ = dateform.quarterStartEndDates(year, quart)
-        if not 'enddate' in request.args or request.args['enddate'] == ['']:
+        if not b'enddate' in request.args or request.args[b'enddate'] == [b'']:
             _, end_date = dateform.quarterStartEndDates(year, quart)
-        if 'unit' in request.args and request.args['unit'][0] not in self.units:
+        if b'unit' in request.args and request.args[b'unit'][0].decode('utf-8') not in self.units:
             return self.renderErrorPage('Invalid units parameters')
-        unit = request.args.get('unit', [wlcg.HS06_CORE_EQUIVALENTS])[0]
+        unit = request.args.get(b'unit', [wlcg.HS06_CORE_EQUIVALENTS.encode('utf-8')])[0].decode('utf-8')
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date, unit)
@@ -629,8 +631,8 @@ class WLCGOversightView(WLCGBaseView):
         table_content = htmltable.createHTMLTable(matrix, columns, row_names, column_labels=COLUMN_NAMES)
 
         # render page
-        start_date_option = request.args.get('startdate', [''])[0]
-        end_date_option   = request.args.get('enddate', [''])[0]
+        start_date_option = request.args.get(b'startdate', [b''])[0].decode('utf-8')
+        end_date_option   = request.args.get(b'enddate', [b''])[0].decode('utf-8')
 
         title = 'WLCG oversight view'
         unit_options = []

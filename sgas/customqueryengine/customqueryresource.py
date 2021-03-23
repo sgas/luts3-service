@@ -21,10 +21,6 @@ JSON_MIME_TYPE = 'application/json'
 HTTP_HEADER_CONTENT_TYPE   = 'content-type'
 
 ACTION_CUSTOMQUERY  = 'customquery'
-CTX_MACHINE_NAME    = 'machine_name'
-CTX_USER_IDENTITY   = 'user_identity'
-CTX_VO_NAME         = 'vo_name'
-
 
 class QueryResource(resource.Resource):
     
@@ -39,11 +35,9 @@ class QueryResource(resource.Resource):
         self.authorizer = authorizer        
         self.queries = querydefinition.buildQueryList(cfg)
         
-        self.authorizer.addChecker(ACTION_CUSTOMQUERY, ctxsetchecker.AllSetChecker)
+        self.authorizer.addChecker(ACTION_CUSTOMQUERY, ctxsetchecker.AnySetChecker)
         self.authorizer.rights.addActions(ACTION_CUSTOMQUERY)
         self.authorizer.rights.addOptions(ACTION_CUSTOMQUERY,[authrights.OPTION_ALL])
-        self.authorizer.rights.addContexts(ACTION_CUSTOMQUERY,[CTX_MACHINE_NAME, CTX_USER_IDENTITY, CTX_VO_NAME])
-
 
 
     def queryDatabase(self, query, query_args):
@@ -56,17 +50,19 @@ class QueryResource(resource.Resource):
             log.msg('Missing query name', system='sgas.QueryResource')
             return "Missing query name"
 
-        query_name = request.postpath[0]
-        if not query_name:
+        if not request.postpath[0]:
             request.setResponseCode(400) # bad request
             log.msg('Missing query name', system='sgas.QueryResource')
             return "Missing query name"
+
+        query_name = request.postpath[0].decode('utf-8')               
 
         query = None
         for q in self.queries:
             if q.query_name == query_name:
                 query = q
-                
+                break
+
         if not query:
             request.setResponseCode(400) # bad request
             log.msg('Query "%s" does not exist' % query_name, system='sgas.QueryResource')
@@ -85,14 +81,14 @@ class QueryResource(resource.Resource):
         
         if not self.authorizer.isAllowed(subject, ACTION_CUSTOMQUERY, context=ctx):
             request.setResponseCode(403) # forbidden
-            return "CustomQuery not allowed for given context for identity %s" % subject
+            return ("CustomQuery not allowed for given context for identity %s" % subject).encode('utf-8')
         # request allowed, continue
 
         hostname = resourceutil.getHostname(request)
         log.msg('Accepted query request from %s' % hostname, system='sgas.QueryResource')
 
         def gotDatabaseResult(rows):
-            payload = json.dumps(rows)
+            payload = json.dumps(rows).encode('utf-8')
             request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
             request.write(payload)
             request.finish()
