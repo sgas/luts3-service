@@ -11,13 +11,13 @@ from sgas.ext import isodate
 
 
 
-MACHINE_NAME  = 'machine_name'
-USER_IDENTITY = 'user_identity'
-VO_NAME       = 'vo_name'
-START_DATE    = 'start_date'
-END_DATE      = 'end_date'
+MACHINE_NAME  = b'machine_name'
+USER_IDENTITY = b'user_identity'
+VO_NAME       = b'vo_name'
+START_DATE    = b'start_date'
+END_DATE      = b'end_date'
 
-TIME_RESOLUTION = 'time_resolution'
+TIME_RESOLUTION = b'time_resolution'
 DEFAULT_TIME_RESOLUTION = 'collapse'
 
 UNDERSTOOD_QUERY_PARAMS    = [ MACHINE_NAME, USER_IDENTITY, VO_NAME, START_DATE, END_DATE, TIME_RESOLUTION ]
@@ -45,7 +45,7 @@ def isoDateTimeToPostgres(iso_date_time):
 def parseURLArguments(request_args):
 
     # ensure all arguments are understood / allowed
-    for query_field in request_args:
+    for query_field in [r.encode('utf-8') for r in request_args]:
         if query_field not in UNDERSTOOD_QUERY_PARAMS:
             raise QueryParseError('Query field %s not understood/allowed.' % query_field)
 
