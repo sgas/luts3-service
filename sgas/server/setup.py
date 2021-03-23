@@ -34,10 +34,10 @@ def createSite(cfg, log, db, authorizer):
         obj = pluginClass(cfg, db, authorizer)
         
         # register
-        tr.registerService(obj, obj.PLUGIN_ID, ((obj.PLUGIN_NAME,obj.PLUGIN_ID),))
+        tr.registerService(obj, obj.PLUGIN_ID.encode('utf-8'), ((obj.PLUGIN_NAME,obj.PLUGIN_ID),))
                            
     root = resource.Resource()
-    root.putChild('sgas', tr)
+    root.putChild(b'sgas', tr)
 
     site = server.Site(root)
     site.log = lambda *args : None
