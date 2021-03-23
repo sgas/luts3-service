@@ -7,7 +7,7 @@ import socket
 
 from twisted.python import log
 
-from util import has_headers, get_headers
+from sgas.server.util import has_headers, get_headers
 
 
 LOOPBACK_ADDRESSES = ('127.0.0.1', '::1')
