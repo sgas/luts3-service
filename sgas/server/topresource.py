@@ -13,7 +13,7 @@ from xml.etree import cElementTree as ET
 from twisted.python import log
 from twisted.web import resource
 
-from util import has_headers, get_headers
+from sgas.server.util import has_headers, get_headers
 
 
 XML_HEADER = '''<?xml version="1.0" encoding="UTF-8"?>'''
@@ -72,10 +72,9 @@ class TopResource(resource.Resource):
         if get_headers(request, 'x-forwarded-protocol') == 'https':
             is_secure = True
 
-        basepath = '/'.join(request.prepath)
+        basepath = '/'.join([p.decode('utf-8') for p in request.prepath])
         baseurl = self._createBaseURL(host, is_secure, basepath)
-        #print "BASEURL", baseurl
         tree = self._createServiceTree(baseurl)
-        ts = XML_HEADER + ET.tostring(tree) + "\n"
-        return ts
+        ts = XML_HEADER + ET.tostring(tree).decode('utf-8') + "\n"
+        return ts.encode('utf-8')
 
