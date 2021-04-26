@@ -38,6 +38,7 @@ class QueryResource(resource.Resource):
         self.authorizer.addChecker(ACTION_CUSTOMQUERY, ctxsetchecker.AnySetChecker)
         self.authorizer.rights.addActions(ACTION_CUSTOMQUERY)
         self.authorizer.rights.addOptions(ACTION_CUSTOMQUERY,[authrights.OPTION_ALL])
+        self.authorizer.rights.addContexts(ACTION_CUSTOMQUERY,[rights.CTX_QUERYGROUP])
 
 
     def queryDatabase(self, query, query_args):
@@ -76,6 +77,11 @@ class QueryResource(resource.Resource):
             return str(e)
         
         ctx = [ (rights.CTX_QUERY, query_name) ] + [ (rights.CTX_QUERYGROUP, vg) for vg in query.query_group ]
+
+        # Add query group authz params.
+        if query.authz_params:
+            query_authz_str = "/".join((query_args[q] for q in query.authz_params))
+            ctx += [ (rights.CTX_QUERYGROUP, vg + "/" + query_authz_str) for vg in query.query_group ]
 
         subject = resourceutil.getSubject(request)
         

@@ -17,6 +17,7 @@ QUERY_PREFIX      = 'query:'
 QUERY_GROUP       = 'querygroup'
 QUERY_QUERY       = 'query'
 QUERY_PARAMS      = 'params'
+QUERY_AUTHZ       = 'authz_params'
 
 
 class QueryParseError(Exception):
@@ -27,11 +28,12 @@ class QueryParseError(Exception):
 
 class QueryDefinition:
 
-    def __init__(self, query_name, query_group, query, params):        
+    def __init__(self, query_name, query_group, query, params, authz_params):
         self.query_name  = query_name        
         self.query_group = query_group
         self.query       = query
         self.params      = params
+        self.authz_params = authz_params
                 
     def parseURLArguments(self, request_args):
         # ensure all arguments are understood / allowed
@@ -70,6 +72,7 @@ def createQueryDefinition(query_name, query_config):
     query_groups = []    
     query        = None
     params       = []
+    authz_params = []
 
     for key, value in query_config.items():
         if key == QUERY_GROUP:
@@ -80,6 +83,9 @@ def createQueryDefinition(query_name, query_config):
 
         elif key == QUERY_PARAMS:
             params = [ param.strip() for param in value.split(',') ]
+
+        elif key == QUERY_AUTHZ:
+            authz_params = [ param.strip() for param in value.split(',') ]
 
         else:
             log.msg("Unknown query definition key: %s" % key, system='customQueryEngine.ViewDefinition')
@@ -94,5 +100,5 @@ def createQueryDefinition(query_name, query_config):
     # "Workaround" using diffrent tag.
     query = re.sub(r'<<([^>]+)>>',r'%(\1)s',query)
 
-    return QueryDefinition(query_name, query_groups, query, params)
+    return QueryDefinition(query_name, query_groups, query, params, authz_params)
 
