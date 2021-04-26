@@ -46,9 +46,9 @@ def readConfig(filename):
 
     # the dict_type option isn't supported until 2.5
     try:
-        cfg = ConfigParser.SafeConfigParser(dict_type=ConfigDict)
+        cfg = ConfigParser.SafeConfigParser(dict_type=ConfigDict, interpolation=None)
     except TypeError:
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = ConfigParser.SafeConfigParser(interpolation=None)
 
     # add defaults
     cfg.add_section(SERVER_BLOCK)
