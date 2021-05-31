@@ -140,7 +140,7 @@ class GraphRenderResource(resource.Resource):
             return self.renderView(request)
 
         # access not allowed
-        request.write('<html><body>Access to view %s not allowed for %s</body></html>' % (self.view.view_name, subject))
+        request.write(('<html><body>Access to view %s not allowed for %s</body></html>' % (self.view.view_name, subject)).encode('utf-8'))
         request.finish()
         return server.NOT_DONE_YET
 
