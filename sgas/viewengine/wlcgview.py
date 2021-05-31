@@ -204,8 +204,9 @@ class WLCGView(baseview.BaseView):
         }
 
     def getChild(self, path, request):
-        if path in self.subview:
-            return self.subview[path][1]
+        p = path.decode('utf-8')
+        if p in self.subview:
+            return self.subview[p][1]
         else:
             # no such resource
             return baseview.BaseView.getChild(self, path, request)
@@ -303,7 +304,7 @@ class WLCGBaseView(baseview.BaseView):
             columns = [ c for c in self.columns if c != self.split and c not in self.invisible_columns ]
             for split_attr, records in split_records.items():
                 table = self.createTable(records, columns)
-                table_content += html.createParagraph(split_attr) + table + html.SECTION_BREAK
+                table_content += html.createParagraph(split_attr or "") + table + html.SECTION_BREAK
 
         start_date_option = request.args.get(b'startdate', [b''])[0].decode('utf-8')
         end_date_option   = request.args.get(b'enddate', [b''])[0].decode('utf-8')
@@ -648,18 +649,18 @@ class WLCGOversightView(WLCGBaseView):
             quarter_links.append(html.createLink('%s?startdate=%s&enddate=%s' % (self.path, sd, ed), q ) )
         range_text = html.createParagraph('Date range: %s - %s (%s days)' % (start_date, end_date, days))
 
-        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
-        request.write( html.createTitle(title) )
-        request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ) )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph(selector_form) )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph(range_text) )
-        request.write( table_content )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
-        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
-        request.write( html.HTML_VIEWBASE_FOOTER )
+        request.write( (html.HTML_VIEWBASE_HEADER % {'title': title}).encode('utf-8') )
+        request.write( html.createTitle(title).encode('utf-8') )
+        request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ).encode('utf-8') )
+        request.write( html.SECTION_BREAK.encode('utf-8') )
+        request.write( html.createParagraph(selector_form).encode('utf-8') )
+        request.write( html.SECTION_BREAK.encode('utf-8') )
+        request.write( html.createParagraph(range_text).encode('utf-8') )
+        request.write( table_content.encode('utf-8') )
+        request.write( html.SECTION_BREAK.encode('utf-8') )
+        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)).encode('utf-8') )
+        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)).encode('utf-8') )
+        request.write( html.HTML_VIEWBASE_FOOTER.encode('utf-8') )
 
         request.finish()
         return server.NOT_DONE_YET
@@ -889,16 +890,16 @@ class WLCGStorageView(baseview.BaseView):
 
         date_text = html.createParagraph('Date: %s' % (date))
 
-        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
-        request.write( html.createTitle(title) )
-        request.write( html.createParagraph(selector_form) )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph(date_text) )
-        request.write( table_content )
-        request.write( html.SECTION_BREAK )
-        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
-        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
-        request.write( html.HTML_VIEWBASE_FOOTER )
+        request.write( (html.HTML_VIEWBASE_HEADER % {'title': title}).encode('utf-8') )
+        request.write( html.createTitle(title).encode('utf-8') )
+        request.write( html.createParagraph(selector_form).encode('utf-8') )
+        request.write( html.SECTION_BREAK.encode('utf-8') )
+        request.write( html.createParagraph(date_text).encode('utf-8') )
+        request.write( table_content.encode('utf-8') )
+        request.write( html.SECTION_BREAK.encode('utf-8') )
+        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)).encode('utf-8') )
+        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)).encode('utf-8') )
+        request.write( html.HTML_VIEWBASE_FOOTER.encode('utf-8') )
 
         request.finish()
         return server.NOT_DONE_YET

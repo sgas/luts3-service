@@ -63,7 +63,7 @@ class ViewTopResource(resource.Resource):
         if cfg.has_option(PLUGIN_CFG_BLOCK, WLCG_VIEWS):
             try:
                 wlcg_views = cfg.getboolean(PLUGIN_CFG_BLOCK, WLCG_VIEWS)
-            except ValueError, e:
+            except ValueError as e:
                 log.err("Couldn't parse option %s in block %s in config file: %s" % (WLCG_VIEWS, PLUGIN_CFG_BLOCK, e), system='sgas.ViewResource')
                 wlcg_views = False
 
@@ -90,7 +90,7 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<p>\n'
         body += 2*ib + '<div><a href=view/machines>Machine list</a></div>\n'
 
-        if 'wlcg' in self.children:
+        if 'wlcg'.encode('utf-8') in self.children:
             body += 2*ib + '<p>\n'
             body += 2*ib + '<div><a href=view/wlcg>WLCG Views</a></div>\n'
 
