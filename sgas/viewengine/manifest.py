@@ -41,7 +41,7 @@ class Manifest:
 
         try:
             return self.properties[property_]
-        except KeyError, e:
+        except KeyError as e:
             raise NoSuchPropertyError(e)
 
 

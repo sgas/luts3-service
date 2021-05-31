@@ -27,7 +27,7 @@ class InstallSGASData(install_data):
 
         # relocation
         if RELOCATE:
-            print 'relocating to %s' % RELOCATE
+            print('relocating to %s' % RELOCATE)
             for (prefix, files) in reversed(self.data_files):
                 if prefix.startswith('/'):
                     new_prefix = os.path.join(RELOCATE, prefix[1:])
@@ -40,7 +40,7 @@ class InstallSGASData(install_data):
                 for basefile in files:
                     fn = os.path.join(prefix, os.path.basename(basefile))
                     if os.path.exists(fn):
-                        print 'Skipping installation of %s (already exists)' % fn
+                        print('Skipping installation of %s (already exists)' % fn)
                         files.remove(basefile)
             if not files:
                 self.data_files.remove((prefix, []))

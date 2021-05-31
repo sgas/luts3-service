@@ -17,6 +17,7 @@ QUERY_PREFIX      = 'query:'
 QUERY_GROUP       = 'querygroup'
 QUERY_QUERY       = 'query'
 QUERY_PARAMS      = 'params'
+QUERY_AUTHZ       = 'authz_params'
 
 
 class QueryParseError(Exception):
@@ -27,25 +28,26 @@ class QueryParseError(Exception):
 
 class QueryDefinition:
 
-    def __init__(self, query_name, query_group, query, params):        
+    def __init__(self, query_name, query_group, query, params, authz_params):
         self.query_name  = query_name        
         self.query_group = query_group
         self.query       = query
         self.params      = params
+        self.authz_params = authz_params
                 
     def parseURLArguments(self, request_args):
         # ensure all arguments are understood / allowed
         for query_field in request_args:
-            if query_field not in self.params:
+            if query_field.decode('utf-8') not in self.params:
                 raise QueryParseError('Query field "%s" not understood/allowed.' % query_field)
 
         result = {}
         # ensure all arguments are understood / allowed
         for query_field in self.params:
             if query_field:
-                if query_field not in request_args:
+                if query_field.encode('utf-8') not in request_args:
                     raise QueryParseError('Query field "%s" missing.' % query_field)
-                result[query_field] = request_args[query_field][0]
+                result[query_field] = request_args[query_field.encode('utf-8')][0].decode('utf-8')
             
         return result
 
@@ -70,6 +72,7 @@ def createQueryDefinition(query_name, query_config):
     query_groups = []    
     query        = None
     params       = []
+    authz_params = []
 
     for key, value in query_config.items():
         if key == QUERY_GROUP:
@@ -80,6 +83,9 @@ def createQueryDefinition(query_name, query_config):
 
         elif key == QUERY_PARAMS:
             params = [ param.strip() for param in value.split(',') ]
+
+        elif key == QUERY_AUTHZ:
+            authz_params = [ param.strip() for param in value.split(',') ]
 
         else:
             log.msg("Unknown query definition key: %s" % key, system='customQueryEngine.ViewDefinition')
@@ -92,7 +98,7 @@ def createQueryDefinition(query_name, query_config):
     
     # ConfigParser also uses %(xxx) for reading variables from the config file.
     # "Workaround" using diffrent tag.
-    query = re.sub(r'<<(\S+)>>',r'%(\1)s',query)
+    query = re.sub(r'<<([^>]+)>>',r'%(\1)s',query)
 
-    return QueryDefinition(query_name, query_groups, query, params)
+    return QueryDefinition(query_name, query_groups, query, params, authz_params)
 

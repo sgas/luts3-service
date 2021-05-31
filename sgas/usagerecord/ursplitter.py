@@ -26,7 +26,7 @@ def splitURDocument(ur_data):
 
     try:
         tree  = ET.fromstring(ur_data)
-    except Exception, e:
+    except Exception as e:
         raise ParseError("Error parsing ur document (%s)" % str(e))
 
     if tree.tag == ur.USAGE_RECORDS:

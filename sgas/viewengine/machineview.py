@@ -105,16 +105,15 @@ class MachineListView(baseview.BaseView):
         machines = [ r[0] for r in results]
         title = 'Machine list'
 
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': title})
-        request.write('<h3>%s</h3>\n' % title)
-        request.write('<p>\n')
+        body = html.HTML_VIEWBASE_HEADER % {'title': title}
+        body += '<h3>%s</h3>\n<p>\n' % title
 
         # service info
         for machine in machines:
-            request.write('<div><a href=machines/%s>%s</a></div>\n' % (machine, machine))
-            request.write('<p>\n')
+            body += '<div><a href=machines/%s>%s</a></div>\n<p>\n' % (machine, machine)
 
-        request.write(html.HTML_VIEWBASE_FOOTER)
+        body += html.HTML_VIEWBASE_FOOTER
+        request.write(body.encode('utf-8'))
 
         request.finish()
         return server.NOT_DONE_YET
@@ -122,7 +121,7 @@ class MachineListView(baseview.BaseView):
 
     def renderErrorPage(self, error, request):
 
-        request.write('Error rendering page: %s' % str(error))
+        request.write(('Error rendering page: %s' % str(error)).encode('utf-8'))
         request.finish()
         return server.NOT_DONE_YET
 
@@ -135,7 +134,7 @@ class MachineView(baseview.BaseView):
     def __init__(self, urdb, authorizer, manifest, machine_name):
 
         baseview.BaseView.__init__(self, urdb, authorizer, manifest)
-        self.machine_name = machine_name
+        self.machine_name = machine_name.decode('utf-8')
 
 
     def render_GET(self, request):
@@ -147,6 +146,7 @@ class MachineView(baseview.BaseView):
             return self.renderAuthzErrorPage(request, 'machine view for %s' % self.machine_name, subject)
         # access allowed
         start_date, end_date = dateform.parseStartEndDates(request)
+        print(start_date,end_date)
         d = self.retrieveMachineInfo(start_date, end_date)
         d.addCallbacks(self.renderMachineView, self.renderErrorPage, callbackArgs=(request,), errbackArgs=(request,))
         return server.NOT_DONE_YET
@@ -207,8 +207,10 @@ class MachineView(baseview.BaseView):
 
         title = 'Machine view for %s' % self.machine_name
 
-        start_date_option = request.args.get('startdate', [''])[0]
-        end_date_option   = request.args.get('enddate', [''])[0]
+        start_date_option = request.args.get(b'startdate', [b''])[0].decode('utf-8')
+        end_date_option   = request.args.get(b'enddate', [b''])[0].decode('utf-8')
+
+        print("start_date_option: ", start_date_option)
 
         # generate year-month options one year back
         month_options = ['']
@@ -229,37 +231,36 @@ class MachineView(baseview.BaseView):
             range_text = 'current month'
 
         # create page
-
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': title})
-        request.write( html.createTitle(title) )
-
-        request.write('\n' + selector_form + '\n')
+        page = html.HTML_VIEWBASE_HEADER % {'title': title}
+        page += html.createTitle(title)
+        page += '\n' + selector_form + '\n'
 
         if not (start_date_option or end_date_option):
         # skip manifest / inserts if date range is selected
-            request.write( html.createSectionTitle('Manifest') )
-            request.write( html.createParagraph('First record registration: %s' % first_record_registration) )
-            request.write( html.createParagraph('Last record registration: %s' % last_record_registration) )
-            request.write( html.createParagraph('First job start: %s' % first_job_start) )
-            request.write( html.createParagraph('Last job termination: %s' % last_job_termination) )
-            request.write( html.createParagraph('Distinct users: %s' % distinct_users) )
-            request.write( html.createParagraph('Distinct projects: %s' % distinct_projects) )
-            request.write( html.createParagraph('Number of jobs: %s' % n_jobs) )
-            request.write( html.SECTION_BREAK )
+            page += html.createSectionTitle('Manifest')
+            page += html.createParagraph('First record registration: %s' % first_record_registration)
+            page += html.createParagraph('Last record registration: %s' % last_record_registration)
+            page += html.createParagraph('First job start: %s' % first_job_start)
+            page += html.createParagraph('Last job termination: %s' % last_job_termination)
+            page += html.createParagraph('Distinct users: %s' % distinct_users)
+            page += html.createParagraph('Distinct projects: %s' % distinct_projects)
+            page += html.createParagraph('Number of jobs: %s' % n_jobs)
+            page += html.SECTION_BREAK
 
-            request.write( html.createSectionTitle('Executed jobs in the last ten days') )
-            request.write( executed_table )
-            request.write( html.SECTION_BREAK)
+            page += html.createSectionTitle('Executed jobs in the last ten days')
+            page += executed_table
+            page += html.SECTION_BREAK
 
-        request.write( html.createSectionTitle('Top 10 projects for the %s' % range_text) )
-        request.write( project_table )
-        request.write( html.SECTION_BREAK )
+        page += html.createSectionTitle('Top 10 projects for the %s' % range_text)
+        page += project_table
+        page += html.SECTION_BREAK
 
-        request.write( html.createSectionTitle('Top 20 users for the %s' % range_text) )
-        request.write( user_table )
-        request.write( html.P + '\n' )
+        page += html.createSectionTitle('Top 20 users for the %s' % range_text)
+        page += user_table
+        page += html.P + '\n'
 
-        request.write(html.HTML_VIEWBASE_FOOTER)
+        page += html.HTML_VIEWBASE_FOOTER
+        request.write(page.encode('utf-8'))
 
         request.finish()
         return server.NOT_DONE_YET

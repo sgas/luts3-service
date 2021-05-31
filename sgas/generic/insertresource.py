@@ -38,7 +38,7 @@ class GenericInsertResource(resource.Resource):
     def render_POST(self, request):
 
         def insertDone(result):
-            request.write(json.dumps(result))
+            request.write(json.dumps(result).encode('utf-8'))
             request.finish()
 
         def insertError(error):
@@ -55,7 +55,7 @@ class GenericInsertResource(resource.Resource):
             else:
                 request.setResponseCode(500)
 
-            request.write(error_msg)
+            request.write(error_msg.encode('utf-8'))
             request.finish()
 
         # FIXME check for postpath, and if any reject request
@@ -66,7 +66,7 @@ class GenericInsertResource(resource.Resource):
             #log.msg("Rejecting insert for %s, has no insert rights." % subject)
             log.msg(reject_msg)
             request.setResponseCode(403) # forbidden
-            return reject_msg
+            return reject_msg.encode('utf-8')
 
         # request allowed, continue
 
@@ -75,7 +75,7 @@ class GenericInsertResource(resource.Resource):
 
         request.content.seek(0)
         data = request.content.read()
-        d = self.insertRecords(data, subject, hostname)
+        d = self.insertRecords(data.decode('utf-8'), subject, hostname)
         d.addCallbacks(insertDone, insertError)
         return server.NOT_DONE_YET
 

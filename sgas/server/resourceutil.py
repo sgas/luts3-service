@@ -7,7 +7,7 @@ import socket
 
 from twisted.python import log
 
-from util import has_headers, get_headers
+from sgas.server.util import has_headers, get_headers
 
 
 LOOPBACK_ADDRESSES = ('127.0.0.1', '::1')
@@ -48,7 +48,7 @@ def getHostname(request):
                 socket.setdefaulttimeout(1)
                 info = socket.gethostbyaddr(addr)
                 return info[0]
-            except socket.error, msg:
+            except socket.error as msg:
                 log.msg("Error performing reverse lookup: %s" % msg)
                 return addr
         else:

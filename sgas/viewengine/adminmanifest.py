@@ -114,65 +114,68 @@ class AdminManifestResource(baseview.BaseView):
 
         manifest_props = self.manifest.getAllProperties()
 
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'})
-        request.write('<h3>Administrators Manifest</h3>\n')
-        request.write('<p> &nbsp; <p>\n\n')
+        body = html.HTML_VIEWBASE_HEADER % {'title': 'Administrators Manifest'}
+
+
+        body += '<h3>Administrators Manifest</h3>\n'
+        body += '<p> &nbsp; <p>\n\n'
 
         # service info
-        request.write('<h4>Service</h4>\n')
-        request.write('SGAS version: %s\n' % sgas_version)
-        request.write('<p>\n')
-        request.write('Up since: %s\n' % manifest_props['start_time'])
-        request.write('<p> &nbsp; <p>\n\n')
+        body += '<h4>Service</h4>\n'
+        body += 'SGAS version: %s\n' % sgas_version
+        body += '<p>\n'
+        body += 'Up since: %s\n' % manifest_props['start_time']
+        body += '<p> &nbsp; <p>\n\n'
 
         # database info
-        request.write('<h4>Database</h4>\n')
-        request.write('Number of usage records: %s\n' % n_ur_recs)
-        request.write('<p>\n')
-        request.write('Number of storage records: %s\n' % n_sr_recs)
-        request.write('<p>\n')
-        request.write('Database size: %s\n' % db_size)
-        request.write('<p> &nbsp; <p>\n\n')
+        body += '<h4>Database</h4>\n'
+        body += 'Number of usage records: %s\n' % n_ur_recs
+        body += '<p>\n'
+        body += 'Number of storage records: %s\n' % n_sr_recs
+        body += '<p>\n'
+        body += 'Database size: %s\n' % db_size
+        body += '<p> &nbsp; <p>\n\n'
 
         # registration info
-        request.write('<h4>Registrations</h4>\n')
+        body += '<h4>Registrations</h4>\n'
 
-        request.write('<h5>Registrations over the last 8 days</h5>\n')
-        request.write(inserts_table)
-        request.write('<p> &nbsp; <p>\n\n')
+        body += '<h5>Registrations over the last 8 days</h5>\n'
+        body += inserts_table
+        body += '<p> &nbsp; <p>\n\n'
 
-        request.write('<h5>Machines which has registered usage records in the last 24 hours</h5>\n')
-        request.write('<p>\n')
+        body += '<h5>Machines which has registered usage records in the last 24 hours</h5>\n'
+        body += '<p>\n'
         for mn in machines_ur_insert:
-            request.write('%s\n' % mn)
-            request.write('<p>\n')
+            body += '%s\n' % mn
+            body += '<p>\n'
         if not machines_ur_insert:
-            request.write('(none)\n')
-            request.write('<p>\n')
-        request.write('<p> &nbsp; <p>\n\n')
+            body += '(none)\n'
+            body += '<p>\n'
+        body += '<p> &nbsp; <p>\n\n'
 
-        request.write('<h5>Machines which has registered storage records in the last 24 hours</h5>\n')
-        request.write('<p>\n')
+        body += '<h5>Machines which has registered storage records in the last 24 hours</h5>\n'
+        body += '<p>\n'
         for mn in machines_sr_insert:
-            request.write('%s\n' % mn)
-            request.write('<p>\n')
+            body += '%s\n' % mn
+            body += '<p>\n'
         if not machines_sr_insert:
-            request.write('(none)\n')
-            request.write('<p>\n')
-        request.write('<p> &nbsp; <p>\n\n')
+            body += '(none)\n'
+            body += '<p>\n'
+        body += '<p> &nbsp; <p>\n\n'
 
-        request.write('<h5>Machines which has registered records within the last two months, but NOT in the last three days</h5>\n')
-        request.write('<h5>This is a list of "potentially" problematic machines</h5>\n')
-        request.write('<p>\n')
+        body += '<h5>Machines which has registered records within the last two months, but NOT in the last three days</h5>\n'
+        body += '<h5>This is a list of "potentially" problematic machines</h5>\n'
+        body += '<p>\n'
         for mn in stale_machines:
-            request.write('%s\n' % mn)
-            request.write('<p>\n')
+            body += '%s\n' % mn
+            body += '<p>\n'
         if not stale_machines:
-            request.write('(none)\n')
-            request.write('<p>\n')
-        request.write('<p> &nbsp; <p>\n\n')
+            body += '(none)\n'
+            body += '<p>\n'
+        body += '<p> &nbsp; <p>\n\n'
 
-        request.write(html.HTML_VIEWBASE_FOOTER)
+        body += html.HTML_VIEWBASE_FOOTER
+        request.write(body.encode('utf-8'))
 
         request.finish()
         return server.NOT_DONE_YET

@@ -75,10 +75,10 @@ class MonitorResource(resource.Resource):
         if not len(request.postpath) in (1,2):
             return self.renderErrorPage('Invalid machine specification', request)
 
-        machine_name = request.postpath[0]
+        machine_name = request.postpath[0].decode('utf-8')
         insert_host = None
         if len(request.postpath) == 2:
-            insert_host = request.postpath[1]
+            insert_host = request.postpath[1].decode('utf-8')
 
         d = self.queryStatus(machine_name, insert_host)
         d.addCallback(self.renderMonitorStatus, machine_name, request)
@@ -97,14 +97,14 @@ class MonitorResource(resource.Resource):
             reg_epoch = db_result[0][0]
             payload = json.dumps( { REGISTRATION_EPOCH : reg_epoch } )
             request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
-            request.write(payload)
+            request.write(payload.encode('utf-8'))
             request.finish()
 
         else:
             log.msg('Error: Got multiple results for monitor status (should not happen)', system='sgas.MonitorResource')
             log.msg('Database result: %s' % str(db_result), system='sgas.MonitorResource')
             request.setResponseCode(500)
-            request.write('Internal error in monitor resource (got multiple results)')
+            request.write(b'Internal error in monitor resource (got multiple results)')
             request.finish()
 
 
@@ -116,7 +116,9 @@ class MonitorResource(resource.Resource):
         else:
             error_msg = str(error)
 
-        request.write('Error rendering page: %s' % error_msg)
+        payload = 'Error rendering page: %s' % error_msg
+
+        request.write(payload.encode('utf-8'))
         request.finish()
         return server.NOT_DONE_YET
 

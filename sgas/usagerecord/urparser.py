@@ -60,10 +60,10 @@ def parseISODateTime(value):
     try:
         dt = isodate.parse_datetime(value)
         return time.strftime(JSON_DATETIME_FORMAT, dt.utctimetuple())
-    except ValueError, e:
+    except ValueError as e:
         log.msg("Failed to parse datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
-    except isodate.ISO8601Error, e:
+    except isodate.ISO8601Error as e:
         log.msg("Failed to parse ISO datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
 
@@ -95,7 +95,7 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
             for subele in element:
                 if    subele.tag == ur.GLOBAL_JOB_ID:  r['global_job_id'] = subele.text
                 elif  subele.tag == ur.LOCAL_JOB_ID:   r['local_job_id']  = subele.text
-                else: print "Unhandled job id element:", subele.tag
+                else: print("Unhandled job id element:", subele.tag)
 
         elif element.tag == ur.USER_IDENTITY:
             for subele in element:
@@ -115,13 +115,13 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
                                 elif va.tag == ur.VO_ROLE:
                                     attr['role'] = va.text
                                 else:
-                                    print "Unhandladed vo attribute element", va.tag
+                                    print("Unhandladed vo attribute element", va.tag)
                             vo_attrs.append(attr)
                         else:
-                            print "Unhandled vo subelement", ve.tag
+                            print("Unhandled vo subelement", ve.tag)
                     if vo_attrs:
                         r['vo_attrs'] = vo_attrs
-                else: print "Unhandled user id element:", subele.tag
+                else: print("Unhandled user id element:", subele.tag)
 
         elif element.tag == ur.JOB_NAME:       r['job_name']       = element.text
         elif element.tag == ur.STATUS:         r['status']         = element.text

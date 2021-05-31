@@ -31,8 +31,8 @@ def _currentMonthEndDate():
 
 def parseDate(request):
 
-    if 'date' in request.args:
-        date = request.args['date'][0].replace('-', '')
+    if b'date' in request.args:
+        date = request.args[b'date'][0].decode('utf-8').replace('-', '')
         if date == '':
             date = _currentMonthStartDate().replace('-', '')
         elif len(date) == 8:
@@ -50,9 +50,8 @@ def parseDate(request):
 
 
 def parseStartEndDates(request):
-
-    if 'startdate' in request.args:
-        startdate = request.args['startdate'][0].replace('-', '')
+    if b'startdate' in request.args:
+        startdate = request.args[b'startdate'][0].decode('utf-8').replace('-', '')
         if startdate == '':
             startdate = _currentMonthStartDate().replace('-', '')
         elif len(startdate) == 8:
@@ -65,8 +64,8 @@ def parseStartEndDates(request):
     else:
         startdate = _currentMonthStartDate()
 
-    if 'enddate' in request.args:
-        enddate = request.args['enddate'][0].replace('-', '')
+    if b'enddate' in request.args:
+        enddate = request.args[b'enddate'][0].decode('utf-8').replace('-', '')
         if enddate == '':
             enddate = _currentMonthEndDate().replace('-', '')
         elif len(enddate) == 8:
@@ -155,8 +154,8 @@ def parseQuarter(quarter):
 
 def parseRequestQuarter(request):
 
-    if 'quarter' in request.args:
-        quarter = request.args['quarter'][0]
+    if b'quarter' in request.args:
+        quarter = request.args[b'quarter'][0].decode('utf-8')
     else:
         quarter = currentQuarter()
 
@@ -165,7 +164,7 @@ def parseRequestQuarter(request):
 
     try:
         year, quart = parseQuarter(quarter)
-    except ValueError, e:
+    except ValueError as e:
         raise baseview.ViewError(str(e))
 
     return year, quart

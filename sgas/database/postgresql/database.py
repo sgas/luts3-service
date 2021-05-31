@@ -83,9 +83,8 @@ class PostgreSQLDatabase(service.MultiService):
 
     @defer.inlineCallbacks
     def query(self, query, query_args=None, retry=False):
-
         def buildValue(value):
-            if type(value) in (unicode, str, int, long, float, bool, types.NoneType):
+            if type(value) in (str, int, float, bool, type(None)):
                 return value
             if isinstance(value, decimal.Decimal):
                 sv = str(value)
@@ -99,7 +98,7 @@ class PostgreSQLDatabase(service.MultiService):
             for row in query_result:
                 results.append( [ buildValue(e) for e in row ] )
             defer.returnValue(results)
-        except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
+        except (psycopg2.InterfaceError, psycopg2.OperationalError) as e:
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if retry:
@@ -136,11 +135,11 @@ class PostgreSQLDatabase(service.MultiService):
                 conn.rollback()
                 raise
 
-        except psycopg2.OperationalError, e:
+        except psycopg2.OperationalError as e:
             if 'Connection refused' in str(e):
                 raise error.DatabaseUnavailableError(str(e))
             raise # re-raise current exception
-        except psycopg2.InterfaceError, e:
+        except psycopg2.InterfaceError as e:
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if not retry:
@@ -153,16 +152,22 @@ class PostgreSQLDatabase(service.MultiService):
                 log.msg('Got interface error after retrying to connect, bailing out.', system='sgas.PostgreSQLDatabase')
                 raise error.DatabaseUnavailableError(str(e))
 
-        except Exception, e:
+        except Exception as e:
             log.msg('Unexpected database error', system='sgas.PostgreSQLDatabase')
             log.err(e, system='sgas.PostgreSQLDatabase')
+            for args in arg_list:
+                log.msg('Database: error: proc: %s' % proc, system='sgas.PostgreSQLDatabase')
+                for a in args:
+                    log.msg('Database: error: proc: %s, Args: "%s"' % (proc, ",".join(map(lambda x: str(x) if x else 'NULL',args))), system='sgas.PostgreSQLDatabase')
+                else:
+                    log.msg('Database: error: proc: %s, Args: "None"' % (proc), system='sgas.PostgreSQLDatabase')
             raise
 
     @defer.inlineCallbacks
     def dictquery(self, query, query_args=None, retry=False):
 
         def buildValue(value):
-            if type(value) in (unicode, str, int, long, float, bool, types.NoneType):
+            if type(value) in (str, int, float, bool, type(None)):
                 return value
             if isinstance(value, decimal.Decimal):
                 sv = str(value)
@@ -181,7 +186,7 @@ class PostgreSQLDatabase(service.MultiService):
             for row in query_result:
                 results.append(dict([(k,buildValue(row[k])) for k in row]))
             defer.returnValue(results)
-        except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
+        except (psycopg2.InterfaceError, psycopg2.OperationalError) as e:
             # this usually happens if the database was restarted,
             # and the existing connection to the database was closed
             if not retry:
@@ -216,7 +221,7 @@ class PostgreSQLDatabase(service.MultiService):
                         log.msg('Aggregation(%s) updated: %s / %s' % (aggregator,insert_date, machine_name), system='sgas.AggregationUpdater')
                     if service and service.stopping:
                         break
-                except (psycopg2.InterfaceError, psycopg2.OperationalError), e:
+                except (psycopg2.InterfaceError, psycopg2.OperationalError) as e:
                     # typically means we lost the connection due to a db restart
                     if retry:
                         log.msg('Reconnect in update failed, bailing out.', system='sgas.AggregationUpdater')
@@ -230,12 +235,12 @@ class PostgreSQLDatabase(service.MultiService):
                         log.msg("Reconnected ...", system='sgas.AggregationUpdater')
                         self.updateAggregator(aggregator, service, retry=True)
                         break
-                except Exception, e:
+                except Exception as e:
                     log.msg("Got exception '%s', trying rollback" % e, system='sgas.AggregationUpdater')
                     conn.rollback()
                     raise
 
-        except Exception, e:
+        except Exception as e:
             log.err(e, system='sgas.AggregationUpdater')
             raise
 

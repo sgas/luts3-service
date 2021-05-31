@@ -5,7 +5,7 @@ Author: Henrik Thostrup Jensen <htj@ndgf.org>
 Copyright: Nordic Data Grid Facility (2009, 2010)
 """
 
-import ConfigParser
+import configparser as ConfigParser
 
 import re
 
@@ -46,9 +46,9 @@ def readConfig(filename):
 
     # the dict_type option isn't supported until 2.5
     try:
-        cfg = ConfigParser.SafeConfigParser(dict_type=ConfigDict)
+        cfg = ConfigParser.SafeConfigParser(dict_type=ConfigDict, interpolation=None)
     except TypeError:
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = ConfigParser.SafeConfigParser(interpolation=None)
 
     # add defaults
     cfg.add_section(SERVER_BLOCK)
@@ -77,6 +77,15 @@ class MultiLineFileReader:
     def __init__(self, fp):
         self._fp = fp
 
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        line = self.readline()
+        if not line:
+            raise StopIteration()
+        return line
+
     def readline(self):
 
         line = self._fp.readline()
@@ -86,7 +95,7 @@ class MultiLineFileReader:
             line = re.sub(r'<<<$',r'',line.rstrip())
             while True:
                 cl = self._fp.readline().rstrip()
-                if not cl:
+                if cl == None:
                     raise ConfigurationError("ReadError: Reached end of file but found no <<<")
                 if cl.startswith("<<<"):
                     break

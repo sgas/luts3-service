@@ -56,9 +56,9 @@ class ViewTopResource(resource.Resource):
         mfst = manifest.Manifest()
         mfst.setProperty('start_time', time.asctime())
 
-        self.putChild('adminmanifest', adminmanifest.AdminManifestResource(self.urdb, authorizer, mfst))
-        self.putChild('machines', machineview.MachineListView(self.urdb, authorizer, mfst))
-        self.putChild('custom', CustomViewTopResource(self.urdb, authorizer, self.views))
+        self.putChild('adminmanifest'.encode('utf-8'), adminmanifest.AdminManifestResource(self.urdb, authorizer, mfst))
+        self.putChild('machines'.encode('utf-8'), machineview.MachineListView(self.urdb, authorizer, mfst))
+        self.putChild('custom'.encode('utf-8'), CustomViewTopResource(self.urdb, authorizer, self.views))
         
         if cfg.has_option(PLUGIN_CFG_BLOCK, WLCG_VIEWS):
             try:
@@ -69,7 +69,7 @@ class ViewTopResource(resource.Resource):
 
             if wlcg_views:
                 from sgas.viewengine import wlcgview
-                self.putChild('wlcg', wlcgview.WLCGView(db, authorizer, mfst))
+                self.putChild('wlcg'.encode('utf-8'), wlcgview.WLCGView(db, authorizer, mfst))
 
 
     def render_GET(self, request):
@@ -105,9 +105,9 @@ class ViewTopResource(resource.Resource):
         if not self.views:
             body += 2*ib + '<div>No views defined in configuration file. See docs/views in the documentation for how specify views.</div>\n'
 
-        request.write(html.HTML_VIEWBASE_HEADER % {'title': 'View startpage'} )
-        request.write(body)
-        request.write(html.HTML_VIEWBASE_FOOTER)
+        request.write((html.HTML_VIEWBASE_HEADER % {'title': 'View startpage'}).encode('utf-8'))
+        request.write(body.encode('utf-8'))
+        request.write(html.HTML_VIEWBASE_FOOTER.encode('utf-8'))
         request.finish()
         return server.NOT_DONE_YET
 
@@ -123,7 +123,7 @@ class CustomViewTopResource(resource.Resource):
         self.views = views
 
         for view in self.views:
-            self.putChild(view.view_name, GraphRenderResource(view, urdb, authorizer))
+            self.putChild(view.view_name.encode('utf-8'), GraphRenderResource(view, urdb, authorizer))
 
 
 
@@ -144,7 +144,7 @@ class GraphRenderResource(resource.Resource):
             return self.renderView(request)
 
         # access not allowed
-        request.write('<html><body>Access to view %s not allowed for %s</body></html>' % (self.view.view_name, subject))
+        request.write(('<html><body>Access to view %s not allowed for %s</body></html>' % (self.view.view_name, subject)).encode('utf-8'))
         request.finish()
         return server.NOT_DONE_YET
 
@@ -154,11 +154,11 @@ class GraphRenderResource(resource.Resource):
         def gotResult(rows):
 
             # twisted web sets content-type to text/html per default
-            page_body = pagebuilder.buildViewPage(self.view, rows)
+            page_body = html.HTML_VIEWGRAPH_HEADER % {'title': self.view.caption}
+            page_body += pagebuilder.buildViewPage(self.view, rows)
+            page_body += html.HTML_VIEWGRAPH_FOOTER
 
-            request.write(html.HTML_VIEWGRAPH_HEADER % {'title': self.view.caption} )
-            request.write(page_body)
-            request.write(html.HTML_VIEWGRAPH_FOOTER)
+            request.write(page_body.encode('utf-8'))
             request.finish()
 
         d = self.urdb.query(self.view.query)
