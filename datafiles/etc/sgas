@@ -33,8 +33,21 @@ do_start() {
     USER_ID=`id -u $USER`
     GROUP_ID=`id -g $USER`
 
+    # Try to find an twistd executable to run
+    TWISTD=""
+    for t in twistd twistd3; do
+        if `which $t > /dev/null 2>&1`; then
+            TWISTD=$t
+            break
+        fi
+    done
+    if [ -z $TWISTD ]; then
+        echo "Couldn't find twistd in the PATH - bailing out" >&2
+        exit 1
+    fi
+
     # start the SGAS LUTS server using twistd
-    twistd --pidfile $PIDFILE -l $LOGFILE -y $TACFILE -u $USER_ID -g $GROUP_ID
+    $TWISTD --pidfile $PIDFILE -l $LOGFILE -y $TACFILE -u $USER_ID -g $GROUP_ID
 }
 
 do_stop() {
