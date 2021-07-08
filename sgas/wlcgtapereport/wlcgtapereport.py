@@ -47,8 +47,9 @@ def find_dcache_version():
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout,stderr = curl.communicate()
     for x in stdout.splitlines():
-        if x[:16] == "< Server: dCache":
-            return x.split('/')[1]
+        xs = str(x, 'utf-8')
+        if xs.startswith("< Server: dCache"):
+            return xs.split('/')[1]
     return None
 
 
@@ -117,19 +118,19 @@ class WLCGTapeReport(resource.Resource):
 
             payload = json.dumps(report)
             request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
-            request.write(payload)
+            request.write(payload.encode('utf-8'))
             request.finish()
 
         def queryError(error):
             log.msg('Queryengine error: %s' % str(error), system='sgas.WLCGTapeReport')
             request.setResponseCode(500)
-            request.write('Queryengine error (%s)' % str(error))
+            request.write(('Queryengine error (%s)' % str(error)).encode('utf-8'))
             request.finish()
 
         def resultHandlingError(error):
             log.msg('Query result error: %s' % str(error), system='sgas.WLCGTapeReport')
             request.setResponseCode(500)
-            request.write('Query result error (%s)' % str(error))
+            request.write(('Query result error (%s)' % str(error)).encode('utf-8'))
             request.finish()
 
         d = self.queryDatabase()
