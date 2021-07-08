@@ -63,14 +63,52 @@ def getHostname(request):
 
 def getCN(dn):
     """
-    Get the CN part of a DN
-    """
+    Given DN strings like:
 
-    fields = dn.split('/')
-    for f in fields:
-        if f[0:3] == 'CN=':
-            cn = f[3:]
-            return cn
+    (old format)
+
+    "/O=Grid/O=NorduGrid/CN=benedict.grid.aau.dk"
+    "/O=Grid/O=NorduGrid/CN=host/fyrkat.grid.aau.dk"
+
+     or (new format)
+
+    "CN=alice-mon.ndgf.org,OU=Nordic DataGrid Facility,O=Nordunet a/s,L=Kastrup,ST=Hovedstaden,C=DK,DC=tcs,DC=terena,DC=org"
+
+    this function returns the CN.
+    """
+    if dn is None:
+        return '.' # this is technically a hostname
+
+    if dn[0] == '/':
+        # Seems to be the old style '/'-delimited format
+
+        tokens = dn.split('/')
+
+        if len(tokens) == 1:
+            return dn # not an x509 identity
+
+
+        if tokens[-2] == 'CN=host':
+            cn = tokens[-1]
+        elif tokens[-1].startswith('CN='):
+            cn = tokens[-1].split('=',2)[1]
+        else:
+            raise ValueError('Could not extract CN from X509 identity (%s)' % identity)
+    else:
+        # Assume newer ','-delimited format
+
+        tokens = dn.split(',')
+
+        cn = None
+        for t in tokens:
+            if t.startswith('CN='):
+                cn = t.split('=',2)[1]
+
+        if not cn:
+            raise ValueError('Could not extract CN from X509 identity (%s)' % identity)
+
+    return cn
+
 
 
 def isIPAddress(addr):
