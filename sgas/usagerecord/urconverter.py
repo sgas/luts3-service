@@ -53,7 +53,7 @@ ARG_LIST = [
 
 def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostname=None):
 
-    stringify = lambda f : unicode(f) if f is not None else None
+    stringify = lambda f : str(f) if f is not None else None
 
     args = []
 
