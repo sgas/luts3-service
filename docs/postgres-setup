@@ -9,7 +9,7 @@ work with earlier versions (should work with 8.3).
 
 In Debian / Ubuntu:
 
-$ sudo apt-get install postgresql postgresql-contrib python-psycopg2
+$ sudo apt-get install postgresql python3-psycopg2
 
 
 2. Setup Database:
