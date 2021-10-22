@@ -112,14 +112,14 @@ def show_factors(db, machine_name, time, factor_type, def_ids):
         """
     execute_sql(cur, query, tuple(args))
 
-    print "%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id")
-    print "-----------------------------------------------------------------------------------------------------------------"
+    print("%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id"))
+    print("-----------------------------------------------------------------------------------------------------------------")
     for row in cur.fetchall():
         hs_id = row[0]
         machine_name = row[1]
         validity_period = format_datetimerange(row[2])
         factor = row[3]
-        print "%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id)
+        print("%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id))
 
 
 def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
@@ -151,7 +151,7 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
         raise Exception("No machine_name given for action 'add'")
     if machine_name not in machines:
         if add_machine:
-            print "Machine %s unknown - adding to db" % machine_name
+            print("Machine %s unknown - adding to db" % machine_name)
             execute_sql(cur, "insert into machinename (machine_name) values (%s);", (machine_name,))
             machines = get_machines(cur)
         else:
@@ -175,8 +175,8 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
     if cur.rowcount == 0:
         # Phiew - no overlapping timeranges!
         if verbose:
-            print "Adding factor %s for machine %s, factor type '%s', time period %s"\
-                  % (factor, machine_name, factortype, format_datetimerange(timerange))
+            print("Adding factor %s for machine %s, factor type '%s', time period %s"\
+                  % (factor, machine_name, factortype, format_datetimerange(timerange)))
 
         sql = """insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor)
                                 values (%s, %s, %s, %s);"""
@@ -204,13 +204,13 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
 
 
         if verbose:
-            print "Changing validity period of factor def %i from %s to %s"\
-                  % (old_factor_id, format_datetimerange(old_timerange), format_datetimerange(mod_timerange))
+            print("Changing validity period of factor def %i from %s to %s"\
+                  % (old_factor_id, format_datetimerange(old_timerange), format_datetimerange(mod_timerange)))
         execute_sql(cur, "update hostscalefactors_data set validity_period = %s where id = %s;", (mod_timerange, old_factor_id))
 
         if verbose:
-            print "Adding factor %s for machine %s, factor type '%s', time period %s"\
-                  % (factor, machine_name, factortype, format_datetimerange(timerange))
+            print("Adding factor %s for machine %s, factor type '%s', time period %s"\
+                  % (factor, machine_name, factortype, format_datetimerange(timerange)))
         sql = """insert into hostscalefactors_data (machine_name_id, scalefactor_type_id, validity_period, scale_factor)
                                 values (%s, %s, %s, %s);"""
         execute_sql(cur, sql, (machine_id, factortype_id, timerange, factor))
@@ -233,7 +233,7 @@ def del_factors(db, def_ids):
     if not def_ids:
         raise Exception("No scale factor definition ids given")
 
-    print "These host scale factors will be deleted:\n"
+    print("These host scale factors will be deleted:\n")
     cur = db.cursor()
     sql = """
         select hs.id, m.machine_name, hs.validity_period, hs.scale_factor
@@ -244,19 +244,19 @@ def del_factors(db, def_ids):
         order by hs.id;
     """
     execute_sql(cur, sql, (tuple(def_ids),))
-    print "%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id")
-    print "-----------------------------------------------------------------------------------------------------------------"
+    print("%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id"))
+    print("-----------------------------------------------------------------------------------------------------------------")
     for row in cur.fetchall():
         hs_id = row[0]
         machine_name = row[1]
         validity_period = format_datetimerange(row[2])
         factor = row[3]
-        print "%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id)
-    print "\nProceed (y/n)?"
+        print("%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id))
+    print("\nProceed (y/n)?")
 
     response = sys.stdin.readline()
     if response not in ('y\n', 'Y\n'):
-        print "Aborting. Nothing deleted"
+        print("Aborting. Nothing deleted")
         sys.exit(0)
 
     execute_sql(cur, "DELETE FROM hostscalefactors_data where id in %s;", (tuple(def_ids),))
