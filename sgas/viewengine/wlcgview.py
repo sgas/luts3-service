@@ -3,7 +3,7 @@ WLCG View. Part of SGAS viewengine.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
         Erik Edelmann <edelmann@csc.fi>
-Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016-2020)
+Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016-2022)
 """
 
 import time
@@ -286,6 +286,10 @@ class WLCGBaseView(baseview.BaseView):
 
         wlcg_records = wlcg.rowsToDicts(wlcg_data, self.columns)
         wlcg_records = _changeUnits(wlcg_records)
+
+        if self.tier_based:
+            # If we are tier based, we should omit records without tier
+            wlcg_records = [ e for e in wlcg_records if e[wlcg.TIER] ]
 
         sk = lambda key : _sortKey(key, field_order=self.columns)
         if self.split is None:
