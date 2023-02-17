@@ -100,6 +100,8 @@ create view wlcg.usagedata as
                                             where hostscalefactor_types.factor_type = 'hepspec06'
                                             limit 1
                                         )) and usagedata.start_time <@ hostscalefactors_data.validity_period
+    where
+        vo_information_id not in (select id from voinformation where vo_name = 'alice' and vo_type = 'voms')  -- avoid double accounting for ALICE on arc01.hpc.ku.dk
     ;
 
         
@@ -107,6 +109,7 @@ create view wlcg.usagedata as
 create view wlcg.urs as
      select
         voinformation.vo_name             as vo_name,
+        voinformation.vo_type             as vo_type,
         voinformation.vo_attributes[1][1] as vo_group,
         voinformation.vo_attributes[1][2] as vo_role,
         usagedata.machine_name_id         as machine_name_id,
@@ -135,6 +138,8 @@ create view wlcg.urs as
         left join wlcg.tiers tiers on tiers.machine_name_id = usagedata.machine_name_id and (tiers.vo_name = voinformation.vo_name or tiers.vo_name = '*')
         left join wlcg.countries countries using(country_id)
         left join jobstatus ON usagedata.status_id = jobstatus.id
+    where
+        not (voinformation.vo_name = 'alice' and voinformation.vo_type = 'voms')  -- avoid double accounting for ALICE on arc01.hpc.ku.dk
 ;
 
 
