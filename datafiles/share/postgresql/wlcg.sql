@@ -138,8 +138,6 @@ create view wlcg.urs as
         left join wlcg.tiers tiers on tiers.machine_name_id = usagedata.machine_name_id and (tiers.vo_name = voinformation.vo_name or tiers.vo_name = '*')
         left join wlcg.countries countries using(country_id)
         left join jobstatus ON usagedata.status_id = jobstatus.id
-    where
-        not (voinformation.vo_name = 'alice' and voinformation.vo_type = 'voms')  -- avoid double accounting for ALICE on arc01.hpc.ku.dk
 ;
 
 
