@@ -100,8 +100,6 @@ create view wlcg.usagedata as
                                             where hostscalefactor_types.factor_type = 'hepspec06'
                                             limit 1
                                         )) and usagedata.start_time <@ hostscalefactors_data.validity_period
-    where
-        vo_information_id not in (select id from voinformation where vo_name = 'alice' and vo_type = 'voms')  -- avoid double accounting for ALICE on arc01.hpc.ku.dk
     ;
 
         
