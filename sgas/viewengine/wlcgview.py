@@ -436,7 +436,7 @@ class WLCGVOOversightView(WLCGBaseView):
     columns = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME,
                 wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     invisible_columns = wlcg.COUNTRY
-    tier_based = True
+    tier_based = False
     split = wlcg.VO_NAME
     sort = staticmethod(sortAndSumByCountry)
 
