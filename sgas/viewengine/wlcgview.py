@@ -62,7 +62,7 @@ def _sortKey(record, field_order):
     attrs = []
     for f in field_order:
         if f in record:
-            attrs.append(record[f])
+            attrs.append(record[f] or '')
     return tuple(attrs)
 
 
