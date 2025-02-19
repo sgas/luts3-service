@@ -7,12 +7,15 @@ Copyright: Nordic Data Grid Facility (2010)
 """
 
 import time
+import re
 
 from twisted.python import log
 
 from sgas.ext import isodate
 from sgas.usagerecord import urelements as ur
 from sgas.usagerecord.memory import SgasMemory
+
+from typing import Optional, Tuple
 
 
 # date constants
@@ -66,6 +69,26 @@ def parseISODateTime(value):
     except isodate.ISO8601Error as e:
         log.msg("Failed to parse ISO datetime value: %s (%s)" % (value, str(e)), system='sgas.UsageRecord')
         return None
+
+
+def parseFloatUnit(value: str) -> Tuple[Optional[float], Optional[str]]:
+    """
+    Parse a string consisting of a float, optionally followed by a unit
+    """
+    m = re.match(r" *([-+]?\d*\.?\d+([eE][-+]?\d+)?) *(\w*)", value)
+    if not m:
+        log.msg("Failed to parse number: '%s'" % value, system='sgas.UsageRecord')
+        return None, None
+
+    try:
+        v = float(m.group(1))
+    except ValueError:
+        log.msg("Failed to parse number: '%s'" % value, system='sgas.UsageRecord')
+        return None, None
+
+    u = m.group(3)
+
+    return (v, u)
 
 
 def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=None):
@@ -195,6 +218,19 @@ def xmlToDict(ur_doc, insert_identity=None, insert_hostname=None, insert_time=No
                         elif ulele.tag == ur.TRANSFER_RETRIEVED_FROM_CACHE:
                             upload['from_cache'] = parseBoolean(ulele.text)
                     r.setdefault('uploads', []).append(upload)
+
+        elif element.tag in (ur.ALLOC_RESOURCE, ur.USED_RESOURCE):
+            usage_type      = 'allocation' if element.tag == ur.ALLOC_RESOURCE else 'usage'
+            resource_type   = element.attrib[ur.RESOURCE_TYPE]
+            amount_unparsed = element.attrib[ur.RESOURCE_AMOUNT]
+            amount, unit    = parseFloatUnit(amount_unparsed)
+            resource_usage  = {
+                'usage_type': usage_type,
+                'resource_type': resource_type,
+                'amount': amount,
+                'unit': unit
+            }
+            r.setdefault('extra_resource_usages', []).append(resource_usage)
 
         #else:
         #    log.msg("Unhandled UR element: %s" % element.tag, system='sgas.UsageRecord')

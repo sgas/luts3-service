@@ -46,7 +46,11 @@ ARG_LIST = [
     'insert_hostname',
     'insert_identity',
     'insert_time',
-    'memory'
+    'memory',
+    'extra_resource_type',
+    'extra_resource_usage_type',
+    'extra_resource_amount',
+    'extra_resource_unit'
 ]
 
 
@@ -112,6 +116,12 @@ def createInsertArguments(usagerecord_docs, insert_identity=None, insert_hostnam
                 ula = ul.get('url'), ul.get('size'), ul.get('start_time'), ul.get('end_time')
                 uls.append(ula)
             ur_doc['uploads'] = [ [ stringify(f) for f in e  ] for e in uls ]
+
+        if 'extra_resource_usages' in ur_doc:
+            ur_doc['extra_resource_type'] = [ r['resource_type'] for r in ur_doc['extra_resource_usages'] ]
+            ur_doc['extra_resource_usage_type'] = [ r['usage_type'] for r in ur_doc['extra_resource_usages'] ]
+            ur_doc['extra_resource_amount'] = [ r['amount'] for r in ur_doc['extra_resource_usages'] ]
+            ur_doc['extra_resource_unit'] = [ r['unit'] for r in ur_doc['extra_resource_usages'] ]
 
         arg = [ ur_doc.get(a, None) for a in ARG_LIST ]
         args.append(arg)

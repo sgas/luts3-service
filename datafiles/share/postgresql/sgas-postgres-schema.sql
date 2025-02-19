@@ -152,6 +152,24 @@ CREATE TABLE jobtransferdata (
     retrieved_from_cache    boolean
 );
 
+CREATE TYPE resource_usage_type as ENUM ( 'usage', 'allocation' );
+
+CREATE TABLE resource_type (
+    id                      serial          NOT NULL PRIMARY KEY,
+    resource_type           text            NOT NULL
+);
+
+CREATE TABLE extra_resources (
+    usagedata_id            integer             NOT NULL REFERENCES usagedata (id),
+    resource_type_id        integer             NOT NULL REFERENCES resource_type (id),
+    usage_type              resource_usage_type NOT NULL,
+    amount                  float               NOT NULL,
+    unit                    text,
+
+    PRIMARY KEY (usagedata_id, resource_type_id, usage_type)
+);
+
+
 CREATE INDEX jobtransferdata_usage_data_id_idx ON jobtransferdata (usage_data_id);
 
 -- this is the table used for storing aggregated usage information in

@@ -75,6 +75,11 @@ SGAS_RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % SGAS_UR_NAMESPACE)
 # ksi2k* are now deprecated, but we have them here so we can recognize them and log about it
 KSI2K_WALL_DURATION = QName("{%s}KSI2KWallDuration"  % SGAS_UR_NAMESPACE)
 KSI2K_CPU_DURATION  = QName("{%s}KSI2KCpuDuration"   % SGAS_UR_NAMESPACE)
+ALLOC_RESOURCE      = QName("{%s}AllocResource"      % SGAS_UR_NAMESPACE)
+USED_RESOURCE       = QName("{%s}UsedResource"       % SGAS_UR_NAMESPACE)
+RESOURCE_TYPE       = QName("{%s}resourceType"       % SGAS_UR_NAMESPACE)
+RESOURCE_AMOUNT     = QName("{%s}resourceAmount"     % SGAS_UR_NAMESPACE)
+
 
 # arc auxillary extensions
 ARC_RUNTIME_ENVIRONMENT = QName("{%s}RuntimeEnvironment" % ARC_UR_NAMESPACE)
