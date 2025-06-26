@@ -94,16 +94,15 @@ create view wlcg.usagedata as
             -- Find a hepspec06 value if defined, otherwise use 1.0
             case
                 when t.factor_type = 'hepspec06' then f.scale_factor
-                when t.factor_type is not null then 0.0
-            end), 1.0)                                     as hs06,
-        jsonb_object_agg(t.factor_type, f.scale_factor)    as benchmarks
+                else null
+            end), 1.0)                                  as hs06,
+        jsonb_object_agg(t.factor_type, f.scale_factor) as benchmarks
     from          usagedata u
         left join hostscalefactors_data f on u.machine_name_id = f.machine_name_id
                                          and u.start_time <@ f.validity_period
         left join hostscalefactor_types t on f.scalefactor_type_id = t.id
     group by u.id
     ;
-
         
 
 create view wlcg.urs as
