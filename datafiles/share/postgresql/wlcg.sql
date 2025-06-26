@@ -82,24 +82,26 @@ create view wlcg.usagedata as
     select
         global_user_name_id,
         vo_information_id,
-        usagedata.machine_name_id,
+        u.machine_name_id,
         status_id,
         coalesce(node_count,1)      as node_count,
         coalesce(processors,1)      as processors,
         start_time,
         end_time,
-        coalesce(cpu_duration,0)                          as cpu_duration, -- seconds
-        coalesce(wall_duration,0)                         as wall_duration, -- seconds 
-        coalesce(hostscalefactors_data.scale_factor,1.0)  as hs06
-    from          usagedata
-        left join hostscalefactors_data on usagedata.machine_name_id = hostscalefactors_data.machine_name_id and
-                                           hostscalefactors_data.scalefactor_type_id = ((
-                                            select
-                                                hostscalefactor_types.id
-                                            from hostscalefactor_types
-                                            where hostscalefactor_types.factor_type = 'hepspec06'
-                                            limit 1
-                                        )) and usagedata.start_time <@ hostscalefactors_data.validity_period
+        coalesce(cpu_duration,0)    as cpu_duration, -- seconds
+        coalesce(wall_duration,0)   as wall_duration, -- seconds
+        coalesce(max(
+            -- Find a hepspec06 value if defined, otherwise use 1.0
+            case
+                when t.factor_type = 'hepspec06' then f.scale_factor
+                when t.factor_type is not null then 0.0
+            end), 1.0)                                     as hs06,
+        jsonb_object_agg(t.factor_type, f.scale_factor)    as benchmarks
+    from          usagedata u
+        left join hostscalefactors_data f on u.machine_name_id = f.machine_name_id
+                                         and u.start_time <@ f.validity_period
+        left join hostscalefactor_types t on f.scalefactor_type_id = t.id
+    group by u.id
     ;
 
         
