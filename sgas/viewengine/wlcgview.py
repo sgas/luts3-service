@@ -16,8 +16,8 @@ from twisted.web import server
 from sgas.server import resourceutil, config
 from sgas.viewengine import html, htmltable, dateform, baseview, rights
 
-CPU_DAYS_HS06 = 'cpu_days_hs06'
-CORE_DAYS_HS06 = 'core_days_hs06'
+CPU_DAYS_NORMALISED = 'cpu_days_normalised'
+CORE_DAYS_NORMALISED = 'core_days_normalised'
 DISK_TIB = 'disk_tib'
 TAPE_TIB = 'tape_tib'
 
@@ -35,15 +35,15 @@ COLUMN_NAMES = {
     wlcg.N_JOBS                  : 'Job count',
     wlcg.CPU_SECONDS             : 'CPU hours',   # (We change time units from s to h)
     wlcg.CORE_SECONDS            : 'Wall hours',  # Yeah, I know ... but somebody decided calling it "Wall", so we'll keep it
-    wlcg.CPU_SECONDS_HS06        : 'HS06 CPU hours',
-    wlcg.CORE_SECONDS_HS06       : 'HS06 wall hours',
+    wlcg.CPU_SECONDS_NORMALISED        : 'Normalised CPU hours',
+    wlcg.CORE_SECONDS_NORMALISED       : 'Normalised wall hours',
     wlcg.EFFICIENCY              : 'Job efficiency',
     #wlcg.CPU_EQUIVALENTS        : 'CPU node equivalents',
     wlcg.CORE_EQUIVALENTS        : 'Wall node equivalents',
-    wlcg.HS06_CPU_EQUIVALENTS    : 'HS06 CPU node equivalents',
-    wlcg.HS06_CORE_EQUIVALENTS   : 'HS06 Wall node equivalents',
-    CPU_DAYS_HS06                : 'CPU days (HS06)',
-    CORE_DAYS_HS06               : 'Wall days (HS06)',
+    wlcg.NORMALISED_CPU_EQUIVALENTS    : 'Normalised CPU node equivalents',
+    wlcg.NORMALISED_CORE_EQUIVALENTS   : 'Normalised Wall node equivalents',
+    CPU_DAYS_NORMALISED                : 'CPU days (Normalised)',
+    CORE_DAYS_NORMALISED               : 'Wall days (Normalised)',
     DISK_TIB                     : 'Disk (TiB)',
     TAPE_TIB                     : 'Tape (TiB)'
 }
@@ -73,7 +73,7 @@ def _changeUnits(records):
     """
 
     # Columns that has times in seconds, that needs conversion to hours
-    time_columns = (wlcg.CPU_SECONDS, wlcg.CORE_SECONDS, wlcg.CPU_SECONDS_HS06, wlcg.CORE_SECONDS_HS06)
+    time_columns = (wlcg.CPU_SECONDS, wlcg.CORE_SECONDS, wlcg.CPU_SECONDS_NORMALISED, wlcg.CORE_SECONDS_NORMALISED)
 
     for r in records:
         if wlcg.EFFICIENCY in r:
@@ -353,14 +353,14 @@ class WLCGVOView(WLCGBaseView):
     group_by = ( wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.MACHINE_NAME )
     columns = [ wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.MACHINE_NAME, 
                 wlcg.N_JOBS, wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS,
-                wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
 
 
 class WLCGTierView(WLCGBaseView):
 
     group_by = ( wlcg.TIER, wlcg.VO_NAME, wlcg.VO_ROLE )
     columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_ROLE,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
 
 
@@ -369,7 +369,7 @@ class WLCGFullTierView(WLCGBaseView):
 
     group_by = ( wlcg.TIER, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
     columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     viewgroup = 'restricted'
 
@@ -379,7 +379,7 @@ class WLCGTierMachineSplitView(WLCGBaseView):
 
     group_by = ( wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.TIER )
     columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.TIER,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.CPU_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     split = wlcg.TIER
 
@@ -409,7 +409,7 @@ def sortAndSumByCountry(records, key):
 
         if countrysum[wlcg.MACHINE_NAME] != country:
             if n > 0: # '> 1' if we want sums only for multi-cluster countries
-                countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_HS06]/countrysum[wlcg.CORE_SECONDS_HS06])
+                countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_NORMALISED]/countrysum[wlcg.CORE_SECONDS_NORMALISED])
                 rec.insert(i, countrysum)
                 i += 1
             countrysum = {wlcg.MACHINE_NAME: country}
@@ -424,9 +424,9 @@ def sortAndSumByCountry(records, key):
         i += 1
 
 
-    countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_HS06]/countrysum[wlcg.CORE_SECONDS_HS06])
+    countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_NORMALISED]/countrysum[wlcg.CORE_SECONDS_NORMALISED])
     rec.append(countrysum)
-    totalsum[wlcg.EFFICIENCY] = int(100.0*totalsum[wlcg.CPU_SECONDS_HS06]/totalsum[wlcg.CORE_SECONDS_HS06])
+    totalsum[wlcg.EFFICIENCY] = int(100.0*totalsum[wlcg.CPU_SECONDS_NORMALISED]/totalsum[wlcg.CORE_SECONDS_NORMALISED])
     rec.append(totalsum)
     return rec
 
@@ -434,7 +434,7 @@ class WLCGVOOversightView(WLCGBaseView):
 
     group_by = (  wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME )
     columns = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.CPU_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     invisible_columns = wlcg.COUNTRY
     tier_based = False
     split = wlcg.VO_NAME
@@ -444,7 +444,7 @@ class WLCGVOOversightView(WLCGBaseView):
 class WLCGMachineView(WLCGBaseView):
 
     columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.N_JOBS,
-                wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     group_by = ( wlcg.MACHINE_NAME, wlcg.VO_NAME )
 
 class WLCGMachinePerMonthView(WLCGBaseView):
@@ -457,19 +457,19 @@ class WLCGUserView(WLCGBaseView):
 
     group_by = ( wlcg.USER, wlcg.VO_NAME, wlcg.VO_ROLE )
     columns = [ wlcg.USER, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.N_JOBS,
-                wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     viewgroup = 'restricted'
 
 
 """
-WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.HS06_CORE_EQUIVALENTS]
+WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.NORMALISED_CORE_EQUIVALENTS]
 WLCG_UNIT_MAPPING = {
     'ksi2k-ne' : WLCG_UNIT_MAPPING_DEFAULT,
-    'hs06-ne'  : lambda rec : rec[wlcg.HS06_CORE_EQUIVALENTS],
-    'hs06-cpune'  : lambda rec : rec[wlcg.HS06_CPU_EQUIVALENTS],
-    'ksi2k-wallhours' : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
-    'hs06-wallhours'  : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
-    'hs06-cpuhours'  : lambda rec : rec[wlcg.CPU_SECONDS_HS06]
+    'normalised-ne'  : lambda rec : rec[wlcg.NORMALISED_CORE_EQUIVALENTS],
+    'normalised-cpune'  : lambda rec : rec[wlcg.NORMALISED_CPU_EQUIVALENTS],
+    'ksi2k-wallhours' : lambda rec : rec[wlcg.WALL_SECONDS_NORMALISED],
+    'normalised-wallhours'  : lambda rec : rec[wlcg.WALL_SECONDS_NORMALISED],
+    'normalised-cpuhours'  : lambda rec : rec[wlcg.CPU_SECONDS_NORMALISED]
 }
 """
 
@@ -479,7 +479,7 @@ class WLCGOversightView(WLCGBaseView):
 
     # This view is rather different than the others, so it is its own class
     group_by = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, wlcg.TIER ]
-    units = (wlcg.CPU_SECONDS_HS06,  wlcg.HS06_CPU_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS)
+    units = (wlcg.CPU_SECONDS_NORMALISED,  wlcg.NORMALISED_CPU_EQUIVALENTS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS)
 
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
@@ -500,7 +500,7 @@ class WLCGOversightView(WLCGBaseView):
             _, end_date = dateform.quarterStartEndDates(year, quart)
         if b'unit' in request.args and request.args[b'unit'][0].decode('utf-8') not in self.units:
             return self.renderErrorPage('Invalid units parameters')
-        unit = request.args.get(b'unit', [wlcg.HS06_CORE_EQUIVALENTS.encode('utf-8')])[0].decode('utf-8')
+        unit = request.args.get(b'unit', [wlcg.NORMALISED_CORE_EQUIVALENTS.encode('utf-8')])[0].decode('utf-8')
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date, unit)
@@ -534,6 +534,7 @@ class WLCGOversightView(WLCGBaseView):
         t_dataprocess_start = time.time()
 
         wlcg_records = wlcg.rowsToDicts(wlcg_data, [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, unit ])
+        wlcg_records = _changeUnits(wlcg_records)
 
         t_dataprocess = time.time() - t_dataprocess_start
 
@@ -588,7 +589,7 @@ class WLCGOversightView(WLCGBaseView):
         total = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.COUNTRY ) )
         assert len(total) in (0,1), 'Records did not collapse into a single record when calculating grand total'
         if len(total) == 0:
-            total = [ { wlcg.CPU_SECONDS : 0, wlcg.CORE_SECONDS : 0, wlcg.CPU_SECONDS_HS06 : 0, wlcg.CORE_SECONDS_HS06 : 0 } ]
+            total = [ { wlcg.CPU_SECONDS : 0, wlcg.CORE_SECONDS : 0, wlcg.CPU_SECONDS_NORMALISED : 0, wlcg.CORE_SECONDS_NORMALISED : 0 } ]
         total_record = total[0]
         total_record[wlcg.MACHINE_NAME] = ALL_TOTAL
         total_record[wlcg.VO_NAME] = TOTAL
@@ -674,7 +675,7 @@ class WLCGOversightView(WLCGBaseView):
 class WLCGT1SummaryView(WLCGBaseView):
     # This view is rather different than the others, so it is its own class
 
-    columns = (wlcg.VO_NAME, CORE_DAYS_HS06, CPU_DAYS_HS06, DISK_TIB, TAPE_TIB)
+    columns = (wlcg.VO_NAME, CORE_DAYS_NORMALISED, CPU_DAYS_NORMALISED, DISK_TIB, TAPE_TIB)
     group_by = (wlcg.VO_NAME)
     vo_list = ('atlas', 'alice')
     tier_list = ('ndgf-t1',)
@@ -688,7 +689,7 @@ class WLCGT1SummaryView(WLCGBaseView):
 
         end_date += " 23:59:59"
 
-        columns=({'name': 'resource_type', 'code': "'compute'"}, wlcg.VO_NAME, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06)
+        columns=({'name': 'resource_type', 'code': "'compute'"}, wlcg.VO_NAME, wlcg.CORE_SECONDS_NORMALISED, wlcg.CPU_SECONDS_NORMALISED)
         group_by=(wlcg.VO_NAME, 'resource_type')
         self.wlcgdb.add_query(columns=columns, group_by=group_by, timerange=(start_date, end_date),
                               vo_list=self.vo_list, tier_list=self.tier_list)
@@ -699,10 +700,10 @@ class WLCGT1SummaryView(WLCGBaseView):
                                       exclude_groups=('atlas-no','atlas-dk','UNKNOWN PROJECT','ops','behrmann','dteam'))
 
         columns=({'name': wlcg.VO_NAME, 'code': wlcg.VO_NAME},
-                 {'name': CORE_DAYS_HS06, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CORE_SECONDS_HS06},
-                 {'name': CPU_DAYS_HS06, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CPU_SECONDS_HS06},
-                 {'name': DISK_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CORE_SECONDS_HS06},
-                 {'name': TAPE_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CPU_SECONDS_HS06})
+                 {'name': CORE_DAYS_NORMALISED, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CORE_SECONDS_NORMALISED},
+                 {'name': CPU_DAYS_NORMALISED, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CPU_SECONDS_NORMALISED},
+                 {'name': DISK_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CORE_SECONDS_NORMALISED},
+                 {'name': TAPE_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CPU_SECONDS_NORMALISED})
         self.wlcgdb.add_outer_query(columns=columns, group_by=(wlcg.VO_NAME,))
 
         d = self.wlcgdb.fetch()
