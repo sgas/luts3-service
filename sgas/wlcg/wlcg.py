@@ -29,6 +29,7 @@ EFFICIENCY = 'efficiency'
 VO_NAME = 'voname'
 VO_GROUP = 'vo_group'
 VO_ROLE = 'vo_role'
+BENCHMARKS = 'benchmarks'
 
 GROUP = 'group_identity'
 RESOURCE_USED = 'resource_capacity_used'
@@ -36,7 +37,7 @@ DISK_USED = 'disk_used'
 TAPE_USED = 'tape_used'
 
 
-_groupable_columns = (USER, TIME, YEAR, MONTH, TIER, SITE, COUNTRY, VO_NAME, VO_GROUP, VO_ROLE, MACHINE_NAME, PROCESSORS, NODE_COUNT)
+_groupable_columns = (USER, TIME, YEAR, MONTH, TIER, SITE, COUNTRY, VO_NAME, VO_GROUP, VO_ROLE, MACHINE_NAME, PROCESSORS, NODE_COUNT, BENCHMARKS)
 value_columns = (N_JOBS, CORE_SECONDS, WALL_SECONDS, CPU_SECONDS, CORE_SECONDS_HS06, WALL_SECONDS_HS06, CPU_SECONDS_HS06,
                   EFFICIENCY, HS06_CORE_EQUIVALENTS, HS06_CPU_EQUIVALENTS, CORE_EQUIVALENTS)
 
@@ -360,6 +361,9 @@ class WLCG:
                 if group_by: 
                     code = 'sum(' + code + ')'
                 column_list.append({'name': CORE_SECONDS_HS06, 'code': code})
+
+            elif c == BENCHMARKS:
+                column_list.append({'name': BENCHMARKS, 'code': 'benchmarks'})
 
             elif c == HS06_CORE_EQUIVALENTS:
                 if group_by:
