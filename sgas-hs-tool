@@ -80,14 +80,41 @@ def execute_sql(cur, sql, args=()):
         sys.exit(1)
 
 
+def get_hostscalefactor_type(db_cur, scalefactor_type_id: int = None) -> str:
+    if scalefactor_type_id is None:
+        query = """
+            select
+                factor_type
+            from hostscalefactor_types
+            where id = (select hostscalefactor_type_default.id FROM hostscalefactor_type_default LIMIT 1)
+        """
+        args: tuple = ()
+    else:
+        query = """
+            select
+                factor_type
+            from hostscalefactor_types
+            where id = %s
+        """
+        args = (scalefactor_type_id,)
+
+    execute_sql(db_cur, query, tuple(args))
+    row = db_cur.fetchone()
+    return row[0]
+
+
+
 def show_factors(db, machine_name, time, factor_type, def_ids):
+    cur = db.cursor()
+
     args = []
 
-    if factor_type != None:
+    if factor_type is not None:
         condition = "st.factor_type = %s"
         args.append(factor_type)
     else:
         condition = "hs.scalefactor_type_id = ( SELECT hostscalefactor_type_default.id FROM hostscalefactor_type_default LIMIT 1)"
+        factor_type = get_hostscalefactor_type(cur)
 
     if machine_name:
         condition += " and m.machine_name = %s"
@@ -101,7 +128,6 @@ def show_factors(db, machine_name, time, factor_type, def_ids):
         condition += " and hs.id in %s"
         args.append(tuple(def_ids))
 
-    cur = db.cursor()
     query = """
         select hs.id, m.machine_name, hs.validity_period, hs.scale_factor
           from hostscalefactors_data hs
@@ -112,14 +138,14 @@ def show_factors(db, machine_name, time, factor_type, def_ids):
         """
     execute_sql(cur, query, tuple(args))
 
-    print("%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", "Factor", "Definition id"))
+    print("%-40s  %-45s  %-10s %s" % ("Machine", "Validity period", factor_type, "Definition id"))
     print("-----------------------------------------------------------------------------------------------------------------")
     for row in cur.fetchall():
         hs_id = row[0]
         machine_name = row[1]
         validity_period = format_datetimerange(row[2])
-        factor = row[3]
-        print("%-40s  %s  %-12s  %3i" % (machine_name, validity_period, factor, hs_id))
+        factor = float(row[3])
+        print("%-40s  %s  %9.5f  %3i" % (machine_name, validity_period, factor, hs_id))
 
 
 def add_factor(db, machine_name, timerange, factortype, factor, add_machine):
