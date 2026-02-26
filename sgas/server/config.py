@@ -2,14 +2,17 @@
 Configuration utils.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
-Copyright: Nordic Data Grid Facility (2009, 2010)
+        Erik Edelmann <edelmann@ndgf.org>
+Copyright: Nordic Data Grid Facility (2009, 2010, 2026)
 """
 
-import configparser as ConfigParser
+from configparser import ConfigParser
 
 import re
 
-from sgas.ext.python import ConfigDict
+from collections import OrderedDict as ConfigDict
+
+from typing import TextIO
 
 
 
@@ -42,24 +45,19 @@ class ConfigurationError(Exception):
 
 
 
-def readConfig(filename):
+def readConfig(filename: str) -> ConfigParser:
 
-    # the dict_type option isn't supported until 2.5
-    try:
-        cfg = ConfigParser.SafeConfigParser(dict_type=ConfigDict, interpolation=None)
-    except TypeError:
-        cfg = ConfigParser.SafeConfigParser(interpolation=None)
+    cfg = ConfigParser(dict_type=ConfigDict, interpolation=None)
 
     # add defaults
     cfg.add_section(SERVER_BLOCK)
     cfg.set(SERVER_BLOCK, AUTHZ_FILE,           DEFAULT_AUTHZ_FILE)
     cfg.set(SERVER_BLOCK, HOSTNAME_CHECK_DEPTH, DEFAULT_HOSTNAME_CHECK_DEPTH)
 
-    fp = open(filename)
-    proxy_fp = MultiLineFileReader(fp)
-
-    # read cfg file
-    cfg.readfp(proxy_fp)
+    # Read the config file
+    with open(filename) as fp:
+        proxy_fp = MultiLineFileReader(fp)
+        cfg.read_file(proxy_fp)
 
     return cfg
 
@@ -74,19 +72,19 @@ class MultiLineFileReader:
     # line starting with "<<<" appears
     # An exception is raised if
 
-    def __init__(self, fp):
+    def __init__(self, fp: TextIO):
         self._fp = fp
 
     def __iter__(self):
         return self
-    
+
     def __next__(self):
         line = self.readline()
         if not line:
             raise StopIteration()
         return line
 
-    def readline(self):
+    def readline(self) -> str:
 
         line = self._fp.readline()
 
@@ -95,7 +93,7 @@ class MultiLineFileReader:
             line = re.sub(r'<<<$',r'',line.rstrip())
             while True:
                 cl = self._fp.readline().rstrip()
-                if cl == None:
+                if cl is None:
                     raise ConfigurationError("ReadError: Reached end of file but found no <<<")
                 if cl.startswith("<<<"):
                     break
@@ -114,4 +112,3 @@ class MultiLineFileReader:
             line = line[:i] + newline
 
         return line
-
