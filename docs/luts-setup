@@ -6,21 +6,15 @@ a mechanism for retrieving aggregated information from these.
 
 == Requirements ==
 
-* Python (Tested with 2.7 - 2.6 may work, but that is untested. Python 3
-  most likely will not work)
-* Twisted Core and Web (12.x - previous versions may work too)
-* NginX 0.7.66 / 0.8.51 or later (http://nginx.org/)
-* PostgreSQL 9.x as backend database (8.x may work as well)
+* Python 3
+* Twisted (Tested with 18.x - other version may work too)
+* NginX (Tested with 1.18 - other versions likely to work too) (http://nginx.org/)
+* Psycopg2
+* PostgreSQL 9 or later
 
-Debian/Ubuntu packages: python-twisted python-twisted-web nginx
+Debian/Ubuntu packages: python3-twisted python3-psycopg2 nginx
 
 RedHat / CentOS packages: ?
-
-Old distributions:
-
-Typically the Python version is not new enough (Python 2.6 is recommended, 2.4
-will NOT work, 2.5 should work), Python and will have to be installed manually
-with dependencies. See the old-distro-notes file for guides.
 
 
 == Database ==
@@ -44,8 +38,8 @@ See docs/nginx-setup for how to setup NginX.
 == Installation & Configuration ==
 
 1. Unpack the tarball (you have probably already done this)
-2. Run: python setup.py build
-3. Run: sudo python setup.py install
+2. Run: python3 setup.py build
+3. Run: sudo python3 setup.py install
 
 Relocation can be done by using --home in the install step.
 
@@ -63,11 +57,15 @@ for more information.
  
 
 Hereafter edit sgas.authz to set which identities can perform which actions.
-Subject names must in "", so a line would look like this:
+Subject names must be in "", so a line would look like this:
 
 "/O=Grid/O=NorduGrid/CN=host/host.example.org"      insert
 
-Which will allow the host to insert usage records. You will probably need to
+or, with subjects given in the newer format:
+
+"CN=host.example.org,O=NorduGrid,O=Grid"            insert
+
+which will allow the host to insert usage records. You will probably need to
 define several of these.
 
 Per default the last two parts of the host name, has to match the last two
@@ -87,4 +85,3 @@ cases where the two previous are needed.
 
 Furthermore it is possible to define views (and access to these), as well as
 access to the SGAS query interface. See docs/views and docs/query-interface.
-

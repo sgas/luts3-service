@@ -1,2 +1,2 @@
-__version__ = '3.8.1/hostscaling'
+__version__ = '3.8.1'
 

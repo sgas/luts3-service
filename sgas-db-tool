@@ -43,17 +43,17 @@ conf = '/etc/sgas.conf'
 db   = None
 
 def options():
-	print "db-tool.py [options] <action> ..."
-	print "-h            help"
-	print "Available actions:"
-	print "   listur     list UR"
-	print "   showur     show UR"
-	print "   deleteur   delete UR"
-	print "   listsr     list SR"
-	print "   showsr     show SR"
-	print "   deletesr   delete SR"
-	print ""
-	print "Use <action> -h for more help"
+	print("db-tool.py [options] <action> ...")
+	print("-h            help")
+	print("Available actions:")
+	print("   listur     list UR")
+	print("   showur     show UR")
+	print("   deleteur   delete UR")
+	print("   listsr     list SR")
+	print("   showsr     show SR")
+	print("   deletesr   delete SR")
+	print("")
+	print("Use <action> -h for more help")
 
 	
 def commandline(argv):
@@ -75,13 +75,13 @@ def commandline(argv):
 
 
 def listsr_options():
-	print "listur options"
-	print "-h               help"
-	print "--output         output format. Standard python % output using field name for usagerecord view"
-	print "--start_time     starttime for record (will show SR within --start && --end) ISO-format"
-	print "--end_time       endtime for record (will show SR within --start && --end) ISO-format"
-	print "--storage_system name of storage system to list"
-	print "--site           site of project to list"
+	print("listur options")
+	print("-h               help")
+	print("--output         output format. Standard python % output using field name for usagerecord view")
+	print("--start_time     starttime for record (will show SR within --start && --end) ISO-format")
+	print("--end_time       endtime for record (will show SR within --start && --end) ISO-format")
+	print("--storage_system name of storage system to list")
+	print("--site           site of project to list")
 
     
 def listsr(argv):
@@ -114,21 +114,21 @@ def listsr(argv):
 			sqla['site'] = arg
 	
 	if not len(sqls):
-		print "No constraints given"
+		print("No constraints given")
 		sys.exit(1)
 				
 	try:
 		cur = db.cursor()
 		cur.execute(sql + " AND ".join(sqls),sqla)
 	except psycopg2.Error as e:
-		print "DB Error: %s" % e
+		print("DB Error: %s" % e)
 		sys.exit(1)	
 	
 	map = {}
 	for t in SR_FIELDS:
 		map[t] = t
-	print output % map	
-	print "-" * len(output % map)
+	print(output % map)
+	print("-" * len(output % map))
 			
 		
 	for row in cur.fetchall():
@@ -136,12 +136,12 @@ def listsr(argv):
 		for t in SR_FIELDS:
 			map[t] = row[0]
 			row = row[1:]
-		print output % map
+		print(output % map)
 
 
 def showsr_options():
-	print "showur options <recordid(s)>"
-	print "-h               help"
+	print("showur options <recordid(s)>")
+	print( "-h               help")
 
 
 def showsr(argv):
@@ -164,18 +164,18 @@ def showsr(argv):
 			cur = db.cursor()
 			cur.execute(sql + " AND ".join(sqls),sqla)
 		except psycopg2.Error as e:
-			print "DB Error: %s" % e
+			print("DB Error: %s" % e)
 			sys.exit(1)
 	
 		for row in cur.fetchall():
 			for t in SR_FIELDS:
-				print "%-22s %s" % (t,row[0])
+				print("%-22s %s" % (t,row[0]))
 				row = row[1:]				
 
 
 def deletesr_options():
-	print "deleteur options <recordid(s)>"
-	print "-h               help"
+	print("deleteur options <recordid(s)>")
+	print("-h               help")
 
 
 def deletesr(argv):
@@ -198,22 +198,22 @@ def deletesr(argv):
 			cur.execute("BEGIN")
 			cur.execute(sql + sqls,sqla)
 			if cur.rowcount == 0:
-				print "Record not found"
+				print("Record not found")
 				sys.exit(1)
 			cur.execute("ROLLBACK")
 		except psycopg2.Error as e:
-			print "DB Error: %s" % e
+			print("DB Error: %s" % e)
 			sys.exit(1)
 
 
 def listur_options():
-	print "listur options"
-	print "-h               help"
-	print "--output         output format. Standard python % output using field name for usagerecord view"
-	print "--start_time     starttime for record (will show UR within --start && --end) ISO-format"
-	print "--end_time       endtime for record (will show UR within --start && --end) ISO-format"
-	print "--machine_name   name of machine to show"
-	print "--project_name   name of project"
+	print("listur options")
+	print("-h               help")
+	print("--output         output format. Standard python % output using field name for usagerecord view")
+	print("--start_time     starttime for record (will show UR within --start && --end) ISO-format")
+	print("--end_time       endtime for record (will show UR within --start && --end) ISO-format")
+	print("--machine_name   name of machine to show")
+	print("--project_name   name of project")
 
 
 def listur(argv):
@@ -243,33 +243,33 @@ def listur(argv):
 			sqla['machinename'] = arg
 
 	if not len(sqls):
-		print "No constraints given"
+		print("No constraints given")
 		sys.exit(1)
 			
 	try:
 		cur = db.cursor()
 		cur.execute(sql + " AND ".join(sqls),sqla)
 	except psycopg2.Error as e:
-		print "DB Error: %s" % e
+		print("DB Error: %s" % e)
 		sys.exit(1)
 		
 	map = {}
 	for t in UR_FIELDS:
 		map[t] = t
-	print output % map	
-	print "-" * len(output % map)
+	print(output % map)
+	print("-" * len(output % map))
 				
 	for row in cur.fetchall():
 		map= {}
 		for t in UR_FIELDS:
 			map[t] = row[0]
 			row = row[1:]
-		print output % map
+		print(output % map)
 
 
 def showur_options():
-	print "showur options <recordid(s)>"
-	print "-h               help"
+	print("showur options <recordid(s)>")
+	print("-h               help")
 
 
 def showur(argv):
@@ -292,18 +292,18 @@ def showur(argv):
 			cur = db.cursor()
 			cur.execute(sql + " AND ".join(sqls),sqla)
 		except psycopg2.Error as e:
-			print "DB Error: %s" % e
+			print("DB Error: %s" % e)
 			sys.exit(1)
 	
 		for row in cur.fetchall():
 			for t in UR_FIELDS:
-				print "%-20s %s" % (t,row[0])
+				print("%-20s %s" % (t,row[0]))
 				row = row[1:]				
 
 
 def deleteur_options():
-	print "deleteur options <recordid(s)>"
-	print "-h               help"
+	print("deleteur options <recordid(s)>")
+	print("-h               help")
 
 
 def deleteur(argv):
@@ -326,17 +326,17 @@ def deleteur(argv):
 			cur.execute("BEGIN")
 			cur.execute(sql + sqls,sqla)
 			if cur.rowcount == 0:
-				print "Record not found"
+				print("Record not found")
 				sys.exit(1)
 		except psycopg2.Error as e:
-			print "DB Error: %s" % e
+			print("DB Error: %s" % e)
 			sys.exit(1)			
 
 
 def actions(args):
 	
 	if not len(args):
-		print "No action given"
+		print("No action given")
 		options()
 		sys.exit(1)
 		
@@ -356,7 +356,7 @@ def actions(args):
 	elif action == 'deletesr':
 		deletesr(args)
 	else:
-		print "Unknown action"
+		print("Unknown action")
 		sys.exit(1)
 		
 	
@@ -370,7 +370,7 @@ def connectDb(dbstring):
 	try:
 		return psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
 	except psycopg2.Error as e:
-		print "DB Error: %s" % e
+		print("DB Error: %s" % e)
     	sys.exit(1)
 
 
