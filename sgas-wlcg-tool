@@ -120,9 +120,9 @@ def show_data(args: argparse.Namespace, db_conn: db_connection) -> None:
     base_query = sql.SQL(
         """
         SELECT
-            m.machine_name,
             c.country_name,
             s.site_name,
+            m.machine_name,
             array_to_string(array_agg(t.tier_name || ':' || t.vo_name),', ') as tier_vo
         FROM machinename AS m
         JOIN wlcg.machinename_site_junction AS j
@@ -161,7 +161,7 @@ def show_data(args: argparse.Namespace, db_conn: db_connection) -> None:
             conditions.append(sql.SQL("t.tier_name = %s"))
             params.append(args.tier)
 
-    epilog = sql.SQL(" GROUP BY m.machine_name, c.country_name, s.site_name ORDER BY m.machine_name, c.country_name, s.site_name")
+    epilog = sql.SQL(" GROUP BY m.machine_name, c.country_name, s.site_name ORDER BY c.country_name, s.site_name, m.machine_name")
 
     if conditions:
         where_clause = sql.SQL(" WHERE ") + sql.SQL(" AND ").join(conditions)
@@ -179,7 +179,7 @@ def show_data(args: argparse.Namespace, db_conn: db_connection) -> None:
         return
 
     # Pretty‑print a table
-    header = ["Machine", "Country", "Site", "Tier:VO"]
+    header = ["Country", "Site", "Machine", "Tier:VO"]
     col_widths = [max(len(str(cell)) for cell in col) for col in zip(*([header] + rows))]
     fmt = " | ".join(f"{{:<{w}}}" for w in col_widths)
 
