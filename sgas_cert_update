@@ -17,5 +17,5 @@
 cat /etc/grid-security/certificates/*.0 > /etc/grid-security/igtf-bundle.pem
 cat /etc/grid-security/certificates/*.r0 > /etc/grid-security/igtf-bundle-crl.pem
 
-/etc/init.d/nginx restart 2>&1 /dev/null
+/etc/init.d/nginx restart > /dev/null 2>&1
 
