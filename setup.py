@@ -22,6 +22,21 @@ class InstallSGASData(install_data):
     # this class is used for relocating datafiles, and remove existing etc files
     # so we don't overwrite the configuration of existing sites
 
+    def run(self):
+        install_data.run(self)
+        for (prefix, files) in self.data_files:
+            if os.path.basename(prefix) == 'bin':
+                print(f"Found bin: {prefix}")
+                dest_dir = os.path.join(self.install_dir, prefix)
+                for f in files:
+                    print(f"Processing {f}")
+                    basename = os.path.basename(f)
+                    name, ext = os.path.splitext(basename)
+                    if ext in ('.py', '.sh'):
+                        print(f"Renaming {os.path.join(dest_dir, basename)} to {os.path.join(dest_dir, name)}")
+                        os.rename(os.path.join(dest_dir, basename),
+                                  os.path.join(dest_dir, name))
+
     def finalize_options(self):
         install_data.finalize_options(self)
 
@@ -33,6 +48,7 @@ class InstallSGASData(install_data):
                     new_prefix = os.path.join(RELOCATE, prefix[1:])
                     self.data_files.remove((prefix, files))
                     self.data_files.append((new_prefix, files))
+                    print(f"Replaced {(prefix, files)} with {(new_prefix, files)}")
 
         # check that we don't overwrite /etc files
         for (prefix, files) in reversed(self.data_files):
@@ -90,7 +106,10 @@ setup(name='sgas-luts-service',
           ('/etc/',                      ['datafiles/etc/sgas.authz']),
           ('/etc/init.d',                ['datafiles/etc/sgas']),
           ('/etc/nginx/sites-available', ['datafiles/etc/nginx/sites-available/sgas']),
-          ('bin',                        ['sgas-db-tool', 'sgas-hs-tool', 'sgas-wlcg-tool'])
+          ('bin',                        ['sgas/tools/sgas-db-tool.py',
+                                          'sgas/tools/sgas-hs-tool.py',
+                                          'sgas/tools/sgas-wlcg-tool.py',
+                                          'sgas/tools/sgas_cert_update.sh'])
       ]
 
 )
