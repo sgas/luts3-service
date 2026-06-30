@@ -244,17 +244,18 @@ def add_data(args: argparse.Namespace, db_conn: db_connection) -> None:
         else:
             country_id = None
 
-        # Ensure the site exists (or create it)
-        cur.execute("SELECT site_id FROM wlcg.sites WHERE site_name = %s", (args.site,))
-        site_row = cur.fetchone()
-        if site_row:
-            site_id = site_row[0]
-        else:
-            if country_id is None:
-                sys.exit(f"Site {args.site} does not exists, and to create it, we need to know the country")
+        if args.site:
+            # Ensure the site exists (or create it)
+            cur.execute("SELECT site_id FROM wlcg.sites WHERE site_name = %s", (args.site,))
+            site_row = cur.fetchone()
+            if site_row:
+                site_id = site_row[0]
+            else:
+                if country_id is None:
+                    sys.exit(f"Site {args.site} does not exists, and to create it, we need to know the country")
 
-            site_id = expect_one(cur, "INSERT INTO wlcg.sites (country_id, site_name) VALUES (%s, %s) RETURNING site_id", (country_id, args.site))[0]
-            print(f"Created site '{args.site}' (id={site_id})")
+                site_id = expect_one(cur, "INSERT INTO wlcg.sites (country_id, site_name) VALUES (%s, %s) RETURNING site_id", (country_id, args.site))[0]
+                print(f"Created site '{args.site}' (id={site_id})")
 
         #  Ensure the machine exists (or create it)
         cur.execute("SELECT id FROM machinename WHERE machine_name = %s", (args.machine,))
