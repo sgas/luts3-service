@@ -1,0 +1,150 @@
+=== sgas-wlcg-tool ===
+
+sgas-wlcg-tool is a command line utility for managing the WLCG schema in the
+SGAS database. It can be used to inspect and modify the mapping between
+machines, sites, countries, tiers and VOs that is needed for WLCG accounting.
+
+The tool reads the database connection string from the SGAS configuration file
+(default: /etc/sgas.conf). An alternate config file can be specified with the
+-c flag:
+
+    sgas-wlcg-tool -c /path/to/sgas.conf <command> [options]
+
+
+--- Commands ---
+
+show    List machines with their associated site, country and tier/VO mappings.
+add     Add a machine (and site/country if needed) with tier/VO mappings.
+del     Remove machines, sites, countries, site associations or tier/VO rows.
+
+
+--- show ---
+
+List all machines with their country, site and tier:VO mappings:
+
+    sgas-wlcg-tool show
+
+The output can be filtered by one or more of the following options:
+
+    --machine MACHINE    Filter by machine name
+    --site SITE          Filter by site name
+    --country COUNTRY    Filter by country name
+    --tier TIER          Filter by tier name, or "tier_name:vo_name"
+
+Examples:
+
+    sgas-wlcg-tool show --country "Norway"
+    sgas-wlcg-tool show --site "FOO"
+    sgas-wlcg-tool show --tier "ndgf-t1"
+    sgas-wlcg-tool show --tier "ndgf-t1:atlas"
+
+
+--- add ---
+
+Add a machine together with its site and country (if needed), and associate it
+with one or more tiers.
+
+    sgas-wlcg-tool add \
+        --machine MACHINE \
+        --site SITE \
+        --tier TIER:VO \
+        [--country COUNTRY] \
+        [--tier TIER:VO ...]
+
+Options:
+
+    --machine MACHINE    (required) Machine name as it appears in the database
+    --site SITE          Site name to associate with the machine
+    --tier TIER:VO       Tier and VO, e.g. "ndgf-t1:atlas".
+                         Use '*' for vo_name to match all VOs.
+                         Can be repeated to set multiple tier/VO rows.
+    --country COUNTRY    Country of the site. Required if the site does not
+                         already exist.
+
+Examples:
+
+    # Add the machine kurvi.tasch.bx from the site FOO in Borduria, which will
+    # run atlas jobs for ndgf-t1, and cms jobs for borduria-t2
+    sgas-wlcg-tool add \
+        --machine "kurvi.tasch.bx" \
+        --country "Borduria" \
+        --site "FOO" \
+        --tier "ndgf-t1:atlas" \
+        --tier "borduria-t2:cms"
+
+    # Jobs from all VOs on kurvi.tasch.bx are ran for ndgf-t1
+    sgas-wlcg-tool add \
+        --machine "kurvi.tasch.bx" \
+        --tier "ndgf-t1:*"
+
+
+--- del ---
+
+The del command covers several removal operations depending on which options
+are given.
+
+
+Remove specific tier/VO rows from a machine:
+
+    sgas-wlcg-tool del --machine MACHINE --tier TIER:VO [--tier TIER:VO ...]
+
+    Example:
+
+        sgas-wlcg-tool del --machine "kurvi.tasch.bx" --tier "ndgf-t1:atlas"
+
+
+Disassociate a machine from a site:
+
+    sgas-wlcg-tool del --machine MACHINE --site SITE
+
+    Example:
+
+        sgas-wlcg-tool del --machine "kurvi.tasch.bx" --site "FOO"
+
+
+Disassociate a machine from a site and remove a tier in one operation:
+
+    sgas-wlcg-tool del --machine MACHINE --site SITE --tier TIER:VO
+
+
+Fully remove a machine:
+
+    sgas-wlcg-tool del --machine MACHINE
+
+    This removes the machine from the machinename table together with all its
+    tier/VO rows (wlcg.tiers), site associations (wlcg.machinename_site_junction)
+    and scale factor entries (hostscalefactors_data). All removals happen inside
+    a single transaction.
+
+    This operation is refused if the machine has any usage records in the
+    usagedata table.
+
+    Example:
+
+        sgas-wlcg-tool del --machine "kurvi.tasch.bx"
+
+
+Remove a site:
+
+    sgas-wlcg-tool del --site SITE
+
+    Removes the site from wlcg.sites. This operation is refused if any machine
+    is still associated with the site in wlcg.machinename_site_junction, or if
+    the site has any pledge entries in wlcg.pledges.
+
+    Example:
+
+        sgas-wlcg-tool del --site "FOO"
+
+
+Remove a country:
+
+    sgas-wlcg-tool del --country COUNTRY
+
+    Removes the country from wlcg.countries. This operation is refused if the
+    country still has any sites in wlcg.sites or any pledge entries in
+    wlcg.pledges. --country cannot be combined with any other option.
+
+    Example:
+
+        sgas-wlcg-tool del --country "Burdria"
