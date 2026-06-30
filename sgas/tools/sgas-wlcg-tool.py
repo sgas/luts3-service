@@ -24,7 +24,10 @@ Show only a specific tier (optionally combined with a VO):
 
     sgas-wlcg-tool show --tier "ndgf-t1:alice"
 
-Add a new machine with related data:
+
+Add a new machine to a country and site (adding the site and country if needed), with tiers.
+Or add tiers to an existsing machine:
+
     sgas-wlcg-tool add \\
         --machine "kurvi.tasch.bx" \\
         --country "Borduria" \\
@@ -34,6 +37,32 @@ Add a new machine with related data:
 
 Multiple ``--tier`` flags can be used to insert several (tier_name:vo_name) rows.
 '*' can be used for vo_name, meaning "all VOs"
+
+
+Remove a specific tier (or tier:VO combination) from a machine:
+
+    sgas-wlcg-tool del --machine "kurvi.tasch.bx" --tier "ndgf-t1:atlas"
+
+    or multiple tiers at once:
+
+    sgas-wlcg-tool del --machine "kurvi.tasch.bx" --tier "ndgf-t1:atlas" --tier "borduria-t2:cms"
+
+Disassociate a machine from a site:
+
+    sgas-wlcg-tool del --machine "kurvi.tasch.bx" --site "FOO"
+
+Fully remove a machine (only possible if it has no usage records in usagedata).
+Also removes its tiers, site associations and scale factor entries:
+
+    sgas-wlcg-tool del --machine "kurvi.tasch.bx"
+
+Remove a site (only possible if no machines are associated with it and it has no pledges):
+
+    sgas-wlcg-tool del --site "FOO"
+
+Remove a country (only possible if it has no sites and no pledges):
+
+    sgas-wlcg-tool del --country "Borduria"
 """
 
 import argparse
@@ -271,6 +300,131 @@ def add_data(args: argparse.Namespace, db_conn: db_connection) -> None:
         db_conn.close()
 
 
+#
+# Mode 3 – DEL
+#
+def del_data(args: argparse.Namespace, db_conn: db_connection) -> None:
+    """
+    Remove tier rows from wlcg.tiers and/or disassociate a machine from a site
+    in wlcg.machinename_site_junction.
+    """
+    if not args.machine and not args.site and not args.country:
+        sys.exit("Error: at least one of --machine, --site or --country must be given.")
+    if args.tiers and not args.machine:
+        sys.exit("Error: --tier requires --machine.")
+    if args.country and (args.machine or args.site or args.tiers):
+        sys.exit("Error: --country cannot be combined with other options.")
+
+    cur = db_conn.cursor()
+
+    try:
+        if args.country:
+            # Country-only removal
+            cur.execute("SELECT country_id FROM wlcg.countries WHERE country_name = %s", (args.country,))
+            country_row = cur.fetchone()
+            if not country_row:
+                sys.exit(f"Country '{args.country}' not found.")
+            country_id = country_row[0]
+
+            cur.execute("SELECT COUNT(*) FROM wlcg.sites WHERE country_id = %s", (country_id,))
+            if cur.fetchone()[0] > 0:
+                sys.exit(f"Cannot remove country '{args.country}': it still has sites in wlcg.sites.")
+
+            cur.execute("SELECT COUNT(*) FROM wlcg.pledges WHERE country_id = %s", (country_id,))
+            if cur.fetchone()[0] > 0:
+                sys.exit(f"Cannot remove country '{args.country}': it has pledges in wlcg.pledges.")
+
+            cur.execute("DELETE FROM wlcg.countries WHERE country_id = %s", (country_id,))
+            print(f"Removed country '{args.country}'.")
+
+            db_conn.commit()
+            print("\nDone.")
+            return
+
+        if args.site and not args.machine:
+            # Site-only removal
+            cur.execute("SELECT site_id FROM wlcg.sites WHERE site_name = %s", (args.site,))
+            site_row = cur.fetchone()
+            if not site_row:
+                sys.exit(f"Site '{args.site}' not found.")
+            site_id = site_row[0]
+
+            cur.execute("SELECT COUNT(*) FROM wlcg.machinename_site_junction WHERE site_id = %s", (site_id,))
+            if cur.fetchone()[0] > 0:
+                sys.exit(f"Cannot remove site '{args.site}': it still has machines associated with it.")
+
+            cur.execute("SELECT COUNT(*) FROM wlcg.pledges WHERE site_id = %s", (site_id,))
+            if cur.fetchone()[0] > 0:
+                sys.exit(f"Cannot remove site '{args.site}': it has pledges in wlcg.pledges.")
+
+            cur.execute("DELETE FROM wlcg.sites WHERE site_id = %s", (site_id,))
+            print(f"Removed site '{args.site}'.")
+
+            db_conn.commit()
+            print("\nDone.")
+            return
+
+        cur.execute("SELECT id FROM machinename WHERE machine_name = %s", (args.machine,))
+        mach_row = cur.fetchone()
+        if not mach_row:
+            sys.exit(f"Machine '{args.machine}' not found.")
+        machine_id = mach_row[0]
+
+        if not args.tiers and not args.site:
+            # Full machine removal
+            cur.execute("SELECT COUNT(*) FROM usagedata WHERE machine_name_id = %s", (machine_id,))
+            n = cur.fetchone()[0]
+            if n > 0:
+                sys.exit(f"Cannot remove machine '{args.machine}': it has {n} usage record(s) in usagedata.")
+
+            cur.execute("DELETE FROM wlcg.tiers WHERE machine_name_id = %s", (machine_id,))
+            print(f"Removed {cur.rowcount} tier row(s) for machine '{args.machine}'.")
+
+            cur.execute("DELETE FROM wlcg.machinename_site_junction WHERE machine_name_id = %s", (machine_id,))
+            print(f"Disassociated machine '{args.machine}' from {cur.rowcount} site(s).")
+
+            cur.execute("DELETE FROM hostscalefactors_data WHERE machine_name_id = %s", (machine_id,))
+            print(f"Removed {cur.rowcount} scale factor row(s) for machine '{args.machine}'.")
+
+            cur.execute("DELETE FROM machinename WHERE id = %s", (machine_id,))
+            print(f"Removed machine '{args.machine}' from machinename.")
+
+        else:
+            for tiervo in (args.tiers or []):
+                cur.execute(
+                    "DELETE FROM wlcg.tiers WHERE machine_name_id = %s AND tier_name = %s AND vo_name = %s",
+                    (machine_id, tiervo.tier, tiervo.vo),
+                )
+                if cur.rowcount == 0:
+                    print(f"No tier '{tiervo.tier}' for VO '{tiervo.vo}' on machine '{args.machine}' found.")
+                else:
+                    print(f"Removed tier '{tiervo.tier}' for VO '{tiervo.vo}' from machine '{args.machine}'.")
+
+            if args.site:
+                cur.execute("SELECT site_id FROM wlcg.sites WHERE site_name = %s", (args.site,))
+                site_row = cur.fetchone()
+                if not site_row:
+                    sys.exit(f"Site '{args.site}' not found.")
+                site_id = site_row[0]
+
+                cur.execute(
+                    "DELETE FROM wlcg.machinename_site_junction WHERE machine_name_id = %s AND site_id = %s",
+                    (machine_id, site_id),
+                )
+                if cur.rowcount == 0:
+                    print(f"Machine '{args.machine}' was not associated with site '{args.site}'.")
+                else:
+                    print(f"Disassociated machine '{args.machine}' from site '{args.site}'.")
+
+        db_conn.commit()
+        print("\nDone.")
+    except Exception as exc:
+        db_conn.rollback()
+        sys.exit(f"\nError while deleting data – transaction rolled back.\nDetails: {exc}")
+    finally:
+        db_conn.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Utility for the SGAS WLCG schema (show / add data).")
     parser.add_argument('-c', '--conf', help="SGAS config file (default: /etc/sgas.conf)", default=DEFAULT_CONFIG_FILE)
@@ -291,6 +445,14 @@ def main() -> None:
     add_parser.add_argument("--site", required=True, help="Site name to associate with the machine")
     add_parser.add_argument("--tier", dest="tiers", action="append", type=parse_tier_arg, required=True, metavar="TIER:VO", help='One or more tier specifications, e.g. "--tier ndgf-t1:atlas". Can be repeated')
     add_parser.set_defaults(func=add_data)
+
+    # DEL
+    del_parser = subparsers.add_parser("del", help="Remove tier(s)/machine/site/country from the WLCG schema")
+    del_parser.add_argument("--machine", required=False, help="Name of the machine")
+    del_parser.add_argument("--site", help="Site to disassociate the machine from, or remove (alone)")
+    del_parser.add_argument("--country", help="Country to remove (alone, no other options)")
+    del_parser.add_argument("--tier", dest="tiers", action="append", type=parse_tier_arg, required=False, metavar="TIER:VO", help='One or more tier specifications to remove, e.g. "--tier ndgf-t1:atlas". Can be repeated')
+    del_parser.set_defaults(func=del_data)
 
     args = parser.parse_args()
     cfg = config.readConfig(args.conf)
