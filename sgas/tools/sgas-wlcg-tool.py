@@ -109,7 +109,7 @@ def get_connection(dbstring: str) -> db_connection:
 @dataclass
 class TierVo:
     tier: str
-    vo: str
+    vo: str|None
 
 def parse_tier_arg(arg: str) -> TierVo:
     """
@@ -120,16 +120,17 @@ def parse_tier_arg(arg: str) -> TierVo:
 
     if len(parts) == 1:
         tier = parts[0]
-        vo = '*'
+        vo = None
     elif len(parts) == 2:
-        tier, vo = parts
+        tier = parts[0].strip()
+        vo = parts[1].strip()
     else:
         raise argparse.ArgumentTypeError(f'Invalid tier specification "{arg}". Expected format "tier_name:vo_name".')
 
-    if not vo or not tier:
-        raise argparse.ArgumentTypeError(f'Invalid tier specification "{arg}". Both parts must be non‑empty.')
+    if not tier:
+        raise argparse.ArgumentTypeError(f'Invalid tier specification "{arg}": empty tier')
 
-    return TierVo(tier.strip(), vo.strip())
+    return TierVo(tier, vo)
 
 
 def expect_one(cursor: db_cursor, query: str|sql.SQL, params: tuple|None=None) -> tuple:
@@ -295,9 +296,12 @@ def add_data(args: argparse.Namespace, db_conn: db_connection) -> None:
                 ON CONFLICT (machine_name_id, vo_name) DO UPDATE
                     SET tier_name = EXCLUDED.tier_name
                 """,
-                (machine_id, tiervo.vo, tiervo.tier),
+                (machine_id, tiervo.vo or '*', tiervo.tier),
             )
-            print(f"Set tier '{tiervo.tier}' for VO '{tiervo.vo}' on machine '{args.machine}'")
+            if tiervo.vo is None:
+                print(f"Set tier '{tiervo.tier}' for all VO:s on machine '{args.machine}'")
+            else:
+                print(f"Set tier '{tiervo.tier}' for VO '{tiervo.vo}' on machine '{args.machine}'")
 
         # Commit everything
         db_conn.commit()
@@ -446,14 +450,21 @@ def del_data(args: argparse.Namespace, db_conn: db_connection) -> None:
 
         else:
             for tiervo in (args.tiers or []):
-                cur.execute(
-                    "DELETE FROM wlcg.tiers WHERE machine_name_id = %s AND tier_name = %s AND vo_name = %s",
-                    (machine_id, tiervo.tier, tiervo.vo),
-                )
-                if cur.rowcount == 0:
-                    print(f"No tier '{tiervo.tier}' for VO '{tiervo.vo}' on machine '{args.machine}' found.")
+                if tiervo.vo is None:
+                    cur.execute("DELETE FROM wlcg.tiers WHERE machine_name_id = %s AND tier_name = %s", (machine_id, tiervo.tier))
+                    if cur.rowcount == 0:
+                        print(f"No tier '{tiervo.tier}' on machine '{args.machine}' found.")
+                    else:
+                        print(f"Removed tier '{tiervo.tier}' from machine '{args.machine}'.")
                 else:
-                    print(f"Removed tier '{tiervo.tier}' for VO '{tiervo.vo}' from machine '{args.machine}'.")
+                    cur.execute(
+                        "DELETE FROM wlcg.tiers WHERE machine_name_id = %s AND tier_name = %s AND vo_name = %s",
+                        (machine_id, tiervo.tier, tiervo.vo)
+                    )
+                    if cur.rowcount == 0:
+                        print(f"No tier '{tiervo.tier}' for VO '{tiervo.vo}' on machine '{args.machine}' found.")
+                    else:
+                        print(f"Removed tier '{tiervo.tier}' for VO '{tiervo.vo}' from machine '{args.machine}'.")
 
             if args.site:
                 cur.execute("SELECT site_id FROM wlcg.sites WHERE site_name = %s", (args.site,))
