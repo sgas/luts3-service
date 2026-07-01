@@ -26,14 +26,11 @@ class InstallSGASData(install_data):
         install_data.run(self)
         for (prefix, files) in self.data_files:
             if os.path.basename(prefix) == 'bin':
-                print(f"Found bin: {prefix}")
                 dest_dir = os.path.join(self.install_dir, prefix)
                 for f in files:
-                    print(f"Processing {f}")
                     basename = os.path.basename(f)
                     name, ext = os.path.splitext(basename)
                     if ext in ('.py', '.sh'):
-                        print(f"Renaming {os.path.join(dest_dir, basename)} to {os.path.join(dest_dir, name)}")
                         os.rename(os.path.join(dest_dir, basename),
                                   os.path.join(dest_dir, name))
 
