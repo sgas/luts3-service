@@ -164,9 +164,9 @@ def show_data(args: argparse.Namespace, db_conn: db_connection) -> None:
         FROM machinename AS m
         LEFT JOIN wlcg.machinename_site_junction AS j
             ON j.machine_name_id = m.id
-        LEFT JOIN wlcg.sites AS s
+        FULL JOIN wlcg.sites AS s
             ON s.site_id = j.site_id
-        LEFT JOIN wlcg.countries AS c
+        FULL JOIN wlcg.countries AS c
             ON c.country_id = s.country_id
         LEFT JOIN wlcg.tiers AS t
             ON t.machine_name_id = m.id
