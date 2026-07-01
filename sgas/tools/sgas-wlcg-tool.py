@@ -176,6 +176,9 @@ def show_data(args: argparse.Namespace, db_conn: db_connection) -> None:
     conditions = []
     params = []
 
+    if args.only_active:
+        conditions.append(sql.SQL("m.id IN (SELECT DISTINCT machine_name_id FROM usagedata WHERE end_time >= NOW() - '6 months'::INTERVAL)"))
+
     if args.machine:
         conditions.append(sql.SQL("m.machine_name = %s"))
         params.append(args.machine)
@@ -511,6 +514,7 @@ def main() -> None:
     show_parser.add_argument("--country", help="Filter by country_name")
     show_parser.add_argument("--site", help="Filter by site_name")
     show_parser.add_argument("--tier", help='Filter by tier_name or "tier_name:vo_name".')
+    show_parser.add_argument("--only-active", "-a", action='store_true', help="Show only machines that has run jobs last 6 months")
     show_parser.set_defaults(func=show_data)
 
     # ADD
