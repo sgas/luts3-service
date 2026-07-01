@@ -161,11 +161,11 @@ def show_data(args: argparse.Namespace, db_conn: db_connection) -> None:
             m.machine_name,
             array_to_string(array_agg(t.tier_name || ':' || t.vo_name),', ') as tier_vo
         FROM machinename AS m
-        JOIN wlcg.machinename_site_junction AS j
+        LEFT JOIN wlcg.machinename_site_junction AS j
             ON j.machine_name_id = m.id
-        JOIN wlcg.sites AS s
+        LEFT JOIN wlcg.sites AS s
             ON s.site_id = j.site_id
-        JOIN wlcg.countries AS c
+        LEFT JOIN wlcg.countries AS c
             ON c.country_id = s.country_id
         LEFT JOIN wlcg.tiers AS t
             ON t.machine_name_id = m.id
