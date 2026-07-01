@@ -63,6 +63,13 @@ Remove a site (only possible if no machines are associated with it and it has no
 Remove a country (only possible if it has no sites and no pledges):
 
     sgas-wlcg-tool del --country "Borduria"
+
+
+Rename a country, site or machine
+
+    sgas-wlcg-tool edit --site "FOO"  --renameto "BAR"
+    sgas-wlcg-tool edit --machine "körvi.tasch.bx"  --renameto "kurvi.tasch.bx"
+    sgas-wlcg-tool edit --country "Syldavia"  --renameto "Borduria"
 """
 
 import argparse
@@ -302,7 +309,53 @@ def add_data(args: argparse.Namespace, db_conn: db_connection) -> None:
 
 
 #
-# Mode 3 – DEL
+# Mode 3 – EDIT
+#
+def edit_data(args: argparse.Namespace, db_conn: db_connection) -> None:
+    """
+    Rename a machine, site, or country.
+    """
+    targets = [x for x in (args.machine, args.site, args.country) if x]
+    if len(targets) != 1:
+        sys.exit("Error: exactly one of --machine, --site or --country must be given.")
+    if not args.renameto:
+        sys.exit("Error: --renameto is required.")
+
+    cur = db_conn.cursor()
+
+    try:
+        if args.machine:
+            cur.execute("SELECT id FROM machinename WHERE machine_name = %s", (args.machine,))
+            if not cur.fetchone():
+                sys.exit(f"Machine '{args.machine}' not found.")
+            cur.execute("UPDATE machinename SET machine_name = %s WHERE machine_name = %s", (args.renameto, args.machine))
+            print(f"Renamed machine '{args.machine}' to '{args.renameto}'.")
+
+        elif args.site:
+            cur.execute("SELECT site_id FROM wlcg.sites WHERE site_name = %s", (args.site,))
+            if not cur.fetchone():
+                sys.exit(f"Site '{args.site}' not found.")
+            cur.execute("UPDATE wlcg.sites SET site_name = %s WHERE site_name = %s", (args.renameto, args.site))
+            print(f"Renamed site '{args.site}' to '{args.renameto}'.")
+
+        elif args.country:
+            cur.execute("SELECT country_id FROM wlcg.countries WHERE country_name = %s", (args.country,))
+            if not cur.fetchone():
+                sys.exit(f"Country '{args.country}' not found.")
+            cur.execute("UPDATE wlcg.countries SET country_name = %s WHERE country_name = %s", (args.renameto, args.country))
+            print(f"Renamed country '{args.country}' to '{args.renameto}'.")
+
+        db_conn.commit()
+        print("\nDone.")
+    except Exception as exc:
+        db_conn.rollback()
+        sys.exit(f"\nError while renaming – transaction rolled back.\nDetails: {exc}")
+    finally:
+        db_conn.close()
+
+
+#
+# Mode 4 – DEL
 #
 def del_data(args: argparse.Namespace, db_conn: db_connection) -> None:
     """
@@ -446,6 +499,14 @@ def main() -> None:
     add_parser.add_argument("--site", required=True, help="Site name to associate with the machine")
     add_parser.add_argument("--tier", dest="tiers", action="append", type=parse_tier_arg, required=True, metavar="TIER:VO", help='One or more tier specifications, e.g. "--tier ndgf-t1:atlas". Can be repeated')
     add_parser.set_defaults(func=add_data)
+
+    # EDIT
+    edit_parser = subparsers.add_parser("edit", help="Rename a machine, site or country")
+    edit_parser.add_argument("--machine", help="Machine to rename")
+    edit_parser.add_argument("--site", help="Site to rename")
+    edit_parser.add_argument("--country", help="Country to rename")
+    edit_parser.add_argument("--renameto", required=True, help="New name")
+    edit_parser.set_defaults(func=edit_data)
 
     # DEL
     del_parser = subparsers.add_parser("del", help="Remove tier(s)/machine/site/country from the WLCG schema")

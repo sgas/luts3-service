@@ -16,6 +16,7 @@ The tool reads the database connection string from the SGAS configuration file
 show    List machines with their associated site, country and tier/VO mappings.
 add     Add a machine (and site/country if needed) with tier/VO mappings.
 del     Remove machines, sites, countries, site associations or tier/VO rows.
+edit    Rename a machine, site or country.
 
 
 --- show ---
@@ -147,4 +148,36 @@ Remove a country:
 
     Example:
 
-        sgas-wlcg-tool del --country "Burdria"
+        sgas-wlcg-tool del --country "Borduria"
+
+
+--- edit ---
+
+Rename a machine, site or country. Exactly one of --machine, --site or
+--country must be given, along with --renameto.
+
+Rename a machine:
+
+    sgas-wlcg-tool edit --machine MACHINE --renameto NEWNAME
+
+    Example:
+
+        sgas-wlcg-tool edit --machine "kurvi.tash.bx" --renameto "kurvi.tasch.bx"
+
+
+Rename a site:
+
+    sgas-wlcg-tool edit --site SITE --renameto NEWNAME
+
+    Example:
+
+        sgas-wlcg-tool edit --site "FOO" --renameto "BAR"
+
+
+Rename a country:
+
+    sgas-wlcg-tool edit --country COUNTRY --renameto NEWNAME
+
+    Example:
+
+        sgas-wlcg-tool edit --country "Bodruria" --renameto "Borduria"
