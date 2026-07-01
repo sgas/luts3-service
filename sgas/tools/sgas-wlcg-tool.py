@@ -275,15 +275,16 @@ def add_data(args: argparse.Namespace, db_conn: db_connection) -> None:
 
         # Link machine ↔ site (junction table)
         # The junction column is declared UNIQUE, so we either INSERT or UPDATE.
-        cur.execute(
-            """
-            INSERT INTO wlcg.machinename_site_junction (machine_name_id, site_id)
-            VALUES (%s, %s)
-            ON CONFLICT (machine_name_id) DO UPDATE SET site_id = EXCLUDED.site_id
-            """,
-            (machine_id, site_id),
-        )
-        print(f"Linked machine '{args.machine}' to site '{args.site}'")
+        if args.site:
+            cur.execute(
+                """
+                INSERT INTO wlcg.machinename_site_junction (machine_name_id, site_id)
+                VALUES (%s, %s)
+                ON CONFLICT (machine_name_id) DO UPDATE SET site_id = EXCLUDED.site_id
+                """,
+                (machine_id, site_id),
+            )
+            print(f"Linked machine '{args.machine}' to site '{args.site}'")
 
         # Insert tier / VO rows (may be many)
         for tiervo in args.tiers:
@@ -496,7 +497,7 @@ def main() -> None:
     add_parser = subparsers.add_parser("add", help="Insert a new machine together with its country, site and tiers")
     add_parser.add_argument("--machine", required=True, help="Name of the machine to insert")
     add_parser.add_argument("--country", required=False, help="Country where the site resides")
-    add_parser.add_argument("--site", required=True, help="Site name to associate with the machine")
+    add_parser.add_argument("--site", required=False, help="Site name to associate with the machine")
     add_parser.add_argument("--tier", dest="tiers", action="append", type=parse_tier_arg, required=True, metavar="TIER:VO", help='One or more tier specifications, e.g. "--tier ndgf-t1:atlas". Can be repeated')
     add_parser.set_defaults(func=add_data)
 
