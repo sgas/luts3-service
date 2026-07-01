@@ -386,12 +386,16 @@ def del_data(args: argparse.Namespace, db_conn: db_connection) -> None:
             country_id = country_row[0]
 
             cur.execute("SELECT COUNT(*) FROM wlcg.sites WHERE country_id = %s", (country_id,))
-            if cur.fetchone()[0] > 0:
-                sys.exit(f"Cannot remove country '{args.country}': it still has sites in wlcg.sites.")
+            row = cur.fetchone() or (0,) # Mostly to satisfy mypy; I can't think of any way this query could give empty result!
+            n = row[0]
+            if n > 0:
+                sys.exit(f"Cannot remove country '{args.country}': it still has {n} sites in wlcg.sites.")
 
             cur.execute("SELECT COUNT(*) FROM wlcg.pledges WHERE country_id = %s", (country_id,))
-            if cur.fetchone()[0] > 0:
-                sys.exit(f"Cannot remove country '{args.country}': it has pledges in wlcg.pledges.")
+            row = cur.fetchone() or (0,) # Mostly to satisfy mypy; I can't think of any way this query could give empty result!
+            n = row[0]
+            if n > 0:
+                sys.exit(f"Cannot remove country '{args.country}': it has {n} pledges in wlcg.pledges.")
 
             cur.execute("DELETE FROM wlcg.countries WHERE country_id = %s", (country_id,))
             print(f"Removed country '{args.country}'.")
@@ -409,12 +413,16 @@ def del_data(args: argparse.Namespace, db_conn: db_connection) -> None:
             site_id = site_row[0]
 
             cur.execute("SELECT COUNT(*) FROM wlcg.machinename_site_junction WHERE site_id = %s", (site_id,))
-            if cur.fetchone()[0] > 0:
-                sys.exit(f"Cannot remove site '{args.site}': it still has machines associated with it.")
+            row = cur.fetchone() or (0,) # Mostly to satisfy mypy; I can't think of any way this query could give empty result!
+            n = row[0]
+            if n > 0:
+                sys.exit(f"Cannot remove site '{args.site}': it still has {n} machines associated with it.")
 
             cur.execute("SELECT COUNT(*) FROM wlcg.pledges WHERE site_id = %s", (site_id,))
-            if cur.fetchone()[0] > 0:
-                sys.exit(f"Cannot remove site '{args.site}': it has pledges in wlcg.pledges.")
+            row = cur.fetchone() or (0,) # Mostly to satisfy mypy; I can't think of any way this query could give empty result!
+            n = row[0]
+            if n > 0:
+                sys.exit(f"Cannot remove site '{args.site}': it has {n} pledges in wlcg.pledges.")
 
             cur.execute("DELETE FROM wlcg.sites WHERE site_id = %s", (site_id,))
             print(f"Removed site '{args.site}'.")
@@ -432,7 +440,8 @@ def del_data(args: argparse.Namespace, db_conn: db_connection) -> None:
         if not args.tiers and not args.site:
             # Full machine removal
             cur.execute("SELECT COUNT(*) FROM usagedata WHERE machine_name_id = %s", (machine_id,))
-            n = cur.fetchone()[0]
+            row = cur.fetchone() or (0,) # Mostly to satisfy mypy; I can't think of any way this query could give empty result!
+            n = row[0]
             if n > 0:
                 sys.exit(f"Cannot remove machine '{args.machine}': it has {n} usage record(s) in usagedata.")
 
