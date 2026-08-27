@@ -14,13 +14,43 @@ from sgas.ext.python import json
 from sgas.authz import rights as authrights, ctxsetchecker
 from sgas.customqueryengine import rights
 from sgas.server import resourceutil
+from sgas.server.util import has_headers, get_headers
 from sgas.customqueryengine import querydefinition
+from sgas.customqueryengine import openmetrics
 
 
 JSON_MIME_TYPE = 'application/json'
 HTTP_HEADER_CONTENT_TYPE   = 'content-type'
+HTTP_HEADER_ACCEPT         = 'accept'
 
 ACTION_CUSTOMQUERY  = 'customquery'
+
+FORMAT_ARG          = b'format'
+FORMAT_JSON         = 'json'
+FORMAT_OPENMETRICS  = 'openmetrics'
+VALID_FORMATS       = (FORMAT_JSON, FORMAT_OPENMETRICS)
+
+
+def determineFormat(format_arg_values, request):
+    """
+    Determine the requested output format, either from an explicit
+    "format" URL argument, or, failing that, from the Accept header
+    (allowing Prometheus-style scraping without any URL changes).
+    Defaults to JSON.
+    """
+    if format_arg_values:
+        fmt = format_arg_values[0].decode('utf-8').strip().lower()
+        if fmt not in VALID_FORMATS:
+            raise ValueError('Unknown format "%s", must be one of: %s' % (fmt, ', '.join(VALID_FORMATS)))
+        return fmt
+
+    if has_headers(request, HTTP_HEADER_ACCEPT):
+        accept = get_headers(request, HTTP_HEADER_ACCEPT) or ''
+        if openmetrics.MIME_TYPE in accept.lower():
+            return FORMAT_OPENMETRICS
+
+    return FORMAT_JSON
+
 
 class QueryResource(resource.Resource):
     
@@ -69,13 +99,30 @@ class QueryResource(resource.Resource):
             log.msg('Query "%s" does not exist' % query_name, system='sgas.QueryResource')
             return "Query does not exist"
 
+        # "format" is a customquery-engine level argument, not a query
+        # parameter, so it is pulled out before validating the query's
+        # own (declared) arguments
+        request_args = dict(request.args)
+        format_arg_values = request_args.pop(FORMAT_ARG, None)
         try:
-            query_args = query.parseURLArguments(request.args)
+            output_format = determineFormat(format_arg_values, request)
+        except ValueError as e:
+            request.setResponseCode(400) # bad request
+            log.msg('Rejecting custom query request: %s' % str(e), system='sgas.QueryResource')
+            return str(e).encode('utf-8')
+
+        if output_format == FORMAT_OPENMETRICS and not query.metric_value:
+            request.setResponseCode(400) # bad request
+            log.msg('Query "%s" does not support openmetrics output' % query_name, system='sgas.QueryResource')
+            return b'Query does not support openmetrics output'
+
+        try:
+            query_args = query.parseURLArguments(request_args)
         except querydefinition.QueryParseError as e:
             request.setResponseCode(400) # bad request
             log.msg('Rejecting custom query request: %s' % str(e), system='sgas.QueryResource')
             return str(e)
-        
+
         ctx = [ (rights.CTX_QUERY, query_name) ] + [ (rights.CTX_QUERYGROUP, vg) for vg in query.query_group ]
 
         # Add query group authz params.
@@ -94,8 +141,20 @@ class QueryResource(resource.Resource):
         log.msg('Accepted query request from %s' % hostname, system='sgas.QueryResource')
 
         def gotDatabaseResult(rows):
-            payload = json.dumps(rows).encode('utf-8')
-            request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
+            if output_format == FORMAT_OPENMETRICS:
+                try:
+                    payload = openmetrics.render(query, rows)
+                except openmetrics.OpenMetricsError as e:
+                    log.msg('Openmetrics rendering error: %s' % str(e), system='sgas.QueryResource')
+                    request.setResponseCode(500)
+                    request.write(('Openmetrics rendering error (%s)' % str(e)).encode('utf-8'))
+                    request.finish()
+                    return
+                request.setHeader(HTTP_HEADER_CONTENT_TYPE, openmetrics.CONTENT_TYPE)
+            else:
+                payload = json.dumps(rows).encode('utf-8')
+                request.setHeader(HTTP_HEADER_CONTENT_TYPE, JSON_MIME_TYPE)
+
             request.write(payload)
             request.finish()
 
