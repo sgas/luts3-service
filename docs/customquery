@@ -19,10 +19,18 @@ which is done in the configure file.
 
 Option              Descrpition
 
-querygroup      Comma seperated list of groups which can access the query.
-query           The query send to the database for data retrieval.
-params			Comma seperated list of required params in query. 
-                
+querygroup              Comma seperated list of groups which can access the query.
+query                   The query send to the database for data retrieval.
+params			Comma seperated list of required params in query.
+metric_value            Column holding the sample value; enables OpenMetrics output.
+metric_name_column      Column from which to take metric name
+metric_name             Metric name for OpenMetrics output (won't have any effect if
+                        metric_name_column is also defined). Defaults to the query name.
+metric_type             "gauge" or "counter" for OpenMetrics output. Default "gauge".
+metric_help             HELP text for OpenMetrics output.
+metric_labels           Comma seperated list of columns to use as labels. Defaults
+                        to all columns except metric_value and metric_name_column.
+
 
 * Explanatory, In-depth Custom Query Configuration
 
@@ -106,6 +114,48 @@ To grant a person access to all queries, just specify customquery or customquery
 
 Note that SGAS must be restarted in order for any configuration or
 authorization changes to take place.
+
+
+* OpenMetrics output
+
+By default custom query results are returned as JSON. A query can also be
+exposed in OpenMetrics text exposition format (the format used by
+Prometheus and compatible scrapers), so it can be added directly as a
+Prometheus scrape target.
+
+To enable this for a query, declare which column holds the numeric sample
+value with "metric_value". The metric name defaults to the query name, but
+can be overridden with "metric_name". All other columns returned by the
+query become metric labels, unless a specific subset is requested with
+"metric_labels". "metric_type" ("gauge" or "counter", default "gauge") and
+"metric_help" are optional.
+
+Note: a counter's metric name must end in "_total" per the OpenMetrics
+specification; if "metric_name" (or the query name, if no metric_name is
+given) doesn't already end in "_total", "_total" is appended automatically
+when metric_type=counter.
+
+[query:lastinsert]
+querygroup=admin,nagios
+query=SELECT machine_name,max(generate_time) as updated \
+      FROM uraggregated GROUP BY machine_name
+metric_value=updated
+metric_name=sgas_last_insert_timestamp_seconds
+metric_help=Unix timestamp of the last insert per machine
+metric_labels=machine_name
+
+A query configured this way still serves JSON by default. To get the
+OpenMetrics rendering instead, either add "?format=openmetrics" to the URL:
+
+https://host.example.org:6443/sgas/customquery/lastinsert?format=openmetrics
+
+or send a request with an "Accept: application/openmetrics-text" header
+(e.g. as a Prometheus scrape target), which is detected automatically
+without needing the URL argument. Requesting "?format=openmetrics" for a
+query that has no "metric_value" configured returns an HTTP 400 error.
+
+Only queries with a single value column are supported, i.e. exactly one
+column is designated with "metric_value"; the rest are labels.
 
 
 * Index in the database
