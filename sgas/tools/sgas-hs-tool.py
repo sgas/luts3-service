@@ -169,7 +169,6 @@ def add_factor(db, machine_name, timerange, factortype, factor, add_machine, add
             machines[machine_name] = machinname_id
         return machines
 
-
     cur = db.cursor()
 
     machines = get_machines(cur)

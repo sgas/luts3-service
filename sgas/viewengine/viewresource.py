@@ -34,7 +34,7 @@ def handleViewError(error, request, view_name):
     request.finish()
 
 PLUGIN_CFG_BLOCK = "plugin:view"     
-WLCG_CONFIG_FILE = 'wlcg_config_file'
+WLCG_VIEWS = 'enable_wlcg_views'
 
 
 class ViewTopResource(resource.Resource):
@@ -55,17 +55,21 @@ class ViewTopResource(resource.Resource):
         
         mfst = manifest.Manifest()
         mfst.setProperty('start_time', time.asctime())
-    
-        if cfg.has_option(PLUGIN_CFG_BLOCK, WLCG_CONFIG_FILE):
-            mfst.setProperty('wlcg_config_file', cfg.get(PLUGIN_CFG_BLOCK, WLCG_CONFIG_FILE))
 
         self.putChild('adminmanifest'.encode('utf-8'), adminmanifest.AdminManifestResource(self.urdb, authorizer, mfst))
         self.putChild('machines'.encode('utf-8'), machineview.MachineListView(self.urdb, authorizer, mfst))
         self.putChild('custom'.encode('utf-8'), CustomViewTopResource(self.urdb, authorizer, self.views))
         
-        if mfst.hasProperty(WLCG_CONFIG_FILE):
-            from sgas.viewengine import wlcgview
-            self.putChild('wlcg'.encode('utf-8'), wlcgview.WLCGView(db, authorizer, mfst))
+        if cfg.has_option(PLUGIN_CFG_BLOCK, WLCG_VIEWS):
+            try:
+                wlcg_views = cfg.getboolean(PLUGIN_CFG_BLOCK, WLCG_VIEWS)
+            except ValueError as e:
+                log.err("Couldn't parse option %s in block %s in config file: %s" % (WLCG_VIEWS, PLUGIN_CFG_BLOCK, e), system='sgas.ViewResource')
+                wlcg_views = False
+
+            if wlcg_views:
+                from sgas.viewengine import wlcgview
+                self.putChild('wlcg'.encode('utf-8'), wlcgview.WLCGView(db, authorizer, mfst))
 
 
     def render_GET(self, request):
@@ -86,7 +90,7 @@ class ViewTopResource(resource.Resource):
         body += 2*ib + '<p>\n'
         body += 2*ib + '<div><a href=view/machines>Machine list</a></div>\n'
 
-        if 'wlcg' in self.children:
+        if 'wlcg'.encode('utf-8') in self.children:
             body += 2*ib + '<p>\n'
             body += 2*ib + '<div><a href=view/wlcg>WLCG Views</a></div>\n'
 

@@ -19,16 +19,27 @@ N_JOBS = 'n_jobs'
 CORE_SECONDS = 'core_seconds'   # processors * wall_seconds
 WALL_SECONDS = 'wall_seconds'
 CPU_SECONDS = 'cpu_seconds'
+CORE_EQUIVALENTS = 'core_equivalents'  # processors * wall_seconds / (end_time - start_time)
+
 CORE_SECONDS_HS06 = 'core_seconds_hs06'   # processors * wall_seconds_hs06
 WALL_SECONDS_HS06 = 'wall_seconds_hs06'
 CPU_SECONDS_HS06 = 'cpu_seconds_hs06'
 HS06_CORE_EQUIVALENTS = 'hs06_core_equivalents'  # processors * wall_seconds_hs06 / (end_time - start_time)
 HS06_CPU_EQUIVALENTS = 'hs06_cpu_equivalents'  # cpu_seconds_hs06 / (end_time - start_time)
-CORE_EQUIVALENTS = 'core_equivalents'  # processors * wall_seconds / (end_time - start_time)
+
+# Normalised means sclaed by a factor which is hepscore23 if available,
+# otherwise hepspec06.
+CORE_SECONDS_NORMALISED = 'core_seconds_normalised'
+WALL_SECONDS_NORMALISED = 'wall_seconds_normalised'
+CPU_SECONDS_NORMALISED = 'cpu_seconds_normalised'
+NORMALISED_CORE_EQUIVALENTS = 'normalised_core_equivalents'
+NORMALISED_CPU_EQUIVALENTS = 'normalised_cpu_equivalents'
+
 EFFICIENCY = 'efficiency'
 VO_NAME = 'voname'
 VO_GROUP = 'vo_group'
 VO_ROLE = 'vo_role'
+BENCHMARKS = 'benchmarks'
 
 GROUP = 'group_identity'
 RESOURCE_USED = 'resource_capacity_used'
@@ -36,12 +47,18 @@ DISK_USED = 'disk_used'
 TAPE_USED = 'tape_used'
 
 
-_groupable_columns = (USER, TIME, YEAR, MONTH, TIER, SITE, COUNTRY, VO_NAME, VO_GROUP, VO_ROLE, MACHINE_NAME, PROCESSORS, NODE_COUNT)
+_groupable_columns = (USER, TIME, YEAR, MONTH, TIER, SITE, COUNTRY, VO_NAME, VO_GROUP, VO_ROLE, MACHINE_NAME, PROCESSORS, NODE_COUNT, BENCHMARKS)
 value_columns = (N_JOBS, CORE_SECONDS, WALL_SECONDS, CPU_SECONDS, CORE_SECONDS_HS06, WALL_SECONDS_HS06, CPU_SECONDS_HS06,
-                  EFFICIENCY, HS06_CORE_EQUIVALENTS, HS06_CPU_EQUIVALENTS, CORE_EQUIVALENTS)
+                  EFFICIENCY, HS06_CORE_EQUIVALENTS, HS06_CPU_EQUIVALENTS, CORE_EQUIVALENTS,
+                  CORE_SECONDS_NORMALISED, WALL_SECONDS_NORMALISED, CPU_SECONDS_NORMALISED, NORMALISED_CORE_EQUIVALENTS, NORMALISED_CPU_EQUIVALENTS)
 
 _st_groupable_col = (GROUP)
 _st_value_col = (RESOURCE_USED, DISK_USED, TAPE_USED)
+
+
+# SQL code snippet to extract a normalsing scale factor from
+# wlcg.usagedata.benchmarks:
+_scale_factor_sql = "coalesce((benchmarks->'hepscore23')::numeric, (benchmarks->'hepspec06')::numeric)"
 
 
 def _build_sql(column_list, from_table, group_by, timerange, end_time=None, joins=None, in_requirements=(), notin_requirements=()):
@@ -381,6 +398,44 @@ class WLCG:
                 sql_args.append(timerange[1])
                 sql_args.append(timerange[0])
 
+            elif c == WALL_SECONDS_NORMALISED:
+                code = f'wall_duration*{_scale_factor_sql}'
+                if group_by: 
+                    code = 'sum(' + code + ')'
+                column_list.append({'name': WALL_SECONDS_NORMALISED, 'code': code})
+
+            elif c == CPU_SECONDS_NORMALISED:
+                code = f'cpu_duration*{_scale_factor_sql}'
+                if group_by: 
+                    code = 'sum(' + code + ')'
+                column_list.append({'name': CPU_SECONDS_NORMALISED, 'code': code})
+
+            elif c == CORE_SECONDS_NORMALISED:
+                code = f'wall_duration*processors*{_scale_factor_sql}'
+                if group_by: 
+                    code = 'sum(' + code + ')'
+                column_list.append({'name': CORE_SECONDS_NORMALISED, 'code': code})
+
+            elif c == NORMALISED_CORE_EQUIVALENTS:
+                if group_by:
+                    code = f'sum(wall_duration*processors*{_scale_factor_sql}) / (extract(EPOCH from %s::timestamp) - extract(EPOCH from %s::timestamp))'
+                else:
+                    code = f'wall_duration*processors*{_scale_factor_sql} / (extract(EPOCH from %s::timestamp) - extract(EPOCH from %s::timestamp))'
+                column_list.append({'name': NORMALISED_CORE_EQUIVALENTS, 'code': code})
+
+                sql_args.append(timerange[1])
+                sql_args.append(timerange[0])
+
+            elif c == NORMALISED_CPU_EQUIVALENTS:
+                if group_by:
+                    code = f'sum(cpu_duration*{_scale_factor_sql}) / (extract(EPOCH from %s::timestamp) - extract(EPOCH from %s::timestamp))'
+                else:
+                    code = f'cpu_duration*{_scale_factor_sql} / (extract(EPOCH from %s::timestamp) - extract(EPOCH from %s::timestamp))'
+                column_list.append({'name': NORMALISED_CPU_EQUIVALENTS, 'code': code})
+
+                sql_args.append(timerange[1])
+                sql_args.append(timerange[0])
+
             elif c == CORE_EQUIVALENTS:
                 if group_by:
                     code = 'sum(wall_duration*processors) / (extract(EPOCH from %s::timestamp) - extract(EPOCH from %s::timestamp))'
@@ -390,6 +445,9 @@ class WLCG:
 
                 sql_args.append(timerange[1])
                 sql_args.append(timerange[0])
+
+            elif c == BENCHMARKS:
+                column_list.append({'name': BENCHMARKS, 'code': 'benchmarks'})
 
             else:
                 assert False, 'Unknwon column %s' % c
@@ -415,7 +473,7 @@ class WLCG:
 
 def rowsToDicts(rows, columns):
     result = []
-    for r in rows:
+    for r in (rows or []):
         d = {}
         for i in range(len(columns)):
             d[columns[i]] = r[i]
