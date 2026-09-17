@@ -15,7 +15,7 @@ LOOPBACK_ADDRESSES = ('127.0.0.1', '::1')
 X_SSL_SUBJECT   = "x-ssl-subject"
 X_FORWARDED_FOR = "x-forwarded-for"
 
-IP_REGEX = "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"
+IP_REGEX = r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"
 ip_matcher = re.compile(IP_REGEX)
 
 

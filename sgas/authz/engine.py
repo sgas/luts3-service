@@ -2,6 +2,7 @@
 SGAS authorization framework.
 """
 
+
 import re
 
 from twisted.python import log
@@ -10,7 +11,7 @@ from sgas.authz import rights, ctxinsertchecker, ctxsetchecker
 
 
 # regular expression for matching authz lines
-AUTHZ_RX = re.compile("""\s*"(.*)"\s*(.*)""")
+AUTHZ_RX = re.compile(r"""\s*"(.*)"\s*(.*)""")
 
 
 class AuthzRights:
