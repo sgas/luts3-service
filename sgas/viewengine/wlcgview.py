@@ -3,7 +3,7 @@ WLCG View. Part of SGAS viewengine.
 
 Author: Henrik Thostrup Jensen <htj@ndgf.org>
         Erik Edelmann <edelmann@csc.fi>
-Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016-2022)
+Copyright: Nordic Data Grid Facility (2011), Nordic e-Infrastructure Collaboration (2016-2020)
 """
 
 import time
@@ -16,8 +16,8 @@ from twisted.web import server
 from sgas.server import resourceutil, config
 from sgas.viewengine import html, htmltable, dateform, baseview, rights
 
-CPU_DAYS_NORMALISED = 'cpu_days_normalised'
-CORE_DAYS_NORMALISED = 'core_days_normalised'
+CPU_DAYS_HS06 = 'cpu_days_hs06'
+CORE_DAYS_HS06 = 'core_days_hs06'
 DISK_TIB = 'disk_tib'
 TAPE_TIB = 'tape_tib'
 
@@ -35,15 +35,15 @@ COLUMN_NAMES = {
     wlcg.N_JOBS                  : 'Job count',
     wlcg.CPU_SECONDS             : 'CPU hours',   # (We change time units from s to h)
     wlcg.CORE_SECONDS            : 'Wall hours',  # Yeah, I know ... but somebody decided calling it "Wall", so we'll keep it
-    wlcg.CPU_SECONDS_NORMALISED        : 'Normalised CPU hours',
-    wlcg.CORE_SECONDS_NORMALISED       : 'Normalised wall hours',
+    wlcg.CPU_SECONDS_HS06        : 'HS06 CPU hours',
+    wlcg.CORE_SECONDS_HS06       : 'HS06 wall hours',
     wlcg.EFFICIENCY              : 'Job efficiency',
     #wlcg.CPU_EQUIVALENTS        : 'CPU node equivalents',
     wlcg.CORE_EQUIVALENTS        : 'Wall node equivalents',
-    wlcg.NORMALISED_CPU_EQUIVALENTS    : 'Normalised CPU node equivalents',
-    wlcg.NORMALISED_CORE_EQUIVALENTS   : 'Normalised Wall node equivalents',
-    CPU_DAYS_NORMALISED                : 'CPU days (Normalised)',
-    CORE_DAYS_NORMALISED               : 'Wall days (Normalised)',
+    wlcg.HS06_CPU_EQUIVALENTS    : 'HS06 CPU node equivalents',
+    wlcg.HS06_CORE_EQUIVALENTS   : 'HS06 Wall node equivalents',
+    CPU_DAYS_HS06                : 'CPU days (HS06)',
+    CORE_DAYS_HS06               : 'Wall days (HS06)',
     DISK_TIB                     : 'Disk (TiB)',
     TAPE_TIB                     : 'Tape (TiB)'
 }
@@ -62,7 +62,7 @@ def _sortKey(record, field_order):
     attrs = []
     for f in field_order:
         if f in record:
-            attrs.append(record[f] or '')
+            attrs.append(record[f])
     return tuple(attrs)
 
 
@@ -73,7 +73,7 @@ def _changeUnits(records):
     """
 
     # Columns that has times in seconds, that needs conversion to hours
-    time_columns = (wlcg.CPU_SECONDS, wlcg.CORE_SECONDS, wlcg.CPU_SECONDS_NORMALISED, wlcg.CORE_SECONDS_NORMALISED)
+    time_columns = (wlcg.CPU_SECONDS, wlcg.CORE_SECONDS, wlcg.CPU_SECONDS_HS06, wlcg.CORE_SECONDS_HS06)
 
     for r in records:
         if wlcg.EFFICIENCY in r:
@@ -204,9 +204,8 @@ class WLCGView(baseview.BaseView):
         }
 
     def getChild(self, path, request):
-        p = path.decode('utf-8')
-        if p in self.subview:
-            return self.subview[p][1]
+        if path in self.subview:
+            return self.subview[path][1]
         else:
             # no such resource
             return baseview.BaseView.getChild(self, path, request)
@@ -287,10 +286,6 @@ class WLCGBaseView(baseview.BaseView):
         wlcg_records = wlcg.rowsToDicts(wlcg_data, self.columns)
         wlcg_records = _changeUnits(wlcg_records)
 
-        if self.tier_based:
-            # If we are tier based, we should omit records without tier
-            wlcg_records = [ e for e in wlcg_records if e[wlcg.TIER] ]
-
         sk = lambda key : _sortKey(key, field_order=self.columns)
         if self.split is None:
             wlcg_records = self.sort(wlcg_records, key=sk)
@@ -308,7 +303,7 @@ class WLCGBaseView(baseview.BaseView):
             columns = [ c for c in self.columns if c != self.split and c not in self.invisible_columns ]
             for split_attr, records in split_records.items():
                 table = self.createTable(records, columns)
-                table_content += html.createParagraph(split_attr or "") + table + html.SECTION_BREAK
+                table_content += html.createParagraph(split_attr) + table + html.SECTION_BREAK
 
         start_date_option = request.args.get(b'startdate', [b''])[0].decode('utf-8')
         end_date_option   = request.args.get(b'enddate', [b''])[0].decode('utf-8')
@@ -353,14 +348,14 @@ class WLCGVOView(WLCGBaseView):
     group_by = ( wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.MACHINE_NAME )
     columns = [ wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.MACHINE_NAME, 
                 wlcg.N_JOBS, wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS,
-                wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
 
 
 class WLCGTierView(WLCGBaseView):
 
     group_by = ( wlcg.TIER, wlcg.VO_NAME, wlcg.VO_ROLE )
     columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_ROLE,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
 
 
@@ -369,7 +364,7 @@ class WLCGFullTierView(WLCGBaseView):
 
     group_by = ( wlcg.TIER, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER )
     columns = [ wlcg.TIER, wlcg.VO_NAME, wlcg.VO_GROUP, wlcg.VO_ROLE, wlcg.USER,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     viewgroup = 'restricted'
 
@@ -379,7 +374,7 @@ class WLCGTierMachineSplitView(WLCGBaseView):
 
     group_by = ( wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.TIER )
     columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.TIER,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.CPU_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     tier_based = True
     split = wlcg.TIER
 
@@ -409,7 +404,7 @@ def sortAndSumByCountry(records, key):
 
         if countrysum[wlcg.MACHINE_NAME] != country:
             if n > 0: # '> 1' if we want sums only for multi-cluster countries
-                countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_NORMALISED]/countrysum[wlcg.CORE_SECONDS_NORMALISED])
+                countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_HS06]/countrysum[wlcg.CORE_SECONDS_HS06])
                 rec.insert(i, countrysum)
                 i += 1
             countrysum = {wlcg.MACHINE_NAME: country}
@@ -424,9 +419,9 @@ def sortAndSumByCountry(records, key):
         i += 1
 
 
-    countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_NORMALISED]/countrysum[wlcg.CORE_SECONDS_NORMALISED])
+    countrysum[wlcg.EFFICIENCY] = int(100.0*countrysum[wlcg.CPU_SECONDS_HS06]/countrysum[wlcg.CORE_SECONDS_HS06])
     rec.append(countrysum)
-    totalsum[wlcg.EFFICIENCY] = int(100.0*totalsum[wlcg.CPU_SECONDS_NORMALISED]/totalsum[wlcg.CORE_SECONDS_NORMALISED])
+    totalsum[wlcg.EFFICIENCY] = int(100.0*totalsum[wlcg.CPU_SECONDS_HS06]/totalsum[wlcg.CORE_SECONDS_HS06])
     rec.append(totalsum)
     return rec
 
@@ -434,9 +429,9 @@ class WLCGVOOversightView(WLCGBaseView):
 
     group_by = (  wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME )
     columns = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME,
-                wlcg.N_JOBS, wlcg.CORE_SECONDS_NORMALISED, wlcg.CPU_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.N_JOBS, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     invisible_columns = wlcg.COUNTRY
-    tier_based = False
+    tier_based = True
     split = wlcg.VO_NAME
     sort = staticmethod(sortAndSumByCountry)
 
@@ -444,7 +439,7 @@ class WLCGVOOversightView(WLCGBaseView):
 class WLCGMachineView(WLCGBaseView):
 
     columns = [ wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.N_JOBS,
-                wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS, wlcg.CORE_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     group_by = ( wlcg.MACHINE_NAME, wlcg.VO_NAME )
 
 class WLCGMachinePerMonthView(WLCGBaseView):
@@ -457,19 +452,19 @@ class WLCGUserView(WLCGBaseView):
 
     group_by = ( wlcg.USER, wlcg.VO_NAME, wlcg.VO_ROLE )
     columns = [ wlcg.USER, wlcg.VO_NAME, wlcg.VO_ROLE, wlcg.N_JOBS,
-                wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
+                wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS, wlcg.EFFICIENCY ]
     viewgroup = 'restricted'
 
 
 """
-WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.NORMALISED_CORE_EQUIVALENTS]
+WLCG_UNIT_MAPPING_DEFAULT = lambda rec : rec[wlcg.HS06_CORE_EQUIVALENTS]
 WLCG_UNIT_MAPPING = {
     'ksi2k-ne' : WLCG_UNIT_MAPPING_DEFAULT,
-    'normalised-ne'  : lambda rec : rec[wlcg.NORMALISED_CORE_EQUIVALENTS],
-    'normalised-cpune'  : lambda rec : rec[wlcg.NORMALISED_CPU_EQUIVALENTS],
-    'ksi2k-wallhours' : lambda rec : rec[wlcg.WALL_SECONDS_NORMALISED],
-    'normalised-wallhours'  : lambda rec : rec[wlcg.WALL_SECONDS_NORMALISED],
-    'normalised-cpuhours'  : lambda rec : rec[wlcg.CPU_SECONDS_NORMALISED]
+    'hs06-ne'  : lambda rec : rec[wlcg.HS06_CORE_EQUIVALENTS],
+    'hs06-cpune'  : lambda rec : rec[wlcg.HS06_CPU_EQUIVALENTS],
+    'ksi2k-wallhours' : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
+    'hs06-wallhours'  : lambda rec : rec[wlcg.WALL_SECONDS_HS06],
+    'hs06-cpuhours'  : lambda rec : rec[wlcg.CPU_SECONDS_HS06]
 }
 """
 
@@ -479,7 +474,8 @@ class WLCGOversightView(WLCGBaseView):
 
     # This view is rather different than the others, so it is its own class
     group_by = [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, wlcg.TIER ]
-    units = (wlcg.CPU_SECONDS_NORMALISED,  wlcg.NORMALISED_CPU_EQUIVALENTS, wlcg.CORE_SECONDS_NORMALISED, wlcg.NORMALISED_CORE_EQUIVALENTS)
+    units = (wlcg.CPU_SECONDS_HS06,  wlcg.HS06_CPU_EQUIVALENTS, wlcg.CORE_SECONDS_HS06, wlcg.HS06_CORE_EQUIVALENTS)
+    default_tier = 'ndgf-t1'
 
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
@@ -500,7 +496,7 @@ class WLCGOversightView(WLCGBaseView):
             _, end_date = dateform.quarterStartEndDates(year, quart)
         if b'unit' in request.args and request.args[b'unit'][0].decode('utf-8') not in self.units:
             return self.renderErrorPage('Invalid units parameters')
-        unit = request.args.get(b'unit', [wlcg.NORMALISED_CORE_EQUIVALENTS.encode('utf-8')])[0].decode('utf-8')
+        unit = request.args.get(b'unit', [wlcg.HS06_CORE_EQUIVALENTS.encode('utf-8')])[0].decode('utf-8')
 
         t_query_start = time.time()
         d = self.retrieveWLCGData(start_date, end_date, unit)
@@ -534,7 +530,6 @@ class WLCGOversightView(WLCGBaseView):
         t_dataprocess_start = time.time()
 
         wlcg_records = wlcg.rowsToDicts(wlcg_data, [ wlcg.MACHINE_NAME, wlcg.COUNTRY, wlcg.VO_NAME, unit ])
-        wlcg_records = _changeUnits(wlcg_records)
 
         t_dataprocess = time.time() - t_dataprocess_start
 
@@ -553,7 +548,7 @@ class WLCGOversightView(WLCGBaseView):
             vo_tiers.add(rec[wlcg.VO_NAME])
 
         TOTAL = 'Total'
-        ALL_TOTAL = 'All Total'
+        TIER_TOTAL = self.default_tier.split('-')[0].upper()
 
         site_totals = _collapseFields(wlcg_records, ( wlcg.VO_NAME, ) )
         for r in site_totals:
@@ -583,15 +578,15 @@ class WLCGOversightView(WLCGBaseView):
         # calculate total per tier-vo
         tier_vo_totals = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.COUNTRY ) )
         for r in tier_vo_totals:
-            r[wlcg.MACHINE_NAME] = ALL_TOTAL
+            r[wlcg.MACHINE_NAME] = TIER_TOTAL
 
         # calculate total
         total = _collapseFields(wlcg_records, ( wlcg.MACHINE_NAME, wlcg.VO_NAME, wlcg.COUNTRY ) )
         assert len(total) in (0,1), 'Records did not collapse into a single record when calculating grand total'
         if len(total) == 0:
-            total = [ { wlcg.CPU_SECONDS : 0, wlcg.CORE_SECONDS : 0, wlcg.CPU_SECONDS_NORMALISED : 0, wlcg.CORE_SECONDS_NORMALISED : 0 } ]
+            total = [ { wlcg.CPU_SECONDS : 0, wlcg.CORE_SECONDS : 0, wlcg.CPU_SECONDS_HS06 : 0, wlcg.CORE_SECONDS_HS06 : 0 } ]
         total_record = total[0]
-        total_record[wlcg.MACHINE_NAME] = ALL_TOTAL
+        total_record[wlcg.MACHINE_NAME] = TIER_TOTAL
         total_record[wlcg.VO_NAME] = TOTAL
 
         # put all calculated records together and add equivalents
@@ -609,10 +604,10 @@ class WLCGOversightView(WLCGBaseView):
         for tld in sorted(tld_groups):
             row_names += sorted(tld_groups[tld])
             row_names.append(tld + '-TOTAL')
-        row_names.append(ALL_TOTAL)
+        row_names.append(TIER_TOTAL)
 
         #unit_extractor = WLCG_UNIT_MAPPING.get(unit, WLCG_UNIT_MAPPING_DEFAULT)
-        unit_extractor = lambda rec : rec.get(unit)
+        unit_extractor = lambda rec : rec[unit]
 
         elements = []
         for row in row_names:
@@ -621,11 +616,11 @@ class WLCGOversightView(WLCGBaseView):
                     if rec[wlcg.MACHINE_NAME] == row and rec[wlcg.VO_NAME] == col:
                         value = _formatValue( unit_extractor(rec) )
                         # hurrah for formatting
-                        if row == ALL_TOTAL and col == TOTAL:
+                        if row == TIER_TOTAL and col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
-                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == ALL_TOTAL:
+                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == TIER_TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, underlined=True)
-                        elif row.endswith('-TOTAL') or row == ALL_TOTAL or col == TOTAL:
+                        elif row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True)
                         elements.append( ((col,row), value))
                         break
@@ -654,18 +649,18 @@ class WLCGOversightView(WLCGBaseView):
             quarter_links.append(html.createLink('%s?startdate=%s&enddate=%s' % (self.path, sd, ed), q ) )
         range_text = html.createParagraph('Date range: %s - %s (%s days)' % (start_date, end_date, days))
 
-        request.write( (html.HTML_VIEWBASE_HEADER % {'title': title}).encode('utf-8') )
-        request.write( html.createTitle(title).encode('utf-8') )
-        request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ).encode('utf-8') )
-        request.write( html.SECTION_BREAK.encode('utf-8') )
-        request.write( html.createParagraph(selector_form).encode('utf-8') )
-        request.write( html.SECTION_BREAK.encode('utf-8') )
-        request.write( html.createParagraph(range_text).encode('utf-8') )
-        request.write( table_content.encode('utf-8') )
-        request.write( html.SECTION_BREAK.encode('utf-8') )
-        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)).encode('utf-8') )
-        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)).encode('utf-8') )
-        request.write( html.HTML_VIEWBASE_FOOTER.encode('utf-8') )
+        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
+        request.write( html.createTitle(title) )
+        request.write( html.createParagraph('Quarters: \n    ' + ('    ' + html.NBSP).join(quarter_links) ) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(selector_form) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(range_text) )
+        request.write( table_content )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
+        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
+        request.write( html.HTML_VIEWBASE_FOOTER )
 
         request.finish()
         return server.NOT_DONE_YET
@@ -675,7 +670,7 @@ class WLCGOversightView(WLCGBaseView):
 class WLCGT1SummaryView(WLCGBaseView):
     # This view is rather different than the others, so it is its own class
 
-    columns = (wlcg.VO_NAME, CORE_DAYS_NORMALISED, CPU_DAYS_NORMALISED, DISK_TIB, TAPE_TIB)
+    columns = (wlcg.VO_NAME, CORE_DAYS_HS06, CPU_DAYS_HS06, DISK_TIB, TAPE_TIB)
     group_by = (wlcg.VO_NAME)
     vo_list = ('atlas', 'alice')
     tier_list = ('ndgf-t1',)
@@ -689,7 +684,7 @@ class WLCGT1SummaryView(WLCGBaseView):
 
         end_date += " 23:59:59"
 
-        columns=({'name': 'resource_type', 'code': "'compute'"}, wlcg.VO_NAME, wlcg.CORE_SECONDS_NORMALISED, wlcg.CPU_SECONDS_NORMALISED)
+        columns=({'name': 'resource_type', 'code': "'compute'"}, wlcg.VO_NAME, wlcg.CORE_SECONDS_HS06, wlcg.CPU_SECONDS_HS06)
         group_by=(wlcg.VO_NAME, 'resource_type')
         self.wlcgdb.add_query(columns=columns, group_by=group_by, timerange=(start_date, end_date),
                               vo_list=self.vo_list, tier_list=self.tier_list)
@@ -700,10 +695,10 @@ class WLCGT1SummaryView(WLCGBaseView):
                                       exclude_groups=('atlas-no','atlas-dk','UNKNOWN PROJECT','ops','behrmann','dteam'))
 
         columns=({'name': wlcg.VO_NAME, 'code': wlcg.VO_NAME},
-                 {'name': CORE_DAYS_NORMALISED, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CORE_SECONDS_NORMALISED},
-                 {'name': CPU_DAYS_NORMALISED, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CPU_SECONDS_NORMALISED},
-                 {'name': DISK_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CORE_SECONDS_NORMALISED},
-                 {'name': TAPE_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CPU_SECONDS_NORMALISED})
+                 {'name': CORE_DAYS_HS06, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CORE_SECONDS_HS06},
+                 {'name': CPU_DAYS_HS06, 'code': "sum(case when resource_type = 'compute' then %s / (24*3600) else 0 end)" % wlcg.CPU_SECONDS_HS06},
+                 {'name': DISK_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CORE_SECONDS_HS06},
+                 {'name': TAPE_TIB, 'code': "sum(case when resource_type = 'storage' then %s / 1099511627776 else 0 end)" %  wlcg.CPU_SECONDS_HS06})
         self.wlcgdb.add_outer_query(columns=columns, group_by=(wlcg.VO_NAME,))
 
         d = self.wlcgdb.fetch()
@@ -736,6 +731,8 @@ class WLCGStorageView(baseview.BaseView):
         self.path = path
         baseview.BaseView.__init__(self, urdb, authorizer, mfst)
 
+        wlcg_config = json.load(open(mfst.getProperty('wlcg_config_file')))
+        self.default_tier = wlcg_config['default-tier']
 
     def render_GET(self, request):
         subject = resourceutil.getSubject(request)
@@ -802,7 +799,7 @@ class WLCGStorageView(baseview.BaseView):
         groups = set( [ rec['group'] for rec in records ] )
 
         TOTAL = 'Total'
-        ALL_TOTAL = 'All Total'
+        TIER_TOTAL = self.default_tier.split('-')[0].upper()
 
         # calculate totals per site / group
         site_group_totals = {}
@@ -850,8 +847,8 @@ class WLCGStorageView(baseview.BaseView):
         for country, rcu in country_totals.items():
             totals.append( { 'site': country, 'group': TOTAL, 'rcu': rcu } )
         for group, rcu in group_totals.items():
-            totals.append( { 'site': ALL_TOTAL, 'group': group, 'rcu': rcu } )
-        totals.append( { 'site': ALL_TOTAL, 'group': TOTAL, 'rcu': total } )
+            totals.append( { 'site': TIER_TOTAL, 'group': group, 'rcu': rcu } )
+        totals.append( { 'site': TIER_TOTAL, 'group': TOTAL, 'rcu': total } )
 
         # create table
         columns = sorted(groups)
@@ -861,7 +858,7 @@ class WLCGStorageView(baseview.BaseView):
         for tld in sorted(tld_groups):
             row_names += sorted(tld_groups[tld])
             row_names.append(tld + '-TOTAL')
-        row_names.append(ALL_TOTAL)
+        row_names.append(TIER_TOTAL)
 
         elements = []
         for row in row_names:
@@ -870,11 +867,11 @@ class WLCGStorageView(baseview.BaseView):
                     if rec['site'] == row and rec['group'] == col:
                         value = rec['rcu']
                         # hurrah for formatting
-                        if row == ALL_TOTAL and col == TOTAL:
+                        if row == TIER_TOTAL and col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, double_underlined=True)
-                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == ALL_TOTAL:
+                        elif (row.endswith('-TOTAL') and col == TOTAL) or row == TIER_TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True, underlined=True)
-                        elif row.endswith('-TOTAL') or row == ALL_TOTAL or col == TOTAL:
+                        elif row.endswith('-TOTAL') or row == TIER_TOTAL or col == TOTAL:
                             value = htmltable.StyledTableValue(value, bold=True)
                         elements.append( ((col,row), value))
                         break
@@ -895,16 +892,16 @@ class WLCGStorageView(baseview.BaseView):
 
         date_text = html.createParagraph('Date: %s' % (date))
 
-        request.write( (html.HTML_VIEWBASE_HEADER % {'title': title}).encode('utf-8') )
-        request.write( html.createTitle(title).encode('utf-8') )
-        request.write( html.createParagraph(selector_form).encode('utf-8') )
-        request.write( html.SECTION_BREAK.encode('utf-8') )
-        request.write( html.createParagraph(date_text).encode('utf-8') )
-        request.write( table_content.encode('utf-8') )
-        request.write( html.SECTION_BREAK.encode('utf-8') )
-        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)).encode('utf-8') )
-        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)).encode('utf-8') )
-        request.write( html.HTML_VIEWBASE_FOOTER.encode('utf-8') )
+        request.write( html.HTML_VIEWBASE_HEADER % {'title': title} )
+        request.write( html.createTitle(title) )
+        request.write( html.createParagraph(selector_form) )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph(date_text) )
+        request.write( table_content )
+        request.write( html.SECTION_BREAK )
+        request.write( html.createParagraph('Query time: %s' % round(t_query, 2)) )
+        request.write( html.createParagraph('Data process time: %s' % round(t_dataprocess, 2)) )
+        request.write( html.HTML_VIEWBASE_FOOTER )
 
         request.finish()
         return server.NOT_DONE_YET
